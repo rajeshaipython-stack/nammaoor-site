@@ -1,4 +1,4 @@
-<!doctype html><html lang="ta"><head><!-- build:geo-20260723062208 --><meta charset="UTF-8">
+<!doctype html><html lang="ta"><head><!-- build:review-20260723075643 --><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>நம்மூர் · NammaOor</title>
 <meta name="description" content="Tamil Nadu local shops directory — scan QR, view products & offers, call or WhatsApp your local shop.">
@@ -257,6 +257,21 @@ table.spec td{padding:7px 9px;font-size:14px}
 .wakebanner{ background:linear-gradient(90deg,#fff4e0,#ffe9cc); border:1px solid #ffd28a;
   color:#8a5a00; padding:10px 12px; border-radius:10px; font-size:13px; margin-bottom:10px;
   line-height:1.4; }
+
+/* Big prominent "5 star review" button on the scan/landing page */
+.reviewbtn{ display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:18px 16px; border-radius:16px; text-decoration:none;
+  background:linear-gradient(135deg,#FFC107,#FF9800);
+  color:#3a2a00; box-shadow:0 6px 18px rgba(255,152,0,.35);
+  transition:transform .15s ease, box-shadow .15s ease; }
+.reviewbtn:hover{ transform:translateY(-2px); box-shadow:0 10px 26px rgba(255,152,0,.45); }
+.reviewbtn:active{ transform:translateY(0) scale(.98); }
+.reviewbtn-stars{ font-size:40px; line-height:1; letter-spacing:4px; color:#fff;
+  text-shadow:0 2px 4px rgba(0,0,0,.18); animation:nmStarPulse 1.6s ease-in-out infinite; }
+.reviewbtn-tx{ font-size:18px; font-weight:800; }
+.reviewbtn-sub{ font-size:12.5px; font-weight:600; opacity:.85; }
+@keyframes nmStarPulse{ 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.06) } }
+@media (prefers-reduced-motion: reduce){ .reviewbtn-stars{ animation:none } }
 </style>
 </head><body><div id="root"></div>
 <script type="text/babel" data-presets="react">
@@ -864,6 +879,11 @@ function ShopPage(){
           {catalog.length>0 &&
             <button className="btn ai-cta" style={{padding:'18px',fontSize:16}} onClick={()=>{ev('details_view');setView('details')}}>🛍 Our Products ({catalog.length})<br/><span style={{fontWeight:400,fontSize:12}}>View - Order - WhatsApp</span></button>}
           <button className="btn" style={{padding:'18px',fontSize:16}} onClick={()=>{ev('details_view');setView('details')}}>Shop Details<br/><span style={{fontWeight:400,fontSize:12}}>Products - Offers - Call - Maps - Reviews</span></button>
+          <a href={review} onClick={()=>ev('review')} target="_blank" rel="noopener noreferrer" className="reviewbtn">
+            <span className="reviewbtn-stars">★★★★★</span>
+            <span className="reviewbtn-tx">Engaluku 5 Star Review Kodunga!</span>
+            <span className="reviewbtn-sub">Google-la ungaloda rating podunga 🙏</span>
+          </a>
         </div>
         {paid && <div style={{marginTop:16,padding:12,background:'#eafaf4',borderRadius:12}}>
           <p style={{color:'var(--teal)',fontWeight:700}}>Payment app-ku poninga?</p>
