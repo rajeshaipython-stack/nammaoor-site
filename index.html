@@ -276,6 +276,36 @@ table.spec td{padding:7px 9px;font-size:14px}
   color:#0b7a4a; padding:12px 14px; border-radius:12px; font-size:14px; font-weight:600;
   line-height:1.45; animation:nmFadeIn .3s ease; }
 
+/* Inline star picker (NammaOor review) */
+.ratepick{ background:linear-gradient(135deg,#fff7e6,#ffeccc); border:2px solid #FFC107;
+  border-radius:16px; padding:14px; text-align:center; }
+.ratepick-tx{ font-weight:800; color:#8a5a00; margin:0 0 8px; }
+.ratepick-stars{ display:flex; justify-content:center; gap:6px; }
+.ratepick-star{ font-size:44px; line-height:1; color:#FFB300; background:none; border:none;
+  cursor:pointer; padding:2px 4px; transition:transform .12s ease; animation:starPop .4s ease both; }
+.ratepick-star:hover{ transform:scale(1.25) rotate(-6deg); color:#FF9800; }
+.ratepick-star:active{ transform:scale(.9); }
+@keyframes starPop{ from{ transform:scale(0); opacity:0 } to{ transform:scale(1); opacity:1 } }
+
+/* Celebration overlay after review */
+.celebrate{ position:fixed; inset:0; z-index:9999; pointer-events:none; overflow:hidden;
+  background:rgba(20,10,40,.28); backdrop-filter:blur(1px); animation:nmFadeIn .2s ease; }
+.celebrate-burst{ position:absolute; top:38%; left:50%; transform:translate(-50%,-50%);
+  text-align:center; animation:burstPop .6s cubic-bezier(.2,1.4,.4,1) both; }
+.celebrate-star{ font-size:96px; line-height:1; filter:drop-shadow(0 6px 18px rgba(255,152,0,.6));
+  animation:spinStar 1.6s ease; }
+.celebrate-msg{ font-size:30px; font-weight:900; color:#fff; margin-top:6px;
+  text-shadow:0 3px 14px rgba(0,0,0,.35); }
+.celebrate-sub{ font-size:15px; font-weight:700; color:#ffe9f4; margin-top:2px; }
+@keyframes burstPop{ 0%{ transform:translate(-50%,-50%) scale(0) } 60%{ transform:translate(-50%,-50%) scale(1.15) } 100%{ transform:translate(-50%,-50%) scale(1) } }
+@keyframes spinStar{ 0%{ transform:rotate(0) scale(.4) } 60%{ transform:rotate(380deg) scale(1.2) } 100%{ transform:rotate(360deg) scale(1) } }
+.confetti{ position:absolute; top:-24px; width:11px; height:16px; border-radius:2px;
+  opacity:.95; animation:confFall 1.9s linear forwards; }
+@keyframes confFall{ 0%{ transform:translateY(-24px) rotate(0); opacity:1 }
+  100%{ transform:translateY(105vh) rotate(720deg); opacity:.9 } }
+@media (prefers-reduced-motion: reduce){
+  .celebrate-star,.confetti,.celebrate-burst,.ratepick-star{ animation:none } }
+
 /* Search result card with contact icons */
 .scard{ padding:12px !important; }
 .scard-main{ display:flex; align-items:center; gap:12px; cursor:pointer; }
@@ -883,7 +913,14 @@ function ShopPage(){
   const [s,setS]=useState(null); const [view,setView]=useState('landing'); const [paid,setPaid]=useState(false)
   const [rev,setRev]=useState({avg:0,count:0,reviews:[]}); const [myR,setMyR]=useState({rating:0,name:'',text:''})
   const [catalog,setCatalog]=useState([]); const [payAmt,setPayAmt]=useState(''); const [thanked,setThanked]=useState(false)
-  const goReview=()=>{ ev('review'); window.open(review,'_blank','noopener'); setThanked(true); setTimeout(()=>setView('details'),1400) }
+  const [rateOpen,setRateOpen]=useState(false); const [celebrate,setCelebrate]=useState(false)
+  // NammaOor review (NOT Google): tap a star -> save -> celebration motion -> open shop details
+  const pickStar=async(n)=>{
+    setMyR(v=>({...v,rating:n}))
+    try{ await api.post(`/shop/${s.shop_code}/reviews`,{reviewer_token:rtok,name:myR.name||'',rating:n,text:myR.text||''}) }catch{}
+    ev('review'); setRateOpen(false); setCelebrate(true)
+    setTimeout(()=>{ setCelebrate(false); setThanked(true); loadRev(s.shop_code); setView('details') }, 2000)
+  }
   const tokenKey='rvtok_'+code
   let rtok=localStorage.getItem(tokenKey); if(!rtok){ rtok='r'+Math.random().toString(36).slice(2,10); localStorage.setItem(tokenKey,rtok) }
   useEffect(()=>{ api.get(`${base}${code}`).then(d=>{ setS(d); if(d.found && d.shop_code){ try{api.post(`/shop/${d.shop_code}/event?event_type=qr_scan`)}catch{}; loadRev(d.shop_code); api.get(`/shop/${d.shop_code}/catalog`).then(setCatalog).catch(()=>{}) } }).catch(()=>setS({found:false})) },[code])
@@ -968,8 +1005,24 @@ function ShopPage(){
     </div>
   )
 
+  const Celebration=()=>(
+    <div className="celebrate">
+      <div className="celebrate-burst">
+        <div className="celebrate-star">⭐</div>
+        <div className="celebrate-msg">Nandri! 🎉</div>
+        <div className="celebrate-sub">Ungaloda review kidaichuduchu</div>
+      </div>
+      {Array.from({length:22}).map((_,i)=>(
+        <span key={i} className="confetti" style={{left:(i*4.5+2)+'%',
+          animationDelay:(i%6*0.12)+'s',
+          background:['#FF2E7E','#7A2FF7','#FF9800','#22C55E','#00B8D4','#FFD54F'][i%6]}}/>
+      ))}
+    </div>
+  )
+
   if(view==='landing') return (
     <div className="container" style={{maxWidth:480}}>
+      {celebrate && <Celebration/>}
       <img src="/logo.png" style={{height:34,display:'block',margin:'6px auto 14px'}}/>
       <Cover/>
       <div className="card" style={{marginTop:-30,textAlign:'center'}}>
@@ -981,13 +1034,22 @@ function ShopPage(){
           {catalog.length>0 &&
             <button className="btn ai-cta" style={{padding:'18px',fontSize:16}} onClick={()=>{ev('details_view');setView('details')}}>🛍 Our Products ({catalog.length})<br/><span style={{fontWeight:400,fontSize:12}}>View - Order - WhatsApp</span></button>}
           <button className="btn" style={{padding:'18px',fontSize:16}} onClick={()=>{ev('details_view');setView('details')}}>Shop Details<br/><span style={{fontWeight:400,fontSize:12}}>Products - Offers - Call - Maps - Reviews</span></button>
-          <button type="button" onClick={goReview} className="reviewbtn">
-            <span className="reviewbtn-stars">★★★★★</span>
-            <span className="reviewbtn-tx">Engaluku 5 Star Review Kodunga!</span>
-            <span className="reviewbtn-sub">Google-la ungaloda rating podunga 🙏</span>
-          </button>
+          {!rateOpen
+            ? <button type="button" onClick={()=>{setRateOpen(true);ev('review_open')}} className="reviewbtn">
+                <span className="reviewbtn-stars">★★★★★</span>
+                <span className="reviewbtn-tx">Engaluku 5 Star Review Kodunga!</span>
+                <span className="reviewbtn-sub">NammaOor-la ungaloda rating podunga 🙏</span>
+              </button>
+            : <div className="ratepick">
+                <p className="ratepick-tx">Star-a thattunga 👇</p>
+                <div className="ratepick-stars">
+                  {[1,2,3,4,5].map(n=>(
+                    <button key={n} type="button" className="ratepick-star" onClick={()=>pickStar(n)}
+                      style={{animationDelay:(n*0.05)+'s'}}>★</button>))}
+                </div>
+              </div>}
         </div>
-        {thanked && <div className="thankbox">🙏 Thanks for your interest! Ungaloda 5 star review-ku romba nandri. Shop details kaatturaen...</div>}
+        {thanked && <div className="thankbox">🙏 Nandri! Ungaloda review kidaichuduchu. Idho shop details...</div>}
       </div>
       {hasUpi && <SharePay/>}
       <p className="muted" style={{textAlign:'center'}}>Powered by NammaOor</p>
@@ -1491,12 +1553,18 @@ function OwnerDashboard(){
 function EmployeeDashboard(){
   const [d,setD]=useState(null); const [shops,setShops]=useState([]); const [inv,setInv]=useState({})
   const [msg,setMsg]=useState(''); const [wh,setWh]=useState([]); const [ver,setVer]=useState({upi_id:'',upi_name:''}); const [amt,setAmt]=useState('')
+  const [genN,setGenN]=useState(10); const [gMsg,setGMsg]=useState('')
   const load=()=>{ api.get('/me/employee/dashboard').then(setD).catch(e=>setMsg(e.message))
     api.get('/me/employee/shops').then(setShops).catch(()=>{})
     api.get('/me/employee/qr-inventory').then(setInv).catch(()=>{})
     api.get('/me/employee/withdrawals').then(setWh).catch(()=>{}) }
   useEffect(load,[])
   if(!d) return <><Header/><div className="container"><div className="card">{msg||'Loading…'}<p className="muted">Employee-ஆ login பண்ணியிருக்கணும்.</p></div></div></>
+  const genQr=async()=>{ try{ const r=await api.post('/me/employee/generate-qr',{count:+genN||1})
+      setGMsg(`✅ ${r.generated} QR generate aayiduchu. Innaikku innum ${r.left_today} QR generate pannalaam.`); load() }
+      catch(e){ setGMsg('❌ '+e.message) } }
+  const dlQr=async()=>{ try{ await downloadFile('/me/employee/qr-pdf?new_only=true&mark=true','nammaoor_myqr.pdf'); setGMsg('⬇️ QR PDF download aayiduchu. Print edunga.') }
+      catch(e){ setGMsg('❌ '+(e.message||'No new QR — generate first')) } }
   const verify=async()=>{ await api.patch('/me/employee/verification',ver); setMsg('✅ Verified'); load() }
   const withdraw=async()=>{ try{await api.post('/me/employee/withdrawals',{amount:+amt}); setMsg('✅ Requested'); load()}catch(e){setMsg('❌ '+e.message)} }
   const regUrl=`${SITE}/#/register?emp=${(d.emp_code||'').replace('-','')}`
@@ -1517,7 +1585,18 @@ function EmployeeDashboard(){
         <div className="kpi"><b>{inv.used||0}</b><span>Used</span></div>
       </div>
       {inv.tokens && inv.tokens.length>0 && <p className="muted" style={{marginTop:8}}>Next codes: {inv.tokens.slice(0,8).join(', ')}…</p>}
-      {(!inv.assigned) && <p className="muted" style={{marginTop:8}}>Admin இன்னும் QR assign பண்ணல. Admin-ஐ கேளுங்க.</p>}
+    </div>
+    <div className="card" style={{marginTop:14}}><h3>🖨️ Generate QR (Self)</h3>
+      <div className="row" style={{alignItems:'flex-end',gap:8,flexWrap:'wrap'}}>
+        <div><label>Ethana QR?</label>
+          <input className="input" type="number" min="1" max={inv.left_today??100} value={genN}
+            onChange={e=>setGenN(e.target.value)} style={{width:110}}/></div>
+        <button className="btn" onClick={genQr} disabled={(inv.left_today??100)<=0}>⚡ Generate QR</button>
+        <button className="btn ghost" onClick={dlQr}>⬇️ Download &amp; Print</button>
+      </div>
+      <p className="muted" style={{marginTop:6}}>Today: {inv.made_today||0}/100 generated · {inv.left_today??100} left</p>
+      <p style={{marginTop:8,fontSize:13,fontWeight:600,color:'#6c5ce7'}}>Per day 100 QR only. Take print out and paste to your shop.</p>
+      {gMsg && <p style={{color:'var(--teal)',marginTop:6}}>{gMsg}</p>}
     </div>
     <div className="grid2">
       <div className="card"><h3>📱 My Registration QR</h3>
