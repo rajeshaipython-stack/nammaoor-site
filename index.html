@@ -1,4 +1,4 @@
-<!doctype html><html lang="ta"><head><!-- build:review-20260723075643 --><meta charset="UTF-8">
+<!doctype html><html lang="ta"><head><!-- build:feat-20260723082056 --><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>நம்மூர் · NammaOor</title>
 <meta name="description" content="Tamil Nadu local shops directory — scan QR, view products & offers, call or WhatsApp your local shop.">
@@ -272,6 +272,21 @@ table.spec td{padding:7px 9px;font-size:14px}
 .reviewbtn-sub{ font-size:12.5px; font-weight:600; opacity:.85; }
 @keyframes nmStarPulse{ 0%,100%{ transform:scale(1) } 50%{ transform:scale(1.06) } }
 @media (prefers-reduced-motion: reduce){ .reviewbtn-stars{ animation:none } }
+
+/* Thank-you box after review */
+.thankbox{ background:linear-gradient(90deg,#e9fbf1,#d7f7e6); border:1px solid #9fe3c0;
+  color:#0b7a4a; padding:12px 14px; border-radius:12px; font-size:14px; font-weight:600;
+  line-height:1.45; animation:nmFadeIn .3s ease; }
+
+/* Search result card with contact icons */
+.scard{ padding:12px !important; }
+.scard-main{ display:flex; align-items:center; gap:12px; cursor:pointer; }
+.sicons{ display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); flex-wrap:wrap; }
+.sic{ width:38px; height:38px; border-radius:50%; display:inline-flex; align-items:center;
+  justify-content:center; color:#fff; font-size:17px; font-weight:800; text-decoration:none;
+  box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
+.sic:hover{ transform:translateY(-2px) scale(1.05); }
+.sic:active{ transform:scale(.95); }
 </style>
 </head><body><div id="root"></div>
 <script type="text/babel" data-presets="react">
@@ -542,6 +557,12 @@ function Register(){
       localStorage.removeItem('draft_id') }
     catch(e){ setMsg('Error: '+e.message) }
   }
+  async function genQr(){
+    try{ setMsg('QR generate aaguthu...'); const r=await api.post(`/shops/${shopId}/generate-qr`)
+      setResult({...result,qr_token:r.qr_token,public_url:r.public_url}); setStep('done')
+      localStorage.removeItem('draft_id') }
+    catch(e){ setMsg('Error: '+e.message) }
+  }
   async function startScan(){
     if(!('BarcodeDetector' in window)){ setMsg('Camera scan illa - code-ai type pannunga'); return }
     try{
@@ -663,6 +684,11 @@ function Register(){
         <p className="muted" style={{marginTop:10}}>Allathu sticker-la achitta code-ai type pannunga:</p>
         <input className="input" placeholder="QR code (e.g. A1B2C3D4)" value={token} onChange={e=>setTok(e.target.value)}/>
         <button className="btn" onClick={linkQr} disabled={!token}>Link QR - Finish</button>
+        <div style={{margin:'14px 0',textAlign:'center',color:'var(--muted)',fontSize:13}}>— allathu —</div>
+        <div style={{background:'#f6f2ff',border:'1px solid #e3d9fb',borderRadius:12,padding:12}}>
+          <p className="muted" style={{margin:0,fontSize:13}}>Sticker illaya? Namma pudhu QR generate panni tharuvom — printout eduthu kadaila oticikonga.</p>
+          <button className="btn ghost" style={{marginTop:8}} onClick={genQr}>✨ Generate QR (No sticker)</button>
+        </div>
         <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
       </div>}
     </div>
@@ -796,7 +822,8 @@ function ShopPage(){
   const base = loc.pathname.startsWith('/s/') ? '/s/' : '/shop/'
   const [s,setS]=useState(null); const [view,setView]=useState('landing'); const [paid,setPaid]=useState(false)
   const [rev,setRev]=useState({avg:0,count:0,reviews:[]}); const [myR,setMyR]=useState({rating:0,name:'',text:''})
-  const [catalog,setCatalog]=useState([]); const [payAmt,setPayAmt]=useState('')
+  const [catalog,setCatalog]=useState([]); const [payAmt,setPayAmt]=useState(''); const [thanked,setThanked]=useState(false)
+  const goReview=()=>{ ev('review'); window.open(review,'_blank','noopener'); setThanked(true); setTimeout(()=>setView('details'),1400) }
   const tokenKey='rvtok_'+code
   let rtok=localStorage.getItem(tokenKey); if(!rtok){ rtok='r'+Math.random().toString(36).slice(2,10); localStorage.setItem(tokenKey,rtok) }
   useEffect(()=>{ api.get(`${base}${code}`).then(d=>{ setS(d); if(d.found && d.shop_code){ try{api.post(`/shop/${d.shop_code}/event?event_type=qr_scan`)}catch{}; loadRev(d.shop_code); api.get(`/shop/${d.shop_code}/catalog`).then(setCatalog).catch(()=>{}) } }).catch(()=>setS({found:false})) },[code])
@@ -879,12 +906,13 @@ function ShopPage(){
           {catalog.length>0 &&
             <button className="btn ai-cta" style={{padding:'18px',fontSize:16}} onClick={()=>{ev('details_view');setView('details')}}>🛍 Our Products ({catalog.length})<br/><span style={{fontWeight:400,fontSize:12}}>View - Order - WhatsApp</span></button>}
           <button className="btn" style={{padding:'18px',fontSize:16}} onClick={()=>{ev('details_view');setView('details')}}>Shop Details<br/><span style={{fontWeight:400,fontSize:12}}>Products - Offers - Call - Maps - Reviews</span></button>
-          <a href={review} onClick={()=>ev('review')} target="_blank" rel="noopener noreferrer" className="reviewbtn">
+          <button type="button" onClick={goReview} className="reviewbtn">
             <span className="reviewbtn-stars">★★★★★</span>
             <span className="reviewbtn-tx">Engaluku 5 Star Review Kodunga!</span>
             <span className="reviewbtn-sub">Google-la ungaloda rating podunga 🙏</span>
-          </a>
+          </button>
         </div>
+        {thanked && <div className="thankbox">🙏 Thanks for your interest! Ungaloda 5 star review-ku romba nandri. Shop details kaatturaen...</div>}
         {paid && <div style={{marginTop:16,padding:12,background:'#eafaf4',borderRadius:12}}>
           <p style={{color:'var(--teal)',fontWeight:700}}>Payment app-ku poninga?</p>
           <button className="btn ghost" style={{marginTop:8}} onClick={()=>{ev('details_view');setView('details')}}>Know More About Our Shop</button>
@@ -897,6 +925,7 @@ function ShopPage(){
   return (
     <div className="container" style={{maxWidth:480}}>
       <button className="btn ghost sm" onClick={()=>setView('landing')}>Back</button>
+      {thanked && <div className="thankbox" style={{marginTop:8}}>🙏 Thanks for your 5-star review! Idho engaloda shop details.</div>}
       <Cover/>
       <div className="card" style={{marginTop:-30}}>
         <Head/>
@@ -945,7 +974,25 @@ function ShopPage(){
 
 
 function StarsRow({v}){ return <span>{[1,2,3,4,5].map(n=><span key={n} style={{color:n<=Math.round(v)?'#FFB800':'#ddd'}}>*</span>)}</span> }
+const _ext=u=>{ u=(u||'').trim(); return u?(/^https?:\/\//i.test(u)?u:'https://'+u.replace(/^\/+/,'')):'' }
+// Contact icons shown on each search result. stopPropagation so tapping an icon
+// opens the contact (not the shop page).
+function ShopIcons({s}){
+  const stop=e=>e.stopPropagation()
+  const items=[]
+  if(s.mobile)    items.push(['#16a34a','📞',`tel:${s.mobile}`,false])
+  if(s.whatsapp)  items.push(['#25D366','💬',`https://wa.me/91${s.whatsapp}`,true])
+  if(s.instagram) items.push(['#E1306C','📷',_ext(s.instagram),true])
+  if(s.facebook)  items.push(['#1877F2','f',_ext(s.facebook),true])
+  if(!items.length) return null
+  return <div className="sicons" onClick={stop}>
+    {items.map(([c,ic,href,blank],i)=>(
+      <a key={i} href={href} onClick={stop} {...(blank?{target:'_blank',rel:'noopener noreferrer'}:{})}
+         className="sic" style={{background:c}}>{ic}</a>))}
+  </div>
+}
 function Search(){
+  const nav=useNavigate()
   const [districts,setD]=useState([]); const [assemblies,setA]=useState([]); const [cats,setC]=useState([])
   const [q,setQ]=useState({text:'',district:'',assembly:'',town:'',category:''}); const [res,setRes]=useState([]); const [done,setDone]=useState(false)
   useEffect(()=>{ api.get('/geo/districts').then(setD).catch(()=>{}); api.get('/geo/categories').then(setC).catch(()=>{}) },[])
@@ -983,15 +1030,19 @@ function Search(){
       <div className="row"><button className="btn" onClick={()=>{setNear(false);search()}}>🔍 Search</button><button className="btn ghost" onClick={nearMe}>📍 Near me</button></div>
       {geoMsg&&<p className="muted" style={{marginTop:6}}>{geoMsg}</p>}
     </div>
-    {res.map(s=><Link key={s.shop_code} to={`/shop/${(s.shop_code||'').replace('-','')}`}>
-      <div className="card row" style={{alignItems:'center',gap:12}}>
-        <div style={{width:44,height:44,borderRadius:12,background:'#f1ecff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,overflow:'hidden'}}>
-          {s.logo_url?<img src={s.logo_url} style={{width:'100%'}}/>:'S'}</div>
-        <div style={{flex:1}}><b>{s.shop_name}</b>
-          <div className="muted">{s.category||''} {s.town?('- '+s.town):''}{s.distance_km!=null?(' · 📍 '+s.distance_km+' km'):''}</div>
-          {s.reviews>0 && <div style={{fontSize:13}}><StarsRow v={s.rating}/> {s.rating} ({s.reviews})</div>}
-          {s.bio && <div className="muted" style={{fontSize:12}}>{s.bio}</div>}
-        </div></div></Link>)}
+    {res.map(s=>(
+      <div key={s.shop_code} className="card scard">
+        <div className="scard-main" onClick={()=>nav(`/shop/${(s.shop_code||'').replace('-','')}`)}>
+          <div style={{width:44,height:44,borderRadius:12,background:'#f1ecff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,overflow:'hidden',flex:'0 0 auto'}}>
+            {s.logo_url?<img src={s.logo_url} style={{width:'100%'}}/>:'S'}</div>
+          <div style={{flex:1,minWidth:0}}><b>{s.shop_name}</b>
+            <div className="muted">{s.category||''} {s.town?('- '+s.town):''}{s.distance_km!=null?(' · 📍 '+s.distance_km+' km'):''}</div>
+            {s.reviews>0 && <div style={{fontSize:13}}><StarsRow v={s.rating}/> {s.rating} ({s.reviews})</div>}
+            {s.bio && <div className="muted" style={{fontSize:12}}>{s.bio}</div>}
+          </div>
+        </div>
+        <ShopIcons s={s}/>
+      </div>))}
     {done && res.length===0 && <p className="muted">No shops found. Try a different search.</p>}
     {!done && <p className="muted">Search by name, category, or area.</p>}
   </div></>)
@@ -1012,6 +1063,9 @@ function Login(){
   const [showForgot,setShowForgot]=useState(false)
   const [fMobile,setFMobile]=useState(''); const [fCode,setFCode]=useState(''); const [fNew,setFNew]=useState('')
   const [fSent,setFSent]=useState(false); const [fUntil,setFUntil]=useState(0); const [fDone,setFDone]=useState(null)
+  // employee self sign-up
+  const [showSignup,setShowSignup]=useState(false)
+  const [sName,setSName]=useState(''); const [sMobile,setSMobile]=useState(''); const [sPass,setSPass]=useState(''); const [sDone,setSDone]=useState(null)
   // 1-second ticker for countdowns
   const [,setTick]=useState(0)
   useEffect(()=>{ const t=setInterval(()=>setTick(x=>x+1),1000); return ()=>clearInterval(t) },[])
@@ -1036,6 +1090,11 @@ function Login(){
     setFDone(r.username); setMsg('') } catch(e){ setMsg('❌ '+e.message) } }
 
   const backToLogin=()=>{ setShowForgot(false); setFSent(false); setFDone(null); setFMobile(''); setFCode(''); setFNew(''); setMsg('') }
+  // employee sign-up
+  async function signup(){ try{ const r=await api.post('/auth/employee/signup',{full_name:sName,mobile:sMobile,password:sPass})
+    setSDone(r.username); setMsg('') } catch(e){ setMsg('❌ '+e.message) } }
+  const goLoginAfterSignup=()=>{ setTab('employee'); setU(sDone||''); setShowSignup(false); setSName(''); setSMobile(''); setSPass(''); setSDone(null); setMsg('') }
+  const backFromSignup=()=>{ setShowSignup(false); setSName(''); setSMobile(''); setSPass(''); setSDone(null); setMsg('') }
 
   return (<><Header/><div className="container" style={{maxWidth:440}}>
     <h2 className="brand">Login</h2>
@@ -1073,8 +1132,34 @@ function Login(){
       <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
     </div>}
 
+    {/* ---------- EMPLOYEE SIGN-UP ---------- */}
+    {showSignup && <div className="card">
+      <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
+        <b>🧑‍💼 Employee Sign Up</b>
+        <a className="muted" style={{cursor:'pointer'}} onClick={backFromSignup}>← Back</a>
+      </div>
+      {sDone ? <>
+        <div style={{padding:12,background:'#eafaf4',borderRadius:10,marginTop:8}}>
+          <p>✅ Account create aayiduchu!</p>
+          <p>Ungaloda Employee ID (username): <b style={{fontSize:18}}>{sDone}</b></p>
+          <p className="muted">Idha note pannikonga. Ithuvum ungaloda password vechu login pannunga.</p>
+        </div>
+        <button className="btn" style={{marginTop:10}} onClick={goLoginAfterSignup}>Go to Login →</button>
+      </> : <>
+        <label style={{marginTop:8}}>Your Name</label>
+        <input className="input" value={sName} onChange={e=>setSName(e.target.value)} placeholder="Full name"/>
+        <label>Mobile Number</label>
+        <input className="input" value={sMobile} onChange={e=>setSMobile(e.target.value)} placeholder="10-digit mobile"/>
+        <label>Set Password</label>
+        <PwInput value={sPass} onChange={e=>setSPass(e.target.value)} placeholder="Password (min 6)"/>
+        <button className="btn" style={{marginTop:10}} onClick={signup} disabled={!sName||!sMobile||sPass.length<6}>Sign Up</button>
+        <p className="muted" style={{marginTop:8,fontSize:12}}>Sign up panna udaney ungaluku oru Employee ID kidaikum — atha vechu login pannunga. Password marandha "Forgot password" use pannunga.</p>
+      </>}
+      <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
+    </div>}
+
     {/* ---------- MAIN LOGIN ---------- */}
-    {!showForgot && !showAdmin && <>
+    {!showForgot && !showAdmin && !showSignup && <>
       <div className="tabs">
         <div className={'tabx'+(tab==='owner'?' on':'')} onClick={()=>{setTab('owner');setMsg('')}}>Shop Owner</div>
         <div className={'tabx'+(tab==='employee'?' on':'')} onClick={()=>{setTab('employee');setMsg('')}}>Employee</div>
@@ -1102,8 +1187,12 @@ function Login(){
           <label>Password</label>
           <PwInput value={p} onChange={e=>setP(e.target.value)}/>
           <button className="btn" style={{marginTop:8}} onClick={empLogin}>Login</button>
-          <p className="muted" style={{marginTop:8,cursor:'pointer',color:'var(--purple)'}}
-             onClick={()=>{setShowForgot(true);setMsg('')}}>Forgot password?</p>
+          <div className="row" style={{justifyContent:'space-between',marginTop:8}}>
+            <a className="muted" style={{cursor:'pointer',color:'var(--purple)'}}
+               onClick={()=>{setShowForgot(true);setMsg('')}}>Forgot password?</a>
+            <a style={{cursor:'pointer',color:'var(--purple)',fontWeight:700}}
+               onClick={()=>{setShowSignup(true);setMsg('')}}>New employee? Sign up →</a>
+          </div>
         </>}
         <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
       </div>
@@ -1123,7 +1212,7 @@ function Login(){
       <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
     </div>}
 
-    {!showForgot && <div style={{textAlign:'center',marginTop:16,opacity:.35,cursor:'pointer',userSelect:'none'}}
+    {!showForgot && !showSignup && <div style={{textAlign:'center',marginTop:16,opacity:.35,cursor:'pointer',userSelect:'none'}}
          onClick={()=>{setShowAdmin(v=>!v);setU('');setP('');setMsg('')}} title="admin">🔒</div>}
   </div></>)
 }
