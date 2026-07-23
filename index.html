@@ -2375,7 +2375,12 @@ function AdminDashboard(){
   const [cred,setCred]=useState(null); const [empSearch,setEmpSearch]=useState(''); const [empDet,setEmpDet]=useState(null)
   const [shopSearch,setShopSearch]=useState(''); const [ov,setOv]=useState({}); const [msg,setMsg]=useState('')
   const [pw,setPw]=useState({current:'',next:''})
+  // Master Catalog admin
+  const [catStats,setCatStats]=useState({total:0,categories:[]})
+  const [mcForm,setMcForm]=useState({name:'',category:'',sub_category:'',unit:'Piece',product_type:'Product'})
+  const [csvText,setCsvText]=useState(''); const [imp,setImp]=useState(null); const [catMsg,setCatMsg]=useState('')
   const load=()=>{ api.get('/admin/revenue').then(setRev).catch(e=>setMsg(e.message))
+    api.get('/admin/catalog/stats').then(setCatStats).catch(()=>{})
     api.get('/admin/analytics').then(setAn).catch(()=>{}); api.get('/admin/shops').then(setShops).catch(()=>{})
     api.get('/admin/withdrawals/all').then(setWd).catch(()=>api.get('/admin/withdrawals').then(setWd).catch(()=>{}))
     api.get('/admin/employees').then(setEmps).catch(()=>{}); api.get('/admin/qr/stats').then(setQr).catch(()=>{}); api.get('/admin/overview').then(setOv).catch(()=>{}) }
@@ -2396,6 +2401,14 @@ function AdminDashboard(){
   const wipeAll=async()=>{ if(!confirm('⚠️ Delete ALL SHOPS (active-um serthu)? Admin & employees mattum meedhi irukkum.'))return
     if(!confirm('Confirm again: FRESH START — ella shops & shop-owner logins delete aagum. Numbering NM-000001-la irundhu restart. Sure-ah?'))return
     const r=await api.post('/admin/wipe-all-shops'); setMsg(`🗑 ${r.deleted_shops} shops wiped. Fresh start ready!`); load() }
+  const addMaster=async()=>{ try{ const r=await api.post('/admin/catalog/master',mcForm)
+      setCatMsg(`✅ Added ${r.product_id} — ${r.name}`); setMcForm({...mcForm,name:''}); load() }catch(e){ setCatMsg('❌ '+e.message) } }
+  const importCsv=async()=>{ if(!csvText.trim()){ setCatMsg('CSV paste pannunga'); return }
+    setImp(null); setCatMsg('Importing…')
+    try{ const r=await api.post('/admin/catalog/import',{csv:csvText}); setImp(r)
+      setCatMsg(`✅ ${r.added} added · ${r.skipped_duplicates} duplicate skipped · ${r.error_count} errors`); setCsvText(''); load() }
+    catch(e){ setCatMsg('❌ '+e.message) } }
+  const exportCsv=()=>downloadFile('/admin/catalog/export','nammaoor_master_catalog.csv')
   const delShop=async(code)=>{ if(!confirm('Delete shop '+code+'? QR will be permanently disabled.'))return; await api.del(`/admin/shops/${code}`); setMsg(`${code} deleted, QR disabled`); load() }
   const wStatus=async(id,st)=>{ if(st==='approve'){await api.post(`/admin/withdrawals/${id}/approve`)} else if(st==='reject'){await api.post(`/admin/withdrawals/${id}/reject`)} else {await api.post(`/admin/withdrawals/${id}/status`,{status:st})} load() }
   const platWithdraw=async()=>{ const a=prompt('Platform withdrawal amount'); if(!a)return; const u=prompt('Your UPI ID'); await api.post('/admin/platform-withdraw',{amount:+a,upi_id:u||''}); setMsg('Platform withdrawal requested') }
@@ -2445,6 +2458,34 @@ function AdminDashboard(){
         <input className="input" style={{flex:1}} type="number" value={asg.count} onChange={e=>setAsg({...asg,count:e.target.value})}/>
         <button className="btn" onClick={assignQr}>Assign</button>
       </div>
+    </div>
+
+    <div className="card" style={{marginTop:14}}><h3>🗂️ Master Catalog</h3>
+      <p className="muted" style={{marginTop:2}}>Total <b>{catStats.total||0}</b> products · {(catStats.categories||[]).length} categories</p>
+      {(catStats.categories||[]).length>0 && <p className="muted" style={{fontSize:12,marginTop:4}}>
+        {catStats.categories.map(c=>`${c.category} (${c.count})`).join(' · ')}</p>}
+
+      <h4 style={{margin:'12px 0 4px'}}>➕ Add Product</h4>
+      <div className="grid2">
+        <input className="input" placeholder="Category (e.g. Grocery)" value={mcForm.category} onChange={e=>setMcForm({...mcForm,category:e.target.value})}/>
+        <input className="input" placeholder="Sub Category (e.g. Rice)" value={mcForm.sub_category} onChange={e=>setMcForm({...mcForm,sub_category:e.target.value})}/>
+        <input className="input" placeholder="Product name" value={mcForm.name} onChange={e=>setMcForm({...mcForm,name:e.target.value})}/>
+        <input className="input" placeholder="Unit (Kg/Cup/Piece)" value={mcForm.unit} onChange={e=>setMcForm({...mcForm,unit:e.target.value})}/>
+      </div>
+      <button className="btn sm" style={{marginTop:6}} onClick={addMaster}
+        disabled={!mcForm.name||!mcForm.category||!mcForm.sub_category}>Add to catalog</button>
+
+      <h4 style={{margin:'14px 0 4px'}}>📥 CSV Bulk Import</h4>
+      <p className="muted" style={{fontSize:12}}>Columns: <code>product_name, category, sub_category, unit, product_type, keywords</code> — first row = header. Duplicates auto-skip.</p>
+      <textarea rows="5" placeholder={"product_name,category,sub_category,unit\nBasmati Rice,Grocery,Rice,Kg\nIdli Rice,Grocery,Rice,Kg"}
+        value={csvText} onChange={e=>setCsvText(e.target.value)} style={{fontFamily:'monospace',fontSize:12}}/>
+      <div className="row" style={{gap:8}}>
+        <button className="btn sm" onClick={importCsv} disabled={!csvText.trim()}>⬆️ Import CSV</button>
+        <button className="btn sm ghost" onClick={exportCsv}>⬇️ Export all (CSV)</button>
+      </div>
+      {imp && imp.errors && imp.errors.length>0 && <div style={{marginTop:8,maxHeight:120,overflowY:'auto',background:'#fff6f6',border:'1px solid #ffd7d7',borderRadius:8,padding:8,fontSize:12}}>
+        {imp.errors.map((er,i)=><div key={i}>⚠️ {er}</div>)}</div>}
+      {catMsg && <p style={{color:'var(--teal)',marginTop:8}}>{catMsg}</p>}
     </div>
 
     <div className="card"><h3>Add Employee</h3>
