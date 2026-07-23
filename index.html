@@ -1,4 +1,4 @@
-<!doctype html><html lang="ta"><head><!-- build:feat-20260723082056 --><meta charset="UTF-8">
+<!doctype html><html lang="ta"><head><!-- build:pay-20260723084710 --><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>நம்மூர் · NammaOor</title>
 <meta name="description" content="Tamil Nadu local shops directory — scan QR, view products & offers, call or WhatsApp your local shop.">
@@ -232,9 +232,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 }
 
 /* ===== Dynamic contact / social buttons (shop page) ===== */
-.socrow{ display:flex; gap:9px; margin-top:12px; overflow-x:auto; -webkit-overflow-scrolling:touch;
-  padding-bottom:4px; scrollbar-width:none; }
-.socrow::-webkit-scrollbar{ display:none; }
+.socrow{ display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
 .socpill{ display:inline-flex; align-items:center; gap:7px; flex:0 0 auto;
   padding:9px 14px; border-radius:24px; color:#fff; font-weight:700; font-size:13.5px;
   text-decoration:none; white-space:nowrap; box-shadow:0 3px 10px rgba(0,0,0,.16);
@@ -582,15 +580,31 @@ function Register(){
     }catch(e){ setMsg('Camera error - type the code'); setScanning(false) }
   }
 
+  const qrLink=result?qrImg(`${SITE}/#/s/${result.qr_token}`):''
+  const dlQr=async()=>{ try{ const r=await fetch(qrLink); const b=await r.blob(); const a=document.createElement('a')
+    a.href=URL.createObjectURL(b); a.download=`NammaOor-QR-${result.shop_code||result.qr_token}.png`; document.body.appendChild(a); a.click()
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500) }catch(e){ window.open(qrLink,'_blank') } }
+  const shareShopQr=async()=>{ const url=`${SITE}/#/s/${result.qr_token}`
+    try{ const r=await fetch(qrLink); const blob=await r.blob(); const file=new File([blob],'shop-qr.png',{type:'image/png'})
+      if(navigator.canShare&&navigator.canShare({files:[file]})) return navigator.share({files:[file],title:f.shop_name,text:`${f.shop_name} — NammaOor: ${url}`})
+      if(navigator.share) return navigator.share({title:f.shop_name,text:url}) }catch(e){}
+    try{ await navigator.clipboard.writeText(url); alert('Shop link copied!') }catch(_){ window.open(qrLink,'_blank') } }
   if(step==='done' && result) return (<>
     <Header/><div className="container"><div className="card" style={{textAlign:'center'}}>
-      <span className="pill">Registered</span>
+      <span className="pill">✅ Registered</span>
       <h2 className="brand" style={{marginTop:10}}>{f.shop_name}</h2>
       <p style={{fontSize:20,fontWeight:800}}>{result.shop_code}</p>
-      <div className="qrbox" style={{margin:'14px auto'}}>
-        <img src={qrImg(`${SITE}/#/s/${result.qr_token}`)}/></div>
-      <p className="muted">QR Token: <b>{result.qr_token}</b></p>
-      <a href={`#/s/${result.qr_token}`}><button className="btn" style={{marginTop:10}}>View Shop Page</button></a>
+      <p className="muted" style={{marginTop:2}}>Idho ungaloda kadai QR. Print eduthu kadaila oticikonga 👇</p>
+      <div style={{background:'#fff',border:'1px solid var(--line)',borderRadius:16,padding:16,margin:'12px auto',display:'inline-block'}}>
+        <img src={qrLink} style={{width:230,height:230,maxWidth:'100%'}}/>
+        <p style={{margin:'8px 0 0',fontWeight:700}}>Scan pannunga!</p>
+        <p className="muted" style={{fontSize:12}}>QR: {result.qr_token}</p>
+      </div>
+      <div className="grid2" style={{gap:8,marginTop:6}}>
+        <button className="btn" onClick={dlQr}>⬇️ Download QR</button>
+        <button className="btn ghost" onClick={shareShopQr}>📤 Share</button>
+      </div>
+      <a href={`#/s/${result.qr_token}`}><button className="btn tl" style={{marginTop:10,width:'100%'}}>👁 View Shop Page</button></a>
     </div></div></>)
 
   return (<>
@@ -893,6 +907,21 @@ function ShopPage(){
     </div>
   )
 
+  // Share-only payment: enter amount → share the shop's UPI QR to anyone to collect payment.
+  const SharePay=()=>(
+    <div className="card">
+      <h3>💸 Payment QR Share</h3>
+      <p className="muted" style={{marginTop:2,marginBottom:8,fontSize:13}}>Amount pottu Share pannunga — yaaru venaalum scan panni pay pannuvaanga.</p>
+      <input className="input" type="number" inputMode="decimal" min="1" placeholder="Amount (Rs.) - optional"
+        value={payAmt} onChange={e=>setPayAmt(e.target.value)} style={{textAlign:'center',fontSize:16}}/>
+      {previewUri && <div style={{textAlign:'center',marginTop:10}}>
+        <img src={qrImg(previewUri)} alt="UPI QR" style={{width:180,height:180,maxWidth:'100%'}}/>
+        <p style={{margin:'6px 0 0',fontWeight:700,color:'var(--teal)'}}>{payAmt&&Number(payAmt)>0?`Rs.${payAmt}`:'Any amount'} · {(s.upi_id||'').trim()}</p>
+      </div>}
+      <button className="btn" style={{marginTop:10,width:'100%'}} onClick={shareQr}>📤 Share Payment QR</button>
+    </div>
+  )
+
   if(view==='landing') return (
     <div className="container" style={{maxWidth:480}}>
       <img src="/logo.png" style={{height:34,display:'block',margin:'6px auto 14px'}}/>
@@ -934,6 +963,8 @@ function ShopPage(){
         <SocialRow s={s} ev={ev} review={review}/>
         {SHOW_PAY && hasUpi && <div style={{marginTop:12}}><PayBox/></div>}
       </div>
+
+      {hasUpi && <SharePay/>}
 
       {catalog.length>0 && <div className="card"><h3>🛍 Products ({catalog.length})</h3>
         <p className="muted" style={{marginTop:2,marginBottom:6}}>Oru product-a click panni details, order &amp; WhatsApp order paakalaam.</p>
