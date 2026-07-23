@@ -2379,6 +2379,7 @@ function AdminDashboard(){
   const [catStats,setCatStats]=useState({total:0,categories:[]})
   const [mcForm,setMcForm]=useState({name:'',category:'',sub_category:'',unit:'Piece',product_type:'Product'})
   const [csvText,setCsvText]=useState(''); const [imp,setImp]=useState(null); const [catMsg,setCatMsg]=useState('')
+  const [dragOver,setDragOver]=useState(false); const [busy,setBusy]=useState(false)
   const load=()=>{ api.get('/admin/revenue').then(setRev).catch(e=>setMsg(e.message))
     api.get('/admin/catalog/stats').then(setCatStats).catch(()=>{})
     api.get('/admin/analytics').then(setAn).catch(()=>{}); api.get('/admin/shops').then(setShops).catch(()=>{})
@@ -2409,15 +2410,35 @@ function AdminDashboard(){
       setCatMsg(`✅ ${r.added} added · ${r.skipped_duplicates} duplicate skipped · ${r.error_count} errors`); setCsvText(''); load() }
     catch(e){ setCatMsg('❌ '+e.message) } }
   const exportCsv=()=>downloadFile('/admin/catalog/export','nammaoor_master_catalog.csv')
-  const ensureXLSX=()=>window.XLSX?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})
-  const onCatFile=async(e)=>{ const f=e.target.files&&e.target.files[0]; if(!f)return
-    try{ setCatMsg('File padikkuthu…')
-      if(/\.csv$/i.test(f.name)){ setCsvText(await f.text()) }
-      else { await ensureXLSX(); const buf=await f.arrayBuffer(); const wb=window.XLSX.read(buf,{type:'array'})
-        const ws=wb.Sheets[wb.SheetNames[0]]; setCsvText(window.XLSX.utils.sheet_to_csv(ws)) }
-      setCatMsg('✅ File load aayiduchu — keezha paathu "Import CSV" click pannunga') }
-    catch(err){ setCatMsg('❌ File padikka mudiyala: '+err.message) }
-    e.target.value='' }
+  const ensureLib=(g,src)=>window[g]?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)})
+  const ensureXLSX=()=>ensureLib('XLSX','https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')
+  const ensureJSZip=()=>ensureLib('JSZip','https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')
+  const _bufToCsv=async(buf)=>{ await ensureXLSX(); const wb=window.XLSX.read(buf,{type:'array'})
+    return window.XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]) }
+  const collectCsvs=async(files)=>{ const out=[]
+    for(const f of files){ const nm=(f.name||'').toLowerCase()
+      if(nm.endsWith('.csv')){ out.push({name:f.name,csv:await f.text()}) }
+      else if(nm.endsWith('.xlsx')||nm.endsWith('.xls')){ out.push({name:f.name,csv:await _bufToCsv(await f.arrayBuffer())}) }
+      else if(nm.endsWith('.zip')){ await ensureJSZip(); const zip=await window.JSZip.loadAsync(await f.arrayBuffer())
+        for(const z of Object.values(zip.files)){ if(z.dir||!/\.(csv|xlsx|xls)$/i.test(z.name))continue
+          if(/\.csv$/i.test(z.name)) out.push({name:z.name,csv:await z.async('string')})
+          else out.push({name:z.name,csv:await _bufToCsv(await z.async('arraybuffer'))}) } } }
+    return out }
+  const importFiles=async(files)=>{ if(!files||!files.length)return
+    setBusy(true); setImp(null); setCatMsg('Files process aaguthu…')
+    try{ const csvs=await collectCsvs(files)
+      if(!csvs.length){ setCatMsg('❌ CSV / Excel / ZIP file thaan pottunga'); setBusy(false); return }
+      let added=0,skipped=0,errs=[]
+      for(const c of csvs){ if(!c.csv||!c.csv.trim())continue
+        const r=await api.post('/admin/catalog/import',{csv:c.csv})
+        added+=r.added||0; skipped+=r.skipped_duplicates||0
+        if(r.errors&&r.errors.length) errs.push(...r.errors.map(e=>c.name+': '+e)) }
+      setImp({added,skipped_duplicates:skipped,error_count:errs.length,errors:errs})
+      setCatMsg(`✅ ${csvs.length} file(s) · ${added} added · ${skipped} duplicate skipped · ${errs.length} errors`); load() }
+    catch(e){ setCatMsg('❌ '+e.message) }
+    setBusy(false) }
+  const onCatFile=(e)=>{ importFiles(e.target.files); e.target.value='' }
+  const onDrop=(e)=>{ e.preventDefault(); setDragOver(false); importFiles(e.dataTransfer.files) }
   const delShop=async(code)=>{ if(!confirm('Delete shop '+code+'? QR will be permanently disabled.'))return; await api.del(`/admin/shops/${code}`); setMsg(`${code} deleted, QR disabled`); load() }
   const wStatus=async(id,st)=>{ if(st==='approve'){await api.post(`/admin/withdrawals/${id}/approve`)} else if(st==='reject'){await api.post(`/admin/withdrawals/${id}/reject`)} else {await api.post(`/admin/withdrawals/${id}/status`,{status:st})} load() }
   const platWithdraw=async()=>{ const a=prompt('Platform withdrawal amount'); if(!a)return; const u=prompt('Your UPI ID'); await api.post('/admin/platform-withdraw',{amount:+a,upi_id:u||''}); setMsg('Platform withdrawal requested') }
@@ -2484,12 +2505,19 @@ function AdminDashboard(){
       <button className="btn sm" style={{marginTop:6}} onClick={addMaster}
         disabled={!mcForm.name||!mcForm.category||!mcForm.sub_category}>Add to catalog</button>
 
-      <h4 style={{margin:'14px 0 4px'}}>📥 Excel / CSV Bulk Import</h4>
+      <h4 style={{margin:'14px 0 4px'}}>📥 Excel / CSV / ZIP Bulk Import</h4>
       <p className="muted" style={{fontSize:12}}>Columns: <code>product_name, category, sub_category, unit, product_type, keywords</code> — first row = header. Duplicates auto-skip.</p>
-      <label className="btn ghost sm" style={{display:'inline-block',marginBottom:6}}>📎 Excel / CSV file thernthedu
-        <input type="file" accept=".csv,.xlsx,.xls" onChange={onCatFile} style={{display:'none'}}/></label>
-      <p className="muted" style={{fontSize:11,margin:'0 0 4px'}}>…allathu keezha neeramе paste pannunga:</p>
-      <textarea rows="5" placeholder={"product_name,category,sub_category,unit\nBasmati Rice,Grocery,Rice,Kg\nIdli Rice,Grocery,Rice,Kg"}
+      <div onDragOver={e=>{e.preventDefault();setDragOver(true)}} onDragLeave={()=>setDragOver(false)} onDrop={onDrop}
+        style={{border:'2px dashed '+(dragOver?'#7A2FF7':'var(--line)'),borderRadius:12,padding:'20px 14px',textAlign:'center',
+          background:dragOver?'#f3efff':'#fafaff',marginBottom:8,transition:'.15s'}}>
+        <div style={{fontSize:30}}>{busy?'⏳':'📥'}</div>
+        <p style={{fontWeight:700,margin:'4px 0'}}>{busy?'Processing…':'Files-a inga drag & drop pannunga'}</p>
+        <p className="muted" style={{fontSize:12,margin:0}}>Excel (.xlsx/.xls) · CSV · ZIP (pala files serthu) — multiple ok</p>
+        <label className="btn ghost sm" style={{display:'inline-block',marginTop:8}}>📎 Files thernthedu
+          <input type="file" accept=".csv,.xlsx,.xls,.zip" multiple onChange={onCatFile} style={{display:'none'}}/></label>
+      </div>
+      <p className="muted" style={{fontSize:11,margin:'0 0 4px'}}>…allathu keezha CSV-a paste panni Import pannunga:</p>
+      <textarea rows="4" placeholder={"product_name,category,sub_category,unit\nBasmati Rice,Grocery,Rice,Kg\nIdli Rice,Grocery,Rice,Kg"}
         value={csvText} onChange={e=>setCsvText(e.target.value)} style={{fontFamily:'monospace',fontSize:12}}/>
       <div className="row" style={{gap:8}}>
         <button className="btn sm" onClick={importCsv} disabled={!csvText.trim()}>⬆️ Import CSV</button>
