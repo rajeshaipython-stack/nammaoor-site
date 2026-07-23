@@ -1,4 +1,4 @@
-<!doctype html><html lang="ta"><head><!-- build:pay-20260723084710 --><meta charset="UTF-8">
+<!doctype html><html lang="ta"><head><!-- build:scanpay-20260723094625 --><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>நம்மூர் · NammaOor</title>
 <meta name="description" content="Tamil Nadu local shops directory — scan QR, view products & offers, call or WhatsApp your local shop.">
@@ -581,9 +581,27 @@ function Register(){
   }
 
   const qrLink=result?qrImg(`${SITE}/#/s/${result.qr_token}`):''
-  const dlQr=async()=>{ try{ const r=await fetch(qrLink); const b=await r.blob(); const a=document.createElement('a')
-    a.href=URL.createObjectURL(b); a.download=`NammaOor-QR-${result.shop_code||result.qr_token}.png`; document.body.appendChild(a); a.click()
-    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500) }catch(e){ window.open(qrLink,'_blank') } }
+  // Compose a printable sticker: shop name + QR + "Give your valuable reviews / Visit again" tag.
+  const dlQr=async()=>{ try{
+      const img=new Image(); img.crossOrigin='anonymous'
+      await new Promise((res,rej)=>{img.onload=res; img.onerror=rej; img.src=qrLink})
+      const W=620,H=820, c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d')
+      x.fillStyle='#fff'; x.fillRect(0,0,W,H); x.textAlign='center'
+      x.fillStyle='#FF2E7E'; x.fillRect(0,0,W,130)
+      x.fillStyle='#fff'; x.font='bold 36px sans-serif'; x.fillText((f.shop_name||'Shop').slice(0,24),W/2,62)
+      x.font='bold 24px sans-serif'; x.fillText('SCAN PANNUNGA!',W/2,100)
+      const qs=400; x.drawImage(img,(W-qs)/2,160,qs,qs)
+      // review / visit-again tag
+      x.fillStyle='#FFF4E0'; x.strokeStyle='#FFC107'; x.lineWidth=3
+      x.fillRect(35,590,W-70,150); x.strokeRect(35,590,W-70,150)
+      x.fillStyle='#FF9800'; x.font='bold 30px sans-serif'; x.fillText('★ ★ ★ ★ ★',W/2,632)
+      x.fillStyle='#8a5a00'; x.font='bold 26px sans-serif'; x.fillText('Give Your Valuable Reviews',W/2,675)
+      x.font='bold 24px sans-serif'; x.fillText('Please Visit Again!',W/2,712)
+      x.fillStyle='#7A2FF7'; x.fillRect(0,H-58,W,58)
+      x.fillStyle='#fff'; x.font='bold 20px sans-serif'; x.fillText('NammaOor  •  '+(result.shop_code||''),W/2,H-20)
+      const a=document.createElement('a'); a.href=c.toDataURL('image/png'); a.download=`NammaOor-QR-${result.shop_code||result.qr_token}.png`
+      document.body.appendChild(a); a.click(); setTimeout(()=>a.remove(),1500)
+    }catch(e){ window.open(qrLink,'_blank') } }
   const shareShopQr=async()=>{ const url=`${SITE}/#/s/${result.qr_token}`
     try{ const r=await fetch(qrLink); const blob=await r.blob(); const file=new File([blob],'shop-qr.png',{type:'image/png'})
       if(navigator.canShare&&navigator.canShare({files:[file]})) return navigator.share({files:[file],title:f.shop_name,text:`${f.shop_name} — NammaOor: ${url}`})
@@ -598,7 +616,12 @@ function Register(){
       <div style={{background:'#fff',border:'1px solid var(--line)',borderRadius:16,padding:16,margin:'12px auto',display:'inline-block'}}>
         <img src={qrLink} style={{width:230,height:230,maxWidth:'100%'}}/>
         <p style={{margin:'8px 0 0',fontWeight:700}}>Scan pannunga!</p>
-        <p className="muted" style={{fontSize:12}}>QR: {result.qr_token}</p>
+        <div style={{marginTop:8,background:'#FFF4E0',border:'2px solid #FFC107',borderRadius:12,padding:'8px 10px'}}>
+          <div style={{color:'#FF9800',fontSize:18,letterSpacing:3}}>★★★★★</div>
+          <div style={{color:'#8a5a00',fontWeight:800,fontSize:14}}>Give Your Valuable Reviews</div>
+          <div style={{color:'#8a5a00',fontWeight:700,fontSize:13}}>Please Visit Again! 🙏</div>
+        </div>
+        <p className="muted" style={{fontSize:12,marginTop:6}}>QR: {result.qr_token}</p>
       </div>
       <div className="grid2" style={{gap:8,marginTop:6}}>
         <button className="btn" onClick={dlQr}>⬇️ Download QR</button>
@@ -942,11 +965,8 @@ function ShopPage(){
           </button>
         </div>
         {thanked && <div className="thankbox">🙏 Thanks for your interest! Ungaloda 5 star review-ku romba nandri. Shop details kaatturaen...</div>}
-        {paid && <div style={{marginTop:16,padding:12,background:'#eafaf4',borderRadius:12}}>
-          <p style={{color:'var(--teal)',fontWeight:700}}>Payment app-ku poninga?</p>
-          <button className="btn ghost" style={{marginTop:8}} onClick={()=>{ev('details_view');setView('details')}}>Know More About Our Shop</button>
-        </div>}
       </div>
+      {hasUpi && <SharePay/>}
       <p className="muted" style={{textAlign:'center'}}>Powered by NammaOor</p>
     </div>
   )
