@@ -334,6 +334,7 @@ function Routes({children}){ const loc=useLocation(); const arr=React.Children.t
   return React.createElement('div',{className:'container'},'Page not found'); }
 function Route(){ return null; }
 
+/* ===== api/client.js ===== */
 const BASE = 'https://nammoor.onrender.com/v1' || '/v1'
 let token = localStorage.getItem('token') || ''
 function setToken(t){ token = t; localStorage.setItem('token', t) }
@@ -412,6 +413,7 @@ try{ if(typeof window!=='undefined'){
 } }catch(_){}
 
 
+/* ===== components/Header.jsx ===== */
 
 // Reusable password field with show/hide eye (global in the built bundle)
 function PwInput({value,onChange,placeholder}){
@@ -451,6 +453,7 @@ function Header(){
 }
 
 
+/* ===== pages/Landing.jsx ===== */
 
 const SLIDES=[
   {icon:'💳', title:'Easy to Pay', sub:'QR scan pannunga — GPay / PhonePe / Paytm. Instant, no app install.', g:'linear-gradient(135deg,#00b894,#0984e3)'},
@@ -504,6 +507,7 @@ function Landing(){
 }
 
 
+/* ===== pages/Register.jsx ===== */
 
 function Register(){
   const _h = (typeof window!=='undefined' && window.location.hash) || ''
@@ -786,6 +790,138 @@ function Register(){
 }
 
 
+/* ===== pages/Search.jsx ===== */
+function StarsRow({v}){ return <span>{[1,2,3,4,5].map(n=><span key={n} style={{color:n<=Math.round(v)?'#FFB800':'#ddd'}}>*</span>)}</span> }
+const _ext=u=>{ u=(u||'').trim(); return u?(/^https?:\/\//i.test(u)?u:'https://'+u.replace(/^\/+/,'')):'' }
+// Contact icons shown on each search result. stopPropagation so tapping an icon
+// opens the contact (not the shop page).
+function ShopIcons({s}){
+  const stop=e=>e.stopPropagation()
+  const items=[]
+  if(s.mobile)    items.push(['#16a34a','📞',`tel:${s.mobile}`,false])
+  if(s.whatsapp)  items.push(['#25D366','💬',`https://wa.me/91${s.whatsapp}`,true])
+  if(s.instagram) items.push(['#E1306C','📷',_ext(s.instagram),true])
+  if(s.facebook)  items.push(['#1877F2','f',_ext(s.facebook),true])
+  if(!items.length) return null
+  return <div className="sicons" onClick={stop}>
+    {items.map(([c,ic,href,blank],i)=>(
+      <a key={i} href={href} onClick={stop} {...(blank?{target:'_blank',rel:'noopener noreferrer'}:{})}
+         className="sic" style={{background:c}}>{ic}</a>))}
+  </div>
+}
+function Search(){
+  const nav=useNavigate()
+  const [districts,setD]=useState([]); const [assemblies,setA]=useState([]); const [cats,setC]=useState([])
+  const [q,setQ]=useState({text:'',district:'',assembly:'',town:'',category:''}); const [res,setRes]=useState([]); const [done,setDone]=useState(false)
+  useEffect(()=>{ api.get('/geo/districts').then(setD).catch(()=>{}); api.get('/geo/categories').then(setC).catch(()=>{}) },[])
+  useEffect(()=>{ if(q.district) api.get('/geo/assemblies?district_id='+q.district).then(setA).catch(()=>{}) },[q.district])
+  async function search(){
+    const p=new URLSearchParams()
+    if(q.text)p.set('q',q.text); if(q.district)p.set('district',q.district); if(q.assembly)p.set('assembly',q.assembly)
+    if(q.town)p.set('town',q.town); if(q.category)p.set('category',q.category)
+    setRes(await api.get('/search?'+p.toString()).catch(()=>[])); setDone(true)
+  }
+  const [near,setNear]=useState(false); const [geoMsg,setGeoMsg]=useState('')
+  function nearMe(){
+    if(!navigator.geolocation){ setGeoMsg('Location support illa'); return }
+    setGeoMsg('📍 Location edukkiraen...')
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      const p=new URLSearchParams({lat:pos.coords.latitude,lng:pos.coords.longitude,radius_km:'8'})
+      if(q.text)p.set('q',q.text); if(q.category)p.set('category',q.category)
+      try{ const r=await api.get('/search/near?'+p.toString()); setRes(r); setNear(true); setDone(true)
+        setGeoMsg(r.length?'':'Pakkathula kadai illa (8km)') }
+      catch(e){ setGeoMsg('Search fail: '+e.message) }
+    }, err=>setGeoMsg('Location deny aachu. Allow pannunga.'), {enableHighAccuracy:true,timeout:10000})
+  }
+  const set=k=>e=>setQ({...q,[k]:e.target.value})
+  return (<><Header/><div className="container">
+    <h2 className="brand">Kadaigalai Thedu / Find Shops</h2>
+    <div className="card">
+      <input className="input" style={{fontSize:16}} placeholder="Search shop name, product, area..." value={q.text}
+        onChange={set('text')} onKeyDown={e=>e.key==='Enter'&&search()}/>
+      <div className="grid2">
+        <select onChange={set('district')}><option value="">District</option>{districts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>
+        <select onChange={set('assembly')}><option value="">Assembly</option>{assemblies.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select>
+        <input className="input" placeholder="Town / Village" onChange={set('town')}/>
+        <select onChange={set('category')}><option value="">Category</option>{cats.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>
+      </div>
+      <div className="row"><button className="btn" onClick={()=>{setNear(false);search()}}>🔍 Search</button><button className="btn ghost" onClick={nearMe}>📍 Near me</button></div>
+      {geoMsg&&<p className="muted" style={{marginTop:6}}>{geoMsg}</p>}
+    </div>
+    {res.map(s=>(
+      <div key={s.shop_code} className="card scard">
+        <div className="scard-main" onClick={()=>nav(`/shop/${(s.shop_code||'').replace('-','')}`)}>
+          <div style={{width:44,height:44,borderRadius:12,background:'#f1ecff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,overflow:'hidden',flex:'0 0 auto'}}>
+            {s.logo_url?<img src={s.logo_url} style={{width:'100%'}}/>:'S'}</div>
+          <div style={{flex:1,minWidth:0}}><b>{s.shop_name}</b>
+            <div className="muted">{s.category||''} {s.town?('- '+s.town):''}{s.distance_km!=null?(' · 📍 '+s.distance_km+' km'):''}</div>
+            {s.reviews>0 && <div style={{fontSize:13}}><StarsRow v={s.rating}/> {s.rating} ({s.reviews})</div>}
+            {s.bio && <div className="muted" style={{fontSize:12}}>{s.bio}</div>}
+          </div>
+        </div>
+        <ShopIcons s={s}/>
+      </div>))}
+    {done && res.length===0 && <p className="muted">No shops found. Try a different search.</p>}
+    {!done && <p className="muted">Search by name, category, or area.</p>}
+  </div></>)
+}
+
+
+/* ===== pages/Products.jsx ===== */
+
+const PCATS=['All','Clothing','Footwear','Grocery','Electronics','Jewellery','Home & Kitchen',
+  'Beauty & Care','Food & Bakery','Mobile & Accessories']
+
+
+function CStars({v}){const f=Math.round(v||0);return <span className="stars sm">{[1,2,3,4,5].map(i=><span key={i} className={i<=f?'on':''}>★</span>)}</span>}
+
+function Card({r}){
+  const price=r.offer_price||r.price
+  const off=r.offer_price&&r.price?Math.round((1-r.offer_price/r.price)*100):0
+  return (
+    <a href={'#/p/'+r.id} className="pcard">
+      <div className="pcimg-wrap">
+        <img className="pcimg" loading="lazy" src={r.thumbnail||PLACEHOLDER} onError={onImgErr} alt={r.title||r.name}/>
+        {off>0 && <span className="off-tag">{off}% OFF</span>}
+        {r.in_stock===false && <span className="oos-tag">Out of stock</span>}
+      </div>
+      <div className="pcbody">
+        {r.brand && <span className="pc-brand">{r.brand}</span>}
+        <b className="pctitle">{r.title||r.name}</b>
+        {(r.rating>0) && <span className="pc-rate"><CStars v={r.rating}/><span className="muted">({r.review_count||0})</span></span>}
+        <span className="pcprice">₹{price||'—'}{off>0 && <s className="muted">₹{r.price}</s>}</span>
+        {r.short_desc && <span className="pc-desc">{r.short_desc}</span>}
+        <span className="pc-shop">🏪 {r.shop_name}{r.town?` · ${r.town}`:''}</span>
+      </div>
+    </a>
+  )
+}
+
+function Products(){
+  const [q,setQ]=useState(''); const [cat,setCat]=useState('All')
+  const [rows,setRows]=useState([]); const [busy,setBusy]=useState(true)
+  const load=()=>{ setBusy(true)
+    const p=new URLSearchParams(); if(q)p.set('q',q); if(cat&&cat!=='All')p.set('category',cat)
+    api.get('/products/search'+(p.toString()?'?'+p:'')).then(r=>{setRows(r);setBusy(false)}).catch(()=>setBusy(false)) }
+  useEffect(load,[])
+  return (<><Header/><div className="container">
+    <h2 className="brand">Shop Products</h2>
+    <div className="row psearchbar" style={{gap:8}}>
+      <input className="input" style={{flex:2}} placeholder="Search products, brands..." value={q}
+        onChange={e=>setQ(e.target.value)} onKeyDown={e=>e.key==='Enter'&&load()}/>
+      <select className="input" value={cat} onChange={e=>{setCat(e.target.value)}}>{PCATS.map(c=><option key={c}>{c}</option>)}</select>
+      <button className="btn" onClick={load}>Search</button>
+    </div>
+    {busy
+      ? <div className="pgrid">{[1,2,3,4,5,6,7,8].map(i=><div key={i} className="pcard"><div className="pcimg-wrap sk"/><div className="pcbody"><div className="skln"/><div className="skln sm"/><div className="skln sm"/></div></div>)}</div>
+      : rows.length===0
+        ? <div className="empty"><div style={{fontSize:44}}>🛍️</div><p className="muted">No products found. Try another search.</p></div>
+        : <div className="pgrid">{rows.map(r=><Card key={r.id} r={r}/>)}</div>}
+  </div></>)
+}
+
+
+/* ===== pages/ShopPage.jsx ===== */
 
 
 const SHOW_PAY = false;  // payment QR/pay buttons — later enable pannalam
@@ -1109,82 +1245,327 @@ function ShopPage(){
 }
 
 
-function StarsRow({v}){ return <span>{[1,2,3,4,5].map(n=><span key={n} style={{color:n<=Math.round(v)?'#FFB800':'#ddd'}}>*</span>)}</span> }
-const _ext=u=>{ u=(u||'').trim(); return u?(/^https?:\/\//i.test(u)?u:'https://'+u.replace(/^\/+/,'')):'' }
-// Contact icons shown on each search result. stopPropagation so tapping an icon
-// opens the contact (not the shop page).
-function ShopIcons({s}){
-  const stop=e=>e.stopPropagation()
-  const items=[]
-  if(s.mobile)    items.push(['#16a34a','📞',`tel:${s.mobile}`,false])
-  if(s.whatsapp)  items.push(['#25D366','💬',`https://wa.me/91${s.whatsapp}`,true])
-  if(s.instagram) items.push(['#E1306C','📷',_ext(s.instagram),true])
-  if(s.facebook)  items.push(['#1877F2','f',_ext(s.facebook),true])
-  if(!items.length) return null
-  return <div className="sicons" onClick={stop}>
-    {items.map(([c,ic,href,blank],i)=>(
-      <a key={i} href={href} onClick={stop} {...(blank?{target:'_blank',rel:'noopener noreferrer'}:{})}
-         className="sic" style={{background:c}}>{ic}</a>))}
-  </div>
-}
-function Search(){
-  const nav=useNavigate()
-  const [districts,setD]=useState([]); const [assemblies,setA]=useState([]); const [cats,setC]=useState([])
-  const [q,setQ]=useState({text:'',district:'',assembly:'',town:'',category:''}); const [res,setRes]=useState([]); const [done,setDone]=useState(false)
-  useEffect(()=>{ api.get('/geo/districts').then(setD).catch(()=>{}); api.get('/geo/categories').then(setC).catch(()=>{}) },[])
-  useEffect(()=>{ if(q.district) api.get('/geo/assemblies?district_id='+q.district).then(setA).catch(()=>{}) },[q.district])
-  async function search(){
-    const p=new URLSearchParams()
-    if(q.text)p.set('q',q.text); if(q.district)p.set('district',q.district); if(q.assembly)p.set('assembly',q.assembly)
-    if(q.town)p.set('town',q.town); if(q.category)p.set('category',q.category)
-    setRes(await api.get('/search?'+p.toString()).catch(()=>[])); setDone(true)
+/* ===== pages/ProductPage.jsx ===== */
+
+
+function PStars({v}){ const f=Math.round(v||0)
+  return <span className="stars">{[1,2,3,4,5].map(i=><span key={i} className={i<=f?'on':''}>★</span>)}</span> }
+
+function custToken(){ let t=localStorage.getItem('cust_token'); if(!t){ t='c'+Math.random().toString(36).slice(2,12); localStorage.setItem('cust_token',t)} return t }
+function wishGet(){ try{return JSON.parse(localStorage.getItem('wishlist')||'[]')}catch{return[]} }
+function cartGet(){ try{return JSON.parse(localStorage.getItem('cart')||'[]')}catch{return[]} }
+
+function ProductPage(){
+  const id=(location.hash.split('/p/')[1]||'').split('?')[0]
+  const [d,setD]=useState(null); const [img,setImg]=useState(0)
+  const [rv,setRv]=useState({avg:0,count:0,breakdown:{},reviews:[]})
+  const [form,setForm]=useState({name:'',rating:5,text:'',photos:[]})
+  const [order,setOrder]=useState({name:'',mobile:'',qty:1})
+  const [placed,setPlaced]=useState(null)
+  const [wish,setWish]=useState(wishGet().includes(id))
+  const [toast,setToast]=useState('')
+
+  const load=()=>{ api.get('/product/'+id).then(setD).catch(()=>setD({found:false}))
+    api.get('/product/'+id+'/reviews').then(setRv).catch(()=>{}) }
+  useEffect(load,[])
+  const flash=(m)=>{ setToast(m); setTimeout(()=>setToast(''),2500) }
+
+  if(!d) return <><Header/><div className="container"><div className="card">Loading…</div></div></>
+  if(!d.found) return <><Header/><div className="container"><div className="card">Product not found or not published.</div></div></>
+
+  const price=d.offer_price||d.price
+  const off=d.offer_price&&d.price? Math.round((1-d.offer_price/d.price)*100):0
+  const imgs=(d.images&&d.images.length?d.images:(d.thumbnail?[d.thumbnail]:[])).filter(Boolean)
+  const mainImg=imgs[img]||PLACEHOLDER
+
+  const addCart=()=>{ const c=cartGet(); if(!c.find(x=>x.id===id)){ c.push({id,title:d.title||d.name,price,thumb:imgs[0]||d.thumbnail,qty:1,shop_code:d.shop_code,shop_name:d.shop_name,shop_upi:d.shop_upi,shop_whatsapp:d.shop_whatsapp}); localStorage.setItem('cart',JSON.stringify(c)) } flash('Added to cart 🛒') }
+  const toggleWish=()=>{ let w=wishGet(); if(w.includes(id)){w=w.filter(x=>x!==id);setWish(false)}else{w.push(id);setWish(true)} localStorage.setItem('wishlist',JSON.stringify(w)); flash(wish?'Removed from wishlist':'Saved to wishlist ❤️') }
+  const share=async()=>{ const url=`${SITE}/#/p/${id}`
+    if(navigator.share){ try{await navigator.share({title:d.title||d.name,url})}catch{} }
+    else { try{await navigator.clipboard.writeText(url); flash('Link copied!')}catch{ flash(url) } } }
+
+  const orderWhatsApp=async()=>{
+    try{
+      const r=await api.post('/order',{product_id:id,qty:+order.qty||1,customer_name:order.name,customer_mobile:order.mobile})
+      const wa=(r.shop_whatsapp||'').replace(/\D/g,''); const wanum=wa.length===10?'91'+wa:wa
+      const txt=`Hi ${r.shop_name||''}! I want to order:\n\n*${d.title||d.name}*\nQty: ${order.qty||1}\nAmount: Rs.${r.amount}\nOrder No: ${r.order_no}\n\n(via NammaOor)`
+      setPlaced({...r})
+      if(wanum) window.open(`https://wa.me/${wanum}?text=${encodeURIComponent(txt)}`,'_blank')
+    }catch(e){ flash(e.message) }
   }
-  const [near,setNear]=useState(false); const [geoMsg,setGeoMsg]=useState('')
-  function nearMe(){
-    if(!navigator.geolocation){ setGeoMsg('Location support illa'); return }
-    setGeoMsg('📍 Location edukkiraen...')
-    navigator.geolocation.getCurrentPosition(async pos=>{
-      const p=new URLSearchParams({lat:pos.coords.latitude,lng:pos.coords.longitude,radius_km:'8'})
-      if(q.text)p.set('q',q.text); if(q.category)p.set('category',q.category)
-      try{ const r=await api.get('/search/near?'+p.toString()); setRes(r); setNear(true); setDone(true)
-        setGeoMsg(r.length?'':'Pakkathula kadai illa (8km)') }
-      catch(e){ setGeoMsg('Search fail: '+e.message) }
-    }, err=>setGeoMsg('Location deny aachu. Allow pannunga.'), {enableHighAccuracy:true,timeout:10000})
+
+  const addReviewPhoto=async()=>{ const im=await pickImage(700); if(im&&form.photos.length<4) setForm(f=>({...f,photos:[...f.photos,im]})) }
+  const submitReview=async()=>{
+    if(!form.text&&!form.rating) return
+    await api.post('/product/'+id+'/reviews',{reviewer_token:custToken(),name:form.name||'Customer',rating:form.rating,text:form.text,photos:form.photos})
+    setForm({name:'',rating:5,text:'',photos:[]}); api.get('/product/'+id+'/reviews').then(setRv); flash('Thanks for your review!')
   }
-  const set=k=>e=>setQ({...q,[k]:e.target.value})
-  return (<><Header/><div className="container">
-    <h2 className="brand">Kadaigalai Thedu / Find Shops</h2>
-    <div className="card">
-      <input className="input" style={{fontSize:16}} placeholder="Search shop name, product, area..." value={q.text}
-        onChange={set('text')} onKeyDown={e=>e.key==='Enter'&&search()}/>
-      <div className="grid2">
-        <select onChange={set('district')}><option value="">District</option>{districts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>
-        <select onChange={set('assembly')}><option value="">Assembly</option>{assemblies.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select>
-        <input className="input" placeholder="Town / Village" onChange={set('town')}/>
-        <select onChange={set('category')}><option value="">Category</option>{cats.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>
+
+  return (<><Header/><div className="container product-page">
+    {toast&&<div className="toast">{toast}</div>}
+    <a className="btn ghost sm" href="#/products">← All products</a>
+    <div className="pmain">
+      <div className="pgallery">
+        <img src={mainImg} className="pbig" loading="lazy" onError={onImgErr} alt={d.title||d.name}/>
+        {imgs.length>1&&<div className="pthumbs">{imgs.map((im,i)=><img key={i} src={im} loading="lazy" onError={onImgErr} className={i===img?'on':''} onClick={()=>setImg(i)}/>)}</div>}
       </div>
-      <div className="row"><button className="btn" onClick={()=>{setNear(false);search()}}>🔍 Search</button><button className="btn ghost" onClick={nearMe}>📍 Near me</button></div>
-      {geoMsg&&<p className="muted" style={{marginTop:6}}>{geoMsg}</p>}
-    </div>
-    {res.map(s=>(
-      <div key={s.shop_code} className="card scard">
-        <div className="scard-main" onClick={()=>nav(`/shop/${(s.shop_code||'').replace('-','')}`)}>
-          <div style={{width:44,height:44,borderRadius:12,background:'#f1ecff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,overflow:'hidden',flex:'0 0 auto'}}>
-            {s.logo_url?<img src={s.logo_url} style={{width:'100%'}}/>:'S'}</div>
-          <div style={{flex:1,minWidth:0}}><b>{s.shop_name}</b>
-            <div className="muted">{s.category||''} {s.town?('- '+s.town):''}{s.distance_km!=null?(' · 📍 '+s.distance_km+' km'):''}</div>
-            {s.reviews>0 && <div style={{fontSize:13}}><StarsRow v={s.rating}/> {s.rating} ({s.reviews})</div>}
-            {s.bio && <div className="muted" style={{fontSize:12}}>{s.bio}</div>}
-          </div>
+      <div className="pinfo">
+        <div className="row" style={{gap:8,alignItems:'center'}}>
+          {d.brand&&<span className="pill">{d.brand}</span>}
+          <span className="badge-verify">✔ Verified Shop</span>
+          {d.in_stock? <span className="dot published">In stock</span>:<span className="dot hidden">Out of stock</span>}
         </div>
-        <ShopIcons s={s}/>
-      </div>))}
-    {done && res.length===0 && <p className="muted">No shops found. Try a different search.</p>}
-    {!done && <p className="muted">Search by name, category, or area.</p>}
+        <h1 className="ptitle">{d.title||d.name}</h1>
+        <div className="row" style={{gap:8,alignItems:'center'}}><PStars v={d.rating}/><span className="muted">{d.rating||0} ({d.review_count||0})</span></div>
+        <div className="pprice">₹{price||'—'} {off>0&&<><s className="muted">₹{d.price}</s> <span className="offbadge">{off}% OFF</span></>}</div>
+        {d.short_desc&&<p className="pshort">{d.short_desc}</p>}
+        <p className="muted">Sold by <b>{d.shop_name}</b>{d.shop_town?` · ${d.shop_town}`:''}</p>
+
+        <div className="pbtns">
+          <button className="btn" onClick={addCart}>🛒 Add to Cart</button>
+          <button className="btn ai-cta" onClick={()=>document.getElementById('orderbox').scrollIntoView({behavior:'smooth'})}>⚡ Buy Now</button>
+          <button className="btn ghost" onClick={toggleWish}>{wish?'❤️ Wishlisted':'🤍 Wishlist'}</button>
+          <button className="btn ghost" onClick={share}>🔗 Share</button>
+        </div>
+
+        <div id="orderbox" className="orderbox">
+          <b>Order via WhatsApp</b>
+          <p className="muted" style={{fontSize:13,margin:'4px 0'}}>Free &amp; direct. Message opens ready — you just tap send.</p>
+          <div className="row">
+            <input className="input" placeholder="Your name" value={order.name} onChange={e=>setOrder({...order,name:e.target.value})}/>
+            <input className="input" placeholder="Mobile" value={order.mobile} onChange={e=>setOrder({...order,mobile:e.target.value})}/>
+            <input className="input" style={{maxWidth:80}} type="number" min="1" value={order.qty} onChange={e=>setOrder({...order,qty:e.target.value})}/>
+          </div>
+          <button className="btn wa" onClick={orderWhatsApp}>💬 Order on WhatsApp</button>
+          {placed&&<div className="thankyou">🎉 Thank you! Order <b>{placed.order_no}</b> placed. <a href={'#/order/'+placed.token}>Track order →</a></div>}
+        </div>
+      </div>
+    </div>
+
+    {(d.highlights&&d.highlights.length>0)&&<div className="card"><h3>Highlights</h3><ul className="hl">{d.highlights.map((h,i)=><li key={i}>{h}</li>)}</ul></div>}
+    {d.full_desc&&<div className="card"><h3>Description</h3><p>{d.full_desc}</p></div>}
+    {(d.features&&d.features.length>0)&&<div className="card"><h3>Features</h3><ul className="hl">{d.features.map((f,i)=><li key={i}>{f}</li>)}</ul></div>}
+    {d.specs&&Object.keys(d.specs).length>0&&<div className="card"><h3>Specifications</h3>
+      <table className="spec">{Object.entries(d.specs).map(([k,v])=><tr key={k}><td className="muted">{k}</td><td>{String(v)}</td></tr>)}</table></div>}
+
+    <div className="card">
+      <h3>Reviews ({rv.count})</h3>
+      <div className="row" style={{gap:20,alignItems:'center',flexWrap:'wrap'}}>
+        <div style={{textAlign:'center'}}><div style={{fontSize:34,fontWeight:800}}>{rv.avg||0}</div><PStars v={rv.avg}/></div>
+        <div style={{flex:1,minWidth:180}}>{[5,4,3,2,1].map(n=>{const c=(rv.breakdown&&rv.breakdown[n])||0;const pct=rv.count?Math.round(c/rv.count*100):0;
+          return <div key={n} className="rbar"><span>{n}★</span><div className="rtrack"><div className="rfill" style={{width:pct+'%'}}/></div><span className="muted">{c}</span></div>})}</div>
+      </div>
+      <div className="revform">
+        <b>Write a review</b>
+        <div className="row" style={{alignItems:'center',gap:8}}>
+          <span className="starpick">{[1,2,3,4,5].map(i=><span key={i} className={i<=form.rating?'on':''} onClick={()=>setForm({...form,rating:i})}>★</span>)}</span>
+          <input className="input" placeholder="Name (optional)" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
+        </div>
+        <textarea className="input" rows="2" placeholder="Share your experience…" value={form.text} onChange={e=>setForm({...form,text:e.target.value})}/>
+        <div className="row" style={{alignItems:'center',gap:8}}>
+          <button className="btn ghost sm" onClick={addReviewPhoto}>📷 Add photo ({form.photos.length}/4)</button>
+          {form.photos.map((p,i)=><img key={i} src={p} className="revthumb"/>)}
+        </div>
+        <button className="btn sm" onClick={submitReview}>Submit review</button>
+      </div>
+      {rv.reviews.map(r=><div key={r.id} className="review">
+        <div className="row" style={{justifyContent:'space-between'}}><b>{r.name}</b><PStars v={r.rating}/></div>
+        {r.text&&<p style={{margin:'4px 0'}}>{r.text}</p>}
+        {r.photos&&r.photos.length>0&&<div className="row" style={{gap:6}}>{r.photos.map((p,i)=><img key={i} src={p} loading="lazy" className="revthumb"/>)}</div>}
+      </div>)}
+      {rv.reviews.length===0&&<p className="muted">No reviews yet. Be the first!</p>}
+    </div>
+
+    {d.related&&d.related.length>0&&<div className="card"><h3>Similar products</h3>
+      <div className="pgrid">{d.related.map(r=><a key={r.id} href={'#/p/'+r.id} className="pcard">
+        <div className="pcimg-wrap"><img src={r.thumbnail||PLACEHOLDER} loading="lazy" onError={onImgErr} className="pcimg"/></div>
+        <div className="pcbody"><b className="pctitle">{r.title||r.name}</b>
+          <span className="pcprice">₹{r.offer_price||r.price||'—'}</span>
+          <span className="pc-shop">🏪 {r.shop_name}</span></div></a>)}</div></div>}
   </div></>)
 }
 
 
+/* ===== pages/OrderTrack.jsx ===== */
+
+const LABEL={received:'Order Received',payment_received:'Payment Received',preparing:'Preparing',
+  packed:'Packed',shipped:'Shipped',delivered:'Delivered'}
+
+function OrderTrack(){
+  const token=(location.hash.split('/order/')[1]||'').split('?')[0]
+  const [o,setO]=useState(null)
+  useEffect(()=>{ api.get('/order/'+token).then(setO).catch(()=>setO({found:false})) },[])
+  if(!o) return <><Header/><div className="container"><div className="card">Loading…</div></div></>
+  if(!o.found) return <><Header/><div className="container"><div className="card">Order not found.</div></div></>
+  const flow=o.flow||['received','payment_received','preparing','packed','shipped','delivered']
+  const idx=flow.indexOf(o.status)
+  return (<><Header/><div className="container">
+    <h2 className="brand">Order {o.order_no}</h2>
+    <div className="card">
+      <p><b>{o.product_name}</b> × {o.qty} · Rs.{o.amount}</p>
+      <p className="muted">Shop: {o.shop_name}</p>
+      {o.status==='cancelled'? <div className="dot hidden" style={{fontSize:16}}>Cancelled</div>
+      : <div className="track">{flow.map((s,i)=><div key={s} className={'tstep'+(i<=idx?' done':'')}>
+          <div className="tdot">{i<=idx?'✓':i+1}</div><span>{LABEL[s]||s}</span></div>)}</div>}
+    </div>
+  </div></>)
+}
+
+
+/* ===== pages/Privacy.jsx ===== */
+function Privacy(){
+  return (<><Header/><div className="container" style={{maxWidth:760}}>
+    <h2 className="brand">Privacy Policy</h2>
+    <div className="card" style={{lineHeight:1.7}}>
+      <p className="muted">Last updated: July 2026 · Operated by AppCore</p>
+
+      <h3>1. Information we collect</h3>
+      <p>We collect information you provide: shop and owner details, mobile number, address, product listings and images, and (for payouts) bank and PAN details of Sellers. Customers may provide name and mobile when placing an order or review. We also collect basic usage events (shop views, calls, clicks) to improve the service.</p>
+
+      <h3>2. How we use it</h3>
+      <p>To operate the directory and marketplace, verify Sellers, enable orders and payouts, send OTP and order notifications by SMS, show analytics to shop owners, and improve NammaOor.</p>
+
+      <h3>3. Sharing</h3>
+      <p>We share information only as needed to run the service — for example, with our SMS provider (to send OTP/alerts) and our payment partner (to process payments and settlements). We do not sell your personal data.</p>
+
+      <h3>4. Payment & bank data</h3>
+      <p>Bank and PAN details provided for payouts are used only for verification and settlement through our payment partner. Card/UPI payment details are handled by the payment gateway and are not stored by us.</p>
+
+      <h3>5. Data retention</h3>
+      <p>We keep information for as long as your account is active or as required for legal, audit, and accounting purposes.</p>
+
+      <h3>6. Your choices</h3>
+      <p>You may request correction or deletion of your data by contacting us. Some data may be retained where required by law.</p>
+
+      <h3>7. Security</h3>
+      <p>We use reasonable technical measures to protect your data. No method of transmission is 100% secure, but we work to keep your information safe.</p>
+
+      <h3>8. Contact</h3>
+      <p>AppCore · Email: rajesh.ai.python@gmail.com · Phone: +91 9791923458</p>
+    </div>
+    <p className="muted" style={{textAlign:'center'}}><a href="#/terms">Terms of Service</a> · <a href="#/">Home</a></p>
+  </div></>)
+}
+
+
+/* ===== pages/Terms.jsx ===== */
+function Terms(){
+  return (<><Header/><div className="container" style={{maxWidth:760}}>
+    <h2 className="brand">Terms of Service</h2>
+    <div className="card" style={{lineHeight:1.7}}>
+      <p className="muted">Last updated: July 2026 · Operated by AppCore</p>
+
+      <h3>1. About NammaOor</h3>
+      <p>NammaOor is a hyperlocal marketplace and shop-directory platform operated by AppCore ("we", "us"). We connect customers with verified local shops and sellers ("Sellers"). NammaOor is a technology platform; the goods and services are provided directly by the Sellers.</p>
+
+      <h3>2. Accounts</h3>
+      <p>Shop owners register using a mobile number and OTP. Employees and administrators use assigned credentials. You are responsible for keeping your login secure and for the accuracy of information you provide.</p>
+
+      <h3>3. Seller responsibilities</h3>
+      <p>Sellers are solely responsible for their product listings, prices, stock, order fulfilment, quality, and any applicable taxes. Sellers must provide accurate business, identity and bank details for verification and payouts.</p>
+
+      <h3>4. Orders & payments</h3>
+      <p>Customers may contact Sellers and pay directly via UPI, or (where enabled) through our payment partner. Payments made via UPI go directly to the Seller's account. AppCore is not a party to the sale contract between customer and Seller.</p>
+
+      <h3>5. Fees</h3>
+      <p>Registration or subscription fees, if any, are shown at the time of purchase. Payment-gateway charges may apply on gateway transactions.</p>
+
+      <h3>6. Prohibited use</h3>
+      <p>You may not use NammaOor for unlawful, fraudulent, or harmful activity, or to list prohibited goods/services. We may suspend or remove any listing or account that violates these terms.</p>
+
+      <h3>7. Limitation of liability</h3>
+      <p>NammaOor is provided "as is". To the extent permitted by law, AppCore is not liable for disputes, losses, or damages arising from transactions between customers and Sellers. Disputes about goods/services should be resolved directly with the Seller.</p>
+
+      <h3>8. Changes</h3>
+      <p>We may update these terms from time to time. Continued use of NammaOor means you accept the updated terms.</p>
+
+      <h3>9. Contact</h3>
+      <p>AppCore · Email: rajesh.ai.python@gmail.com · Phone: +91 9791923458</p>
+    </div>
+    <p className="muted" style={{textAlign:'center'}}><a href="#/privacy">Privacy Policy</a> · <a href="#/">Home</a></p>
+  </div></>)
+}
+
+
+/* ===== pages/Cart.jsx ===== */
+
+const CK_SHOW_PAY = false;  // payment QR — later enable pannalam
+function ckGet(){ try{return JSON.parse(localStorage.getItem('cart')||'[]')}catch{return[]} }
+function ckSet(c){ localStorage.setItem('cart', JSON.stringify(c)) }
+function ckVpa(v){ return /^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test((v||'').trim()) }
+function ckUpi(vpa,name,amt){
+  const p=new URLSearchParams(); p.set('pn',(name||'Shop').trim()); p.set('cu','INR')
+  if(amt&&+amt>0) p.set('am', String(Math.round(+amt)))
+  p.set('tn','NammaOor order')
+  return `upi://pay?pa=${(vpa||'').trim()}&`+p.toString().replace(/\+/g,'%20')
+}
+
+function Cart(){
+  const [items,setItems]=useState(ckGet())
+  const [toast,setToast]=useState('')
+  const flash=m=>{setToast(m);setTimeout(()=>setToast(''),2000)}
+  const save=c=>{ setItems(c); ckSet(c) }
+  const setQty=(id,q)=>save(items.map(x=>x.id===id?{...x,qty:Math.max(1,q)}:x))
+  const remove=id=>save(items.filter(x=>x.id!==id))
+  const clear=()=>save([])
+
+  // group by shop
+  const shops={}
+  items.forEach(it=>{ const k=it.shop_code||'_'; (shops[k]=shops[k]||{info:it,list:[]}).list.push(it) })
+
+  if(items.length===0) return (<><Header/><div className="container" style={{maxWidth:520}}>
+    <h2 className="brand">🛒 Cart</h2>
+    <div className="card" style={{textAlign:'center'}}>
+      <p className="muted">Cart காலியா இருக்கு.</p>
+      <a href="#/products"><button className="btn" style={{marginTop:8}}>Products பாக்க</button></a>
+    </div></div></>)
+
+  return (<><Header/><div className="container" style={{maxWidth:560}}>
+    {toast&&<div className="toast">{toast}</div>}
+    <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
+      <h2 className="brand">🛒 Cart</h2>
+      <button className="btn ghost sm" onClick={clear}>Clear</button>
+    </div>
+
+    {Object.values(shops).map((g,gi)=>{
+      const total=g.list.reduce((s,x)=>s+(+x.price||0)*(x.qty||1),0)
+      const upi=g.info.shop_upi; const wa=(g.info.shop_whatsapp||'').replace(/\D/g,'')
+      const wanum=wa.length===10?'91'+wa:wa
+      const waText=`Hi ${g.info.shop_name||''}! Order via NammaOor:\n`+
+        g.list.map(x=>`• ${x.title} x${x.qty||1} = Rs.${(+x.price||0)*(x.qty||1)}`).join('\n')+
+        `\n\nTotal: Rs.${total}`
+      return (<div key={gi} className="card">
+        <b>{g.info.shop_name||'Shop'}</b>
+        {g.list.map(it=><div key={it.id} className="row" style={{alignItems:'center',gap:10,borderBottom:'1px solid var(--line)',padding:'8px 0'}}>
+          <img src={it.thumb||PLACEHOLDER} onError={onImgErr} style={{width:48,height:48,borderRadius:8,objectFit:'cover'}}/>
+          <div style={{flex:1}}><div style={{fontWeight:600,fontSize:14}}>{it.title}</div>
+            <div className="muted" style={{fontSize:13}}>Rs.{it.price}</div></div>
+          <div className="row" style={{gap:4,alignItems:'center'}}>
+            <button className="btn ghost sm" onClick={()=>setQty(it.id,(it.qty||1)-1)}>−</button>
+            <span style={{minWidth:20,textAlign:'center'}}>{it.qty||1}</span>
+            <button className="btn ghost sm" onClick={()=>setQty(it.id,(it.qty||1)+1)}>+</button>
+          </div>
+          <button className="btn ghost sm" onClick={()=>remove(it.id)}>✕</button>
+        </div>)}
+        <div className="row" style={{justifyContent:'space-between',marginTop:10}}>
+          <b>Total</b><b style={{color:'var(--teal)'}}>Rs.{total}</b></div>
+
+        {CK_SHOW_PAY && ckVpa(upi) && <div style={{marginTop:12,textAlign:'center',background:'#fff',border:'1px solid var(--line)',borderRadius:14,padding:14}}>
+          <img src={qrImg(ckUpi(upi,g.info.shop_name,total))} alt="Pay QR" style={{width:190,height:190,maxWidth:'100%'}}/>
+          <p style={{fontWeight:800,color:'var(--teal)',margin:'8px 0 0'}}>Scan to Pay Rs.{total}</p>
+        </div>}
+
+        {wanum && <a href={`https://wa.me/${wanum}?text=${encodeURIComponent(waText)}`} target="_blank">
+          <button className="btn wa" style={{width:'100%',marginTop:10}}>💬 Order on WhatsApp</button></a>}
+      </div>)
+    })}
+    <p className="muted" style={{textAlign:'center',fontSize:12}}>
+      Order WhatsApp-la pogum — kadaila neradiya pay pannalam.</p>
+  </div></>)
+}
+
+
+/* ===== pages/Login.jsx ===== */
 
 function Login(){
   const nav=useNavigate()
@@ -1380,17 +1761,40 @@ function Login(){
 }
 
 
+/* ===== pages/OwnerDashboard.jsx ===== */
 function OwnerDashboard(){
   const [s,setS]=useState(null); const [an,setAn]=useState({}); const [pays,setPays]=useState([])
   const [prod,setProd]=useState({name:'',price:''}); const [offer,setOffer]=useState({title:'',detail:''})
   const [edit,setEdit]=useState(null); const [ef,setEf]=useState({name:'',price:''})
   const [psearch,setPsearch]=useState(''); const [msg,setMsg]=useState('')
   const [route,setRoute]=useState(null); const [bankF,setBankF]=useState({bank_account:'',bank_ifsc:'',beneficiary_name:'',pan:'',email:''})
+  // Master Catalog
+  const [mcCats,setMcCats]=useState([]); const [mcSubs,setMcSubs]=useState([])
+  const [mcCat,setMcCat]=useState(''); const [mcSub,setMcSub]=useState('')
+  const [mcItems,setMcItems]=useState([]); const [mcSel,setMcSel]=useState({})
+  const [mcLoading,setMcLoading]=useState(false); const [mcMsg,setMcMsg]=useState('')
   const load=()=>{ api.get('/me/shop').then(setS).catch(e=>setMsg(e.message))
     api.get('/me/shop/analytics').then(setAn).catch(()=>{})
     api.get('/me/shop/payments').then(setPays).catch(()=>{})
     api.get('/me/shop/route/status').then(setRoute).catch(()=>{}) }
   useEffect(load,[])
+  useEffect(()=>{ api.get('/catalog/categories').then(setMcCats).catch(()=>{}) },[])
+  const pickCat=(c)=>{ setMcCat(c); setMcSub(''); setMcItems([]); setMcSel({}); setMcSubs([]); setMcMsg('')
+    if(c) api.get('/catalog/subcategories?category='+encodeURIComponent(c)).then(setMcSubs).catch(()=>{}) }
+  const pickSub=(sub)=>{ setMcSub(sub); setMcItems([]); setMcSel({}); setMcMsg('')
+    if(sub){ setMcLoading(true)
+      api.get('/catalog/master?category='+encodeURIComponent(mcCat)+'&sub_category='+encodeURIComponent(sub))
+        .then(r=>{ setMcItems(r.items||[]); setMcLoading(false) }).catch(()=>setMcLoading(false)) } }
+  const mcTog=(it,on)=>setMcSel(x=>({...x,[it.product_id]:{...(x[it.product_id]||{}),on,name:it.name,unit:it.unit}}))
+  const mcUpd=(pid,k,v)=>setMcSel(x=>({...x,[pid]:{...(x[pid]||{}),[k]:v}}))
+  const saveMc=async()=>{
+    const items=Object.entries(mcSel).filter(([,v])=>v.on).map(([pid,v])=>({
+      master_product_id:pid, name:v.name, category:mcCat, subcategory:mcSub, unit:v.unit,
+      price:v.price?+v.price:null, offer_price:v.offer?+v.offer:null, stock:v.stock?+v.stock:null }))
+    if(!items.length){ setMcMsg('Products select pannunga'); return }
+    try{ const r=await api.post('/me/shop/catalog/bulk',{items})
+      setMcMsg(`✅ ${r.added} products add aayiduchu! Customer app-la ippove varum.`); setMcSel({}) }
+    catch(e){ setMcMsg('❌ '+e.message) } }
   if(!s) return <><Header/><div className="container"><div className="card">{msg||'Loading...'}<p className="muted">Shop owner-aa login pannirukanum.</p></div></div></>
   const save=async(patch,note)=>{ await api.patch('/me/shop',patch); setMsg(note||'Saved'); load() }
   // Validate + https-prepend a social/website link. Empty clears it (hides the button).
@@ -1487,6 +1891,47 @@ function OwnerDashboard(){
       </div>
     </div>
 
+    <div className="card">
+      <h3>🛒 Master Catalog — Products Add Pannunga</h3>
+      <p className="muted" style={{marginTop:2}}>Category → Sub Category → products select panni price/stock podunga. Udaney customer app-la varum.</p>
+      <div className="grid2" style={{marginTop:8}}>
+        <div><label className="lbl">Category</label>
+          <select value={mcCat} onChange={e=>pickCat(e.target.value)}>
+            <option value="">-- Category --</option>
+            {mcCats.map(c=><option key={c.category} value={c.category}>{c.category} ({c.count})</option>)}
+          </select></div>
+        <div><label className="lbl">Sub Category</label>
+          <select value={mcSub} onChange={e=>pickSub(e.target.value)} disabled={!mcCat}>
+            <option value="">{mcCat?'-- Sub Category --':'Category select pannunga'}</option>
+            {mcSubs.map(x=><option key={x.sub_category} value={x.sub_category}>{x.sub_category} ({x.count})</option>)}
+          </select></div>
+      </div>
+      {mcLoading && <p className="muted" style={{marginTop:8}}>Products load aaguthu…</p>}
+      {mcItems.length>0 && <>
+        <p className="muted" style={{marginTop:10}}>Kadaila irukura products-a tick panni price podunga:</p>
+        <div style={{maxHeight:380,overflowY:'auto',border:'1px solid var(--line)',borderRadius:10,padding:'4px 10px',marginTop:6}}>
+          {mcItems.map(it=>{ const sel=mcSel[it.product_id]||{}; return (
+            <div key={it.product_id} style={{borderBottom:'1px solid var(--line)',padding:'8px 0'}}>
+              <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontWeight:600}}>
+                <input type="checkbox" checked={!!sel.on} onChange={e=>mcTog(it,e.target.checked)}/>
+                <span>{it.name} <span className="muted" style={{fontWeight:400,fontSize:12}}>/ {it.unit}</span></span>
+              </label>
+              {sel.on && <div className="row" style={{gap:6,marginTop:6,flexWrap:'wrap'}}>
+                <input className="input" style={{width:110}} type="number" inputMode="decimal" placeholder="Price ₹"
+                  value={sel.price||''} onChange={e=>mcUpd(it.product_id,'price',e.target.value)}/>
+                <input className="input" style={{width:130}} type="number" inputMode="decimal" placeholder="Offer ₹ (opt)"
+                  value={sel.offer||''} onChange={e=>mcUpd(it.product_id,'offer',e.target.value)}/>
+                <input className="input" style={{width:100}} type="number" placeholder="Stock"
+                  value={sel.stock||''} onChange={e=>mcUpd(it.product_id,'stock',e.target.value)}/>
+              </div>}
+            </div>)})}
+        </div>
+        <button className="btn ai-cta" style={{marginTop:10,width:'100%'}} onClick={saveMc}>
+          💾 Save {Object.values(mcSel).filter(x=>x.on).length||''} products to my shop</button>
+      </>}
+      {mcMsg && <p style={{color:'var(--teal)',marginTop:8}}>{mcMsg}</p>}
+    </div>
+
     <div className="card ai-banner">
       <div className="row" style={{justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10}}>
         <div><h3 style={{margin:0}}>✨ AI Listing Generator</h3>
@@ -1550,220 +1995,7 @@ function OwnerDashboard(){
 }
 
 
-function EmployeeDashboard(){
-  const [d,setD]=useState(null); const [shops,setShops]=useState([]); const [inv,setInv]=useState({})
-  const [msg,setMsg]=useState(''); const [wh,setWh]=useState([]); const [ver,setVer]=useState({upi_id:'',upi_name:''}); const [amt,setAmt]=useState('')
-  const [genN,setGenN]=useState(10); const [gMsg,setGMsg]=useState('')
-  const load=()=>{ api.get('/me/employee/dashboard').then(setD).catch(e=>setMsg(e.message))
-    api.get('/me/employee/shops').then(setShops).catch(()=>{})
-    api.get('/me/employee/qr-inventory').then(setInv).catch(()=>{})
-    api.get('/me/employee/withdrawals').then(setWh).catch(()=>{}) }
-  useEffect(load,[])
-  if(!d) return <><Header/><div className="container"><div className="card">{msg||'Loading…'}<p className="muted">Employee-ஆ login பண்ணியிருக்கணும்.</p></div></div></>
-  const genQr=async()=>{ try{ const r=await api.post('/me/employee/generate-qr',{count:+genN||1})
-      setGMsg(`✅ ${r.generated} QR generate aayiduchu. Innaikku innum ${r.left_today} QR generate pannalaam.`); load() }
-      catch(e){ setGMsg('❌ '+e.message) } }
-  const dlQr=async()=>{ try{ await downloadFile('/me/employee/qr-pdf?new_only=true&mark=true','nammaoor_myqr.pdf'); setGMsg('⬇️ QR PDF download aayiduchu. Print edunga.') }
-      catch(e){ setGMsg('❌ '+(e.message||'No new QR — generate first')) } }
-  const verify=async()=>{ await api.patch('/me/employee/verification',ver); setMsg('✅ Verified'); load() }
-  const withdraw=async()=>{ try{await api.post('/me/employee/withdrawals',{amount:+amt}); setMsg('✅ Requested'); load()}catch(e){setMsg('❌ '+e.message)} }
-  const regUrl=`${SITE}/#/register?emp=${(d.emp_code||'').replace('-','')}`
-  const regHref=`#/register?emp=${(d.emp_code||'').replace('-','')}`
-  return (<><Header/><div className="container">
-    <h2 className="brand">Employee — {d.emp_code}</h2>
-    <a href={regHref}><button className="btn" style={{marginTop:10,fontSize:18,padding:'14px'}}>➕ புது கடை பதிவு / Register New Shop</button></a>
-    <div className="row" style={{marginTop:10}}>
-      <div className="kpi"><b>₹{d.wallet_balance}</b><span>Wallet</span></div>
-      <div className="kpi"><b>{d.total_registrations}</b><span>Total Shops</span></div>
-      <div className="kpi"><b>{d.today_registrations}</b><span>Today</span></div>
-      <div className="kpi"><b>{d.is_verified?'✅':'❌'}</b><span>Verified</span></div>
-    </div>
-    <div className="card" style={{marginTop:14}}><h3>📦 My QR Stickers (Admin assigned)</h3>
-      <div className="row">
-        <div className="kpi"><b>{inv.assigned||0}</b><span>Total Assigned</span></div>
-        <div className="kpi"><b>{inv.available||0}</b><span>Available</span></div>
-        <div className="kpi"><b>{inv.used||0}</b><span>Used</span></div>
-      </div>
-      {inv.tokens && inv.tokens.length>0 && <p className="muted" style={{marginTop:8}}>Next codes: {inv.tokens.slice(0,8).join(', ')}…</p>}
-    </div>
-    <div className="card" style={{marginTop:14}}><h3>🖨️ Generate QR (Self)</h3>
-      <div className="row" style={{alignItems:'flex-end',gap:8,flexWrap:'wrap'}}>
-        <div><label>Ethana QR?</label>
-          <input className="input" type="number" min="1" max={inv.left_today??100} value={genN}
-            onChange={e=>setGenN(e.target.value)} style={{width:110}}/></div>
-        <button className="btn" onClick={genQr} disabled={(inv.left_today??100)<=0}>⚡ Generate QR</button>
-        <button className="btn ghost" onClick={dlQr}>⬇️ Download &amp; Print</button>
-      </div>
-      <p className="muted" style={{marginTop:6}}>Today: {inv.made_today||0}/100 generated · {inv.left_today??100} left</p>
-      <p style={{marginTop:8,fontSize:13,fontWeight:600,color:'#6c5ce7'}}>Per day 100 QR only. Take print out and paste to your shop.</p>
-      {gMsg && <p style={{color:'var(--teal)',marginTop:6}}>{gMsg}</p>}
-    </div>
-    <div className="grid2">
-      <div className="card"><h3>📱 My Registration QR</h3>
-        <div className="qrbox" style={{margin:'10px auto'}}><img src={qrImg(regUrl)}/></div>
-        <p className="muted" style={{textAlign:'center'}}>{regUrl}</p></div>
-      <div className="card"><h3>💸 Withdrawal (min ₹500)</h3>
-        {!d.is_verified && <><input className="input" placeholder="UPI ID" onChange={e=>setVer({...ver,upi_id:e.target.value})}/>
-          <input className="input" placeholder="UPI Name" onChange={e=>setVer({...ver,upi_name:e.target.value})}/>
-          <button className="btn sm" onClick={verify}>Verify UPI</button></>}
-        {d.is_verified && <><input className="input" placeholder="Amount" value={amt} onChange={e=>setAmt(e.target.value)}/>
-          <button className="btn" onClick={withdraw}>Request Withdrawal</button></>}
-        <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p></div>
-    </div>
-    <div className="card"><h3>My Withdrawals</h3>
-      <table><tr><th>Requested</th><th>Amount</th><th>Status</th><th>Paid On</th></tr>
-        {wh.map((w,i)=><tr key={i}><td>{w.created_at?new Date(w.created_at).toLocaleDateString():'-'}</td><td>Rs.{w.amount}</td>
-          <td><span className={'tag '+(['completed','paid'].includes(w.status)?'a':'e')}>{w.status}</span></td>
-          <td>{w.paid_at?new Date(w.paid_at).toLocaleDateString():'-'}</td></tr>)}
-      </table>{wh.length===0 && <p className="muted">No withdrawals yet.</p>}
-    </div>
-    <div className="card"><h3>🏪 My Shops</h3>
-      <table><tr><th>ID</th><th>Shop</th><th>Status</th></tr>
-        {shops.map((s,i)=><tr key={i}><td>{s.shop_code||'draft'}</td><td>{s.shop_name}</td><td><span className={'tag '+(s.status==='active'?'a':'e')}>{s.status}</span></td></tr>)}
-      </table>{shops.length===0 && <p className="muted">இன்னும் shops இல்ல.</p>}</div>
-  </div></>)
-}
-
-
-function AdminDashboard(){
-  const [rev,setRev]=useState({}); const [an,setAn]=useState({}); const [shops,setShops]=useState([])
-  const [wd,setWd]=useState([]); const [emps,setEmps]=useState([]); const [qr,setQr]=useState({})
-  const [genN,setGenN]=useState(50); const [asg,setAsg]=useState({emp_code:'',count:10}); const [dlN,setDlN]=useState(10)
-  const [newEmp,setNewEmp]=useState({full_name:'',mobile:'',password:'',district_id:''})
-  const [cred,setCred]=useState(null); const [empSearch,setEmpSearch]=useState(''); const [empDet,setEmpDet]=useState(null)
-  const [shopSearch,setShopSearch]=useState(''); const [ov,setOv]=useState({}); const [msg,setMsg]=useState('')
-  const [pw,setPw]=useState({current:'',next:''})
-  const load=()=>{ api.get('/admin/revenue').then(setRev).catch(e=>setMsg(e.message))
-    api.get('/admin/analytics').then(setAn).catch(()=>{}); api.get('/admin/shops').then(setShops).catch(()=>{})
-    api.get('/admin/withdrawals/all').then(setWd).catch(()=>api.get('/admin/withdrawals').then(setWd).catch(()=>{}))
-    api.get('/admin/employees').then(setEmps).catch(()=>{}); api.get('/admin/qr/stats').then(setQr).catch(()=>{}); api.get('/admin/overview').then(setOv).catch(()=>{}) }
-  useEffect(load,[])
-  const changePw=async()=>{ if(pw.next.length<6){setMsg('New password min 6 chars');return} try{ await api.post('/admin/change-password',{current_password:pw.current,new_password:pw.next}); setMsg('✅ Password changed. Use it next login.'); setPw({current:'',next:''}) }catch(e){ setMsg('❌ '+e.message) } }
-  if(msg && !rev.active_shops && rev.active_shops!==0) return <><Header/><div className="container"><div className="card">{msg}</div></div></>
-  const genQr=async()=>{ const r=await api.post('/admin/qr/generate',{count:+genN}); setMsg(`${r.generated} QR generated`); load() }
-  const assignQr=async()=>{ try{const r=await api.post('/admin/qr/assign',{emp_code:asg.emp_code,count:+asg.count}); setMsg(`${r.assigned} assigned to ${r.emp_code}`); load()}catch(e){setMsg(e.message)} }
-  const dlPdf=(status)=>downloadFile(`/admin/qr/pdf?status=${status}&limit=60`,`nammaoor_qr_${status}.pdf`)
-  // Download only NEW (not-yet-downloaded) QRs — exact count, old ones never repeat.
-  const dlNew=async()=>{ const n=+dlN||1; try{ await downloadFile(`/admin/qr/pdf?status=unassigned&count=${n}&new_only=true&mark=true`,`nammaoor_qr_new_${n}.pdf`); setMsg(`${n} new QR downloaded`); load() }catch(e){ setMsg('❌ '+(e.message||'No new QR — generate first')) } }
-  const createEmp=async()=>{ try{const r=await api.post('/admin/employees',{...newEmp,district_id:newEmp.district_id?+newEmp.district_id:null}); setCred(r); setMsg(''); load()}catch(e){setMsg(e.message)} }
-  const searchEmp=async()=>{ setEmps(await api.get('/admin/employees'+(empSearch?('?search='+encodeURIComponent(empSearch)):''))) }
-  const openEmp=async(code)=>{ try{ setEmpDet(await api.get(`/admin/employees/${code}/details`)) }catch(e){setMsg(e.message)} }
-  const resetPwd=async(code)=>{ const np=prompt('New password for '+code); if(!np)return; const r=await api.post(`/admin/employees/${code}/password`,{new_password:np}); setMsg(`${code} password set: ${r.new_password}`) }
-  const cleanupTests=async()=>{ if(!confirm('Delete ALL draft & unpaid test shops? (Active shops safe)'))return
-    const r=await api.post('/admin/cleanup-tests'); setMsg(`🧹 ${r.deleted} test shops deleted`); load() }
-  const wipeAll=async()=>{ if(!confirm('⚠️ Delete ALL SHOPS (active-um serthu)? Admin & employees mattum meedhi irukkum.'))return
-    if(!confirm('Confirm again: FRESH START — ella shops & shop-owner logins delete aagum. Numbering NM-000001-la irundhu restart. Sure-ah?'))return
-    const r=await api.post('/admin/wipe-all-shops'); setMsg(`🗑 ${r.deleted_shops} shops wiped. Fresh start ready!`); load() }
-  const delShop=async(code)=>{ if(!confirm('Delete shop '+code+'? QR will be permanently disabled.'))return; await api.del(`/admin/shops/${code}`); setMsg(`${code} deleted, QR disabled`); load() }
-  const wStatus=async(id,st)=>{ if(st==='approve'){await api.post(`/admin/withdrawals/${id}/approve`)} else if(st==='reject'){await api.post(`/admin/withdrawals/${id}/reject`)} else {await api.post(`/admin/withdrawals/${id}/status`,{status:st})} load() }
-  const platWithdraw=async()=>{ const a=prompt('Platform withdrawal amount'); if(!a)return; const u=prompt('Your UPI ID'); await api.post('/admin/platform-withdraw',{amount:+a,upi_id:u||''}); setMsg('Platform withdrawal requested') }
-  const fs=shops.filter(s=>!shopSearch||(s.shop_name||'').toLowerCase().includes(shopSearch.toLowerCase())||(s.shop_code||'').includes(shopSearch))
-  return (<><Header/><div className="container">
-    <h2 className="brand">Super Admin</h2>
-    <div className="card" style={{border:'1px solid #ffd7d7',background:'#fff8f8'}}>
-      <b>🔒 Change Admin Password</b>
-      <div className="grid2" style={{marginTop:8}}>
-        <PwInput value={pw.current} onChange={e=>setPw({...pw,current:e.target.value})} placeholder="Current password"/>
-        <PwInput value={pw.next} onChange={e=>setPw({...pw,next:e.target.value})} placeholder="New password (min 6)"/>
-      </div>
-      <button className="btn" onClick={changePw}>Update Password</button>
-      <p className="muted" style={{fontSize:12,marginTop:6}}>Default password-a udane strong-ah maathunga (security).</p>
-    </div>
-    <div className="row" style={{marginTop:10}}>
-      <div className="kpi"><b>Rs.{rev.total_revenue||0}</b><span>Revenue</span></div>
-      <div className="kpi"><b>{rev.active_shops||0}</b><span>Active Shops</span></div>
-      <div className="kpi"><b>{an.shop_views||0}</b><span>Shop Views</span></div>
-      <div className="kpi"><b>{emps.length}</b><span>Employees</span></div>
-    </div>
-    {ov.districts && ov.districts.length>0 && <div className="card" style={{marginTop:14}}><h3>District-wise Shops</h3>
-      {ov.districts.map((d,i)=><div key={i} className="row" style={{justifyContent:'space-between',padding:'3px 0'}}><span>{d.name}</span><b>{d.shops}</b></div>)}
-      <h4 style={{marginTop:10}}>Recent Registrations</h4>
-      {(ov.recent||[]).map((r,i)=><div key={i} className="muted">{r.shop_code} - {r.shop_name}</div>)}
-    </div>}
-    <div className="card" style={{marginTop:14}}><h3>QR Management</h3>
-      <div className="row">
-        <div className="kpi"><b>{qr.total||0}</b><span>Total</span></div>
-        <div className="kpi"><b>{qr.unassigned||0}</b><span>Unassigned</span></div>
-        <div className="kpi"><b>{qr.assigned||0}</b><span>Assigned</span></div>
-        <div className="kpi"><b>{qr.used||0}</b><span>Used</span></div>
-      </div>
-      <div className="row" style={{marginTop:10}}>
-        <input className="input" style={{flex:1}} type="number" placeholder="Generate count" value={genN} onChange={e=>setGenN(e.target.value)}/>
-        <button className="btn" onClick={genQr}>Generate</button>
-      </div>
-      <div style={{marginTop:10,background:'#f6f2ff',border:'1px solid #e3d9fb',borderRadius:12,padding:10}}>
-        <p className="muted" style={{margin:'0 0 8px',fontSize:13}}>Ethana QR venum-nu podu → pudhusa (download aagatha) QR mattum varum. Pazhaya QR marupadi download aagaadhu.</p>
-        <div className="row">
-          <input className="input" style={{flex:1}} type="number" min="1" placeholder="How many?" value={dlN} onChange={e=>setDlN(e.target.value)}/>
-          <button className="btn" onClick={dlNew}>⬇️ Download New QR</button>
-        </div>
-      </div>
-      <div className="row" style={{marginTop:10}}>
-        <input className="input" style={{flex:2}} placeholder="Employee (EMP-0001)" value={asg.emp_code} onChange={e=>setAsg({...asg,emp_code:e.target.value})}/>
-        <input className="input" style={{flex:1}} type="number" value={asg.count} onChange={e=>setAsg({...asg,count:e.target.value})}/>
-        <button className="btn" onClick={assignQr}>Assign</button>
-      </div>
-    </div>
-
-    <div className="card"><h3>Add Employee</h3>
-      <div className="grid2">
-        <input className="input" placeholder="Full name" onChange={e=>setNewEmp({...newEmp,full_name:e.target.value})}/>
-        <input className="input" placeholder="Mobile" onChange={e=>setNewEmp({...newEmp,mobile:e.target.value})}/>
-        <input className="input" placeholder="Password" onChange={e=>setNewEmp({...newEmp,password:e.target.value})}/>
-        <input className="input" placeholder="District ID (optional)" onChange={e=>setNewEmp({...newEmp,district_id:e.target.value})}/>
-      </div>
-      <button className="btn" onClick={createEmp}>Create Employee</button>
-      {cred && <div style={{marginTop:10,padding:12,background:'#eafaf4',borderRadius:12}}>
-        <b>Employee created - save these:</b>
-        <p>Username: <b>{cred.username||cred.emp_code}</b></p><p>Password: <b>{cred.login_password}</b></p></div>}
-    </div>
-
-    <div className="card"><h3>Withdrawals</h3>
-      <button className="btn sm ghost" onClick={platWithdraw}>Platform Withdraw (my earnings)</button>
-      <table><tr><th>Emp</th><th>Rs.</th><th>UPI</th><th>Status</th><th>Action</th></tr>
-        {wd.map(w=><tr key={w.id}><td>{w.emp_code||(w.employee_id||'').slice(0,8)}</td><td>{w.amount}</td><td className="muted">{w.upi||'-'}</td>
-          <td><span className={'tag '+(['completed','paid'].includes(w.status)?'a':'e')}>{w.status}</span></td>
-          <td>{w.status==='requested'&&<><button className="btn sm" onClick={()=>wStatus(w.id,'approve')}>Approve</button> <button className="btn sm ghost" onClick={()=>wStatus(w.id,'reject')}>Reject</button></>}
-              {w.status==='approved'&&<button className="btn sm" onClick={()=>wStatus(w.id,'processing')}>Processing</button>}
-              {w.status==='processing'&&<button className="btn sm" onClick={()=>wStatus(w.id,'completed')}>Mark Paid</button>}</td></tr>)}
-      </table>{wd.length===0 && <p className="muted">No withdrawals.</p>}</div>
-
-    <div className="card"><h3>Employees</h3>
-      <div className="row" style={{marginBottom:8}}>
-        <input className="input" style={{flex:2}} placeholder="Search by phone / code" value={empSearch} onChange={e=>setEmpSearch(e.target.value)}/>
-        <button className="btn sm" onClick={searchEmp}>Search</button>
-      </div>
-      <table><tr><th>Code</th><th>Name</th><th>Mobile</th><th>Wallet</th><th>Action</th></tr>
-        {emps.map((e,i)=><tr key={i}><td><a style={{color:'var(--purple)',cursor:'pointer',fontWeight:700}} onClick={()=>openEmp(e.emp_code)}>{e.emp_code}</a></td>
-          <td>{e.full_name||'-'}</td><td><a style={{cursor:'pointer'}} onClick={()=>openEmp(e.emp_code)}>{e.mobile}</a></td><td>Rs.{e.wallet}</td>
-          <td><button className="btn sm ghost" onClick={()=>resetPwd(e.emp_code)}>Change Pwd</button></td></tr>)}
-      </table>
-      {empDet && <div style={{marginTop:10,padding:12,background:'#f7f6fc',borderRadius:12}}>
-        <b>{empDet.emp_code} - {empDet.full_name}</b>
-        <p className="muted">Mobile: {empDet.mobile} | Wallet: Rs.{empDet.wallet} | Shops: {empDet.total_shops} | Verified: {empDet.verified?'Yes':'No'}</p>
-        <p className="muted">UPI: {empDet.upi_id||'-'} | Password: {empDet.password_note}</p>
-        <button className="btn sm" onClick={()=>resetPwd(empDet.emp_code)}>Change Password</button>
-        <button className="btn sm ghost" onClick={()=>setEmpDet(null)}>Close</button></div>}
-    </div>
-
-    <div className="card"><div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
-        <h3>Shops</h3>
-        <div className="row" style={{gap:6}}>
-          <button className="btn sm ghost" onClick={cleanupTests}>🧹 Clean drafts/unpaid</button>
-          <button className="btn sm" style={{background:'#c0392b'}} onClick={wipeAll}>🗑 Fresh Start (all shops)</button>
-        </div>
-      </div>
-      <input className="input" placeholder="Search shop" value={shopSearch} onChange={e=>setShopSearch(e.target.value)}/>
-      <table><tr><th>ID</th><th>Name</th><th>Status</th><th>Action</th></tr>
-        {fs.slice(0,80).map((s,i)=><tr key={i}><td>{s.shop_code||'-'}</td><td>{s.shop_name}</td>
-          <td><span className={'tag '+(s.status==='active'?'a':'e')}>{s.status}</span></td>
-          <td>{s.shop_code&&<button className="btn sm ghost" onClick={()=>delShop(s.shop_code)}>Delete + Disable QR</button>}</td></tr>)}
-      </table></div>
-    <p style={{color:'var(--teal)'}}>{msg}</p>
-  </div></>)
-}
-
-
+/* ===== pages/AIListing.jsx ===== */
 
 // client-side image enhance (brightness/contrast) + thumbnail — free, no API
 function enhance(dataUrl, bright, contrast, maxW){
@@ -2058,373 +2290,224 @@ function Field({l,v,on,type}){
 }
 
 
-
-
-function PStars({v}){ const f=Math.round(v||0)
-  return <span className="stars">{[1,2,3,4,5].map(i=><span key={i} className={i<=f?'on':''}>★</span>)}</span> }
-
-function custToken(){ let t=localStorage.getItem('cust_token'); if(!t){ t='c'+Math.random().toString(36).slice(2,12); localStorage.setItem('cust_token',t)} return t }
-function wishGet(){ try{return JSON.parse(localStorage.getItem('wishlist')||'[]')}catch{return[]} }
-function cartGet(){ try{return JSON.parse(localStorage.getItem('cart')||'[]')}catch{return[]} }
-
-function ProductPage(){
-  const id=(location.hash.split('/p/')[1]||'').split('?')[0]
-  const [d,setD]=useState(null); const [img,setImg]=useState(0)
-  const [rv,setRv]=useState({avg:0,count:0,breakdown:{},reviews:[]})
-  const [form,setForm]=useState({name:'',rating:5,text:'',photos:[]})
-  const [order,setOrder]=useState({name:'',mobile:'',qty:1})
-  const [placed,setPlaced]=useState(null)
-  const [wish,setWish]=useState(wishGet().includes(id))
-  const [toast,setToast]=useState('')
-
-  const load=()=>{ api.get('/product/'+id).then(setD).catch(()=>setD({found:false}))
-    api.get('/product/'+id+'/reviews').then(setRv).catch(()=>{}) }
+/* ===== pages/EmployeeDashboard.jsx ===== */
+function EmployeeDashboard(){
+  const [d,setD]=useState(null); const [shops,setShops]=useState([]); const [inv,setInv]=useState({})
+  const [msg,setMsg]=useState(''); const [wh,setWh]=useState([]); const [ver,setVer]=useState({upi_id:'',upi_name:''}); const [amt,setAmt]=useState('')
+  const [genN,setGenN]=useState(10); const [gMsg,setGMsg]=useState('')
+  const load=()=>{ api.get('/me/employee/dashboard').then(setD).catch(e=>setMsg(e.message))
+    api.get('/me/employee/shops').then(setShops).catch(()=>{})
+    api.get('/me/employee/qr-inventory').then(setInv).catch(()=>{})
+    api.get('/me/employee/withdrawals').then(setWh).catch(()=>{}) }
   useEffect(load,[])
-  const flash=(m)=>{ setToast(m); setTimeout(()=>setToast(''),2500) }
-
-  if(!d) return <><Header/><div className="container"><div className="card">Loading…</div></div></>
-  if(!d.found) return <><Header/><div className="container"><div className="card">Product not found or not published.</div></div></>
-
-  const price=d.offer_price||d.price
-  const off=d.offer_price&&d.price? Math.round((1-d.offer_price/d.price)*100):0
-  const imgs=(d.images&&d.images.length?d.images:(d.thumbnail?[d.thumbnail]:[])).filter(Boolean)
-  const mainImg=imgs[img]||PLACEHOLDER
-
-  const addCart=()=>{ const c=cartGet(); if(!c.find(x=>x.id===id)){ c.push({id,title:d.title||d.name,price,thumb:imgs[0]||d.thumbnail,qty:1,shop_code:d.shop_code,shop_name:d.shop_name,shop_upi:d.shop_upi,shop_whatsapp:d.shop_whatsapp}); localStorage.setItem('cart',JSON.stringify(c)) } flash('Added to cart 🛒') }
-  const toggleWish=()=>{ let w=wishGet(); if(w.includes(id)){w=w.filter(x=>x!==id);setWish(false)}else{w.push(id);setWish(true)} localStorage.setItem('wishlist',JSON.stringify(w)); flash(wish?'Removed from wishlist':'Saved to wishlist ❤️') }
-  const share=async()=>{ const url=`${SITE}/#/p/${id}`
-    if(navigator.share){ try{await navigator.share({title:d.title||d.name,url})}catch{} }
-    else { try{await navigator.clipboard.writeText(url); flash('Link copied!')}catch{ flash(url) } } }
-
-  const orderWhatsApp=async()=>{
-    try{
-      const r=await api.post('/order',{product_id:id,qty:+order.qty||1,customer_name:order.name,customer_mobile:order.mobile})
-      const wa=(r.shop_whatsapp||'').replace(/\D/g,''); const wanum=wa.length===10?'91'+wa:wa
-      const txt=`Hi ${r.shop_name||''}! I want to order:\n\n*${d.title||d.name}*\nQty: ${order.qty||1}\nAmount: Rs.${r.amount}\nOrder No: ${r.order_no}\n\n(via NammaOor)`
-      setPlaced({...r})
-      if(wanum) window.open(`https://wa.me/${wanum}?text=${encodeURIComponent(txt)}`,'_blank')
-    }catch(e){ flash(e.message) }
-  }
-
-  const addReviewPhoto=async()=>{ const im=await pickImage(700); if(im&&form.photos.length<4) setForm(f=>({...f,photos:[...f.photos,im]})) }
-  const submitReview=async()=>{
-    if(!form.text&&!form.rating) return
-    await api.post('/product/'+id+'/reviews',{reviewer_token:custToken(),name:form.name||'Customer',rating:form.rating,text:form.text,photos:form.photos})
-    setForm({name:'',rating:5,text:'',photos:[]}); api.get('/product/'+id+'/reviews').then(setRv); flash('Thanks for your review!')
-  }
-
-  return (<><Header/><div className="container product-page">
-    {toast&&<div className="toast">{toast}</div>}
-    <a className="btn ghost sm" href="#/products">← All products</a>
-    <div className="pmain">
-      <div className="pgallery">
-        <img src={mainImg} className="pbig" loading="lazy" onError={onImgErr} alt={d.title||d.name}/>
-        {imgs.length>1&&<div className="pthumbs">{imgs.map((im,i)=><img key={i} src={im} loading="lazy" onError={onImgErr} className={i===img?'on':''} onClick={()=>setImg(i)}/>)}</div>}
-      </div>
-      <div className="pinfo">
-        <div className="row" style={{gap:8,alignItems:'center'}}>
-          {d.brand&&<span className="pill">{d.brand}</span>}
-          <span className="badge-verify">✔ Verified Shop</span>
-          {d.in_stock? <span className="dot published">In stock</span>:<span className="dot hidden">Out of stock</span>}
-        </div>
-        <h1 className="ptitle">{d.title||d.name}</h1>
-        <div className="row" style={{gap:8,alignItems:'center'}}><PStars v={d.rating}/><span className="muted">{d.rating||0} ({d.review_count||0})</span></div>
-        <div className="pprice">₹{price||'—'} {off>0&&<><s className="muted">₹{d.price}</s> <span className="offbadge">{off}% OFF</span></>}</div>
-        {d.short_desc&&<p className="pshort">{d.short_desc}</p>}
-        <p className="muted">Sold by <b>{d.shop_name}</b>{d.shop_town?` · ${d.shop_town}`:''}</p>
-
-        <div className="pbtns">
-          <button className="btn" onClick={addCart}>🛒 Add to Cart</button>
-          <button className="btn ai-cta" onClick={()=>document.getElementById('orderbox').scrollIntoView({behavior:'smooth'})}>⚡ Buy Now</button>
-          <button className="btn ghost" onClick={toggleWish}>{wish?'❤️ Wishlisted':'🤍 Wishlist'}</button>
-          <button className="btn ghost" onClick={share}>🔗 Share</button>
-        </div>
-
-        <div id="orderbox" className="orderbox">
-          <b>Order via WhatsApp</b>
-          <p className="muted" style={{fontSize:13,margin:'4px 0'}}>Free &amp; direct. Message opens ready — you just tap send.</p>
-          <div className="row">
-            <input className="input" placeholder="Your name" value={order.name} onChange={e=>setOrder({...order,name:e.target.value})}/>
-            <input className="input" placeholder="Mobile" value={order.mobile} onChange={e=>setOrder({...order,mobile:e.target.value})}/>
-            <input className="input" style={{maxWidth:80}} type="number" min="1" value={order.qty} onChange={e=>setOrder({...order,qty:e.target.value})}/>
-          </div>
-          <button className="btn wa" onClick={orderWhatsApp}>💬 Order on WhatsApp</button>
-          {placed&&<div className="thankyou">🎉 Thank you! Order <b>{placed.order_no}</b> placed. <a href={'#/order/'+placed.token}>Track order →</a></div>}
-        </div>
-      </div>
+  if(!d) return <><Header/><div className="container"><div className="card">{msg||'Loading…'}<p className="muted">Employee-ஆ login பண்ணியிருக்கணும்.</p></div></div></>
+  const genQr=async()=>{ try{ const r=await api.post('/me/employee/generate-qr',{count:+genN||1})
+      setGMsg(`✅ ${r.generated} QR generate aayiduchu. Innaikku innum ${r.left_today} QR generate pannalaam.`); load() }
+      catch(e){ setGMsg('❌ '+e.message) } }
+  const dlQr=async()=>{ try{ await downloadFile('/me/employee/qr-pdf?new_only=true&mark=true','nammaoor_myqr.pdf'); setGMsg('⬇️ QR PDF download aayiduchu. Print edunga.') }
+      catch(e){ setGMsg('❌ '+(e.message||'No new QR — generate first')) } }
+  const verify=async()=>{ await api.patch('/me/employee/verification',ver); setMsg('✅ Verified'); load() }
+  const withdraw=async()=>{ try{await api.post('/me/employee/withdrawals',{amount:+amt}); setMsg('✅ Requested'); load()}catch(e){setMsg('❌ '+e.message)} }
+  const regUrl=`${SITE}/#/register?emp=${(d.emp_code||'').replace('-','')}`
+  const regHref=`#/register?emp=${(d.emp_code||'').replace('-','')}`
+  return (<><Header/><div className="container">
+    <h2 className="brand">Employee — {d.emp_code}</h2>
+    <a href={regHref}><button className="btn" style={{marginTop:10,fontSize:18,padding:'14px'}}>➕ புது கடை பதிவு / Register New Shop</button></a>
+    <div className="row" style={{marginTop:10}}>
+      <div className="kpi"><b>₹{d.wallet_balance}</b><span>Wallet</span></div>
+      <div className="kpi"><b>{d.total_registrations}</b><span>Total Shops</span></div>
+      <div className="kpi"><b>{d.today_registrations}</b><span>Today</span></div>
+      <div className="kpi"><b>{d.is_verified?'✅':'❌'}</b><span>Verified</span></div>
     </div>
-
-    {(d.highlights&&d.highlights.length>0)&&<div className="card"><h3>Highlights</h3><ul className="hl">{d.highlights.map((h,i)=><li key={i}>{h}</li>)}</ul></div>}
-    {d.full_desc&&<div className="card"><h3>Description</h3><p>{d.full_desc}</p></div>}
-    {(d.features&&d.features.length>0)&&<div className="card"><h3>Features</h3><ul className="hl">{d.features.map((f,i)=><li key={i}>{f}</li>)}</ul></div>}
-    {d.specs&&Object.keys(d.specs).length>0&&<div className="card"><h3>Specifications</h3>
-      <table className="spec">{Object.entries(d.specs).map(([k,v])=><tr key={k}><td className="muted">{k}</td><td>{String(v)}</td></tr>)}</table></div>}
-
-    <div className="card">
-      <h3>Reviews ({rv.count})</h3>
-      <div className="row" style={{gap:20,alignItems:'center',flexWrap:'wrap'}}>
-        <div style={{textAlign:'center'}}><div style={{fontSize:34,fontWeight:800}}>{rv.avg||0}</div><PStars v={rv.avg}/></div>
-        <div style={{flex:1,minWidth:180}}>{[5,4,3,2,1].map(n=>{const c=(rv.breakdown&&rv.breakdown[n])||0;const pct=rv.count?Math.round(c/rv.count*100):0;
-          return <div key={n} className="rbar"><span>{n}★</span><div className="rtrack"><div className="rfill" style={{width:pct+'%'}}/></div><span className="muted">{c}</span></div>})}</div>
+    <div className="card" style={{marginTop:14}}><h3>📦 My QR Stickers (Admin assigned)</h3>
+      <div className="row">
+        <div className="kpi"><b>{inv.assigned||0}</b><span>Total Assigned</span></div>
+        <div className="kpi"><b>{inv.available||0}</b><span>Available</span></div>
+        <div className="kpi"><b>{inv.used||0}</b><span>Used</span></div>
       </div>
-      <div className="revform">
-        <b>Write a review</b>
-        <div className="row" style={{alignItems:'center',gap:8}}>
-          <span className="starpick">{[1,2,3,4,5].map(i=><span key={i} className={i<=form.rating?'on':''} onClick={()=>setForm({...form,rating:i})}>★</span>)}</span>
-          <input className="input" placeholder="Name (optional)" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
-        </div>
-        <textarea className="input" rows="2" placeholder="Share your experience…" value={form.text} onChange={e=>setForm({...form,text:e.target.value})}/>
-        <div className="row" style={{alignItems:'center',gap:8}}>
-          <button className="btn ghost sm" onClick={addReviewPhoto}>📷 Add photo ({form.photos.length}/4)</button>
-          {form.photos.map((p,i)=><img key={i} src={p} className="revthumb"/>)}
-        </div>
-        <button className="btn sm" onClick={submitReview}>Submit review</button>
-      </div>
-      {rv.reviews.map(r=><div key={r.id} className="review">
-        <div className="row" style={{justifyContent:'space-between'}}><b>{r.name}</b><PStars v={r.rating}/></div>
-        {r.text&&<p style={{margin:'4px 0'}}>{r.text}</p>}
-        {r.photos&&r.photos.length>0&&<div className="row" style={{gap:6}}>{r.photos.map((p,i)=><img key={i} src={p} loading="lazy" className="revthumb"/>)}</div>}
-      </div>)}
-      {rv.reviews.length===0&&<p className="muted">No reviews yet. Be the first!</p>}
+      {inv.tokens && inv.tokens.length>0 && <p className="muted" style={{marginTop:8}}>Next codes: {inv.tokens.slice(0,8).join(', ')}…</p>}
     </div>
-
-    {d.related&&d.related.length>0&&<div className="card"><h3>Similar products</h3>
-      <div className="pgrid">{d.related.map(r=><a key={r.id} href={'#/p/'+r.id} className="pcard">
-        <div className="pcimg-wrap"><img src={r.thumbnail||PLACEHOLDER} loading="lazy" onError={onImgErr} className="pcimg"/></div>
-        <div className="pcbody"><b className="pctitle">{r.title||r.name}</b>
-          <span className="pcprice">₹{r.offer_price||r.price||'—'}</span>
-          <span className="pc-shop">🏪 {r.shop_name}</span></div></a>)}</div></div>}
+    <div className="card" style={{marginTop:14}}><h3>🖨️ Generate QR (Self)</h3>
+      <div className="row" style={{alignItems:'flex-end',gap:8,flexWrap:'wrap'}}>
+        <div><label>Ethana QR?</label>
+          <input className="input" type="number" min="1" max={inv.left_today??100} value={genN}
+            onChange={e=>setGenN(e.target.value)} style={{width:110}}/></div>
+        <button className="btn" onClick={genQr} disabled={(inv.left_today??100)<=0}>⚡ Generate QR</button>
+        <button className="btn ghost" onClick={dlQr}>⬇️ Download &amp; Print</button>
+      </div>
+      <p className="muted" style={{marginTop:6}}>Today: {inv.made_today||0}/100 generated · {inv.left_today??100} left</p>
+      <p style={{marginTop:8,fontSize:13,fontWeight:600,color:'#6c5ce7'}}>Per day 100 QR only. Take print out and paste to your shop.</p>
+      {gMsg && <p style={{color:'var(--teal)',marginTop:6}}>{gMsg}</p>}
+    </div>
+    <div className="grid2">
+      <div className="card"><h3>📱 My Registration QR</h3>
+        <div className="qrbox" style={{margin:'10px auto'}}><img src={qrImg(regUrl)}/></div>
+        <p className="muted" style={{textAlign:'center'}}>{regUrl}</p></div>
+      <div className="card"><h3>💸 Withdrawal (min ₹500)</h3>
+        {!d.is_verified && <><input className="input" placeholder="UPI ID" onChange={e=>setVer({...ver,upi_id:e.target.value})}/>
+          <input className="input" placeholder="UPI Name" onChange={e=>setVer({...ver,upi_name:e.target.value})}/>
+          <button className="btn sm" onClick={verify}>Verify UPI</button></>}
+        {d.is_verified && <><input className="input" placeholder="Amount" value={amt} onChange={e=>setAmt(e.target.value)}/>
+          <button className="btn" onClick={withdraw}>Request Withdrawal</button></>}
+        <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p></div>
+    </div>
+    <div className="card"><h3>My Withdrawals</h3>
+      <table><tr><th>Requested</th><th>Amount</th><th>Status</th><th>Paid On</th></tr>
+        {wh.map((w,i)=><tr key={i}><td>{w.created_at?new Date(w.created_at).toLocaleDateString():'-'}</td><td>Rs.{w.amount}</td>
+          <td><span className={'tag '+(['completed','paid'].includes(w.status)?'a':'e')}>{w.status}</span></td>
+          <td>{w.paid_at?new Date(w.paid_at).toLocaleDateString():'-'}</td></tr>)}
+      </table>{wh.length===0 && <p className="muted">No withdrawals yet.</p>}
+    </div>
+    <div className="card"><h3>🏪 My Shops</h3>
+      <table><tr><th>ID</th><th>Shop</th><th>Status</th></tr>
+        {shops.map((s,i)=><tr key={i}><td>{s.shop_code||'draft'}</td><td>{s.shop_name}</td><td><span className={'tag '+(s.status==='active'?'a':'e')}>{s.status}</span></td></tr>)}
+      </table>{shops.length===0 && <p className="muted">இன்னும் shops இல்ல.</p>}</div>
   </div></>)
 }
 
 
-
-const PCATS=['All','Clothing','Footwear','Grocery','Electronics','Jewellery','Home & Kitchen',
-  'Beauty & Care','Food & Bakery','Mobile & Accessories']
-
-
-function CStars({v}){const f=Math.round(v||0);return <span className="stars sm">{[1,2,3,4,5].map(i=><span key={i} className={i<=f?'on':''}>★</span>)}</span>}
-
-function Card({r}){
-  const price=r.offer_price||r.price
-  const off=r.offer_price&&r.price?Math.round((1-r.offer_price/r.price)*100):0
-  return (
-    <a href={'#/p/'+r.id} className="pcard">
-      <div className="pcimg-wrap">
-        <img className="pcimg" loading="lazy" src={r.thumbnail||PLACEHOLDER} onError={onImgErr} alt={r.title||r.name}/>
-        {off>0 && <span className="off-tag">{off}% OFF</span>}
-        {r.in_stock===false && <span className="oos-tag">Out of stock</span>}
-      </div>
-      <div className="pcbody">
-        {r.brand && <span className="pc-brand">{r.brand}</span>}
-        <b className="pctitle">{r.title||r.name}</b>
-        {(r.rating>0) && <span className="pc-rate"><CStars v={r.rating}/><span className="muted">({r.review_count||0})</span></span>}
-        <span className="pcprice">₹{price||'—'}{off>0 && <s className="muted">₹{r.price}</s>}</span>
-        {r.short_desc && <span className="pc-desc">{r.short_desc}</span>}
-        <span className="pc-shop">🏪 {r.shop_name}{r.town?` · ${r.town}`:''}</span>
-      </div>
-    </a>
-  )
-}
-
-function Products(){
-  const [q,setQ]=useState(''); const [cat,setCat]=useState('All')
-  const [rows,setRows]=useState([]); const [busy,setBusy]=useState(true)
-  const load=()=>{ setBusy(true)
-    const p=new URLSearchParams(); if(q)p.set('q',q); if(cat&&cat!=='All')p.set('category',cat)
-    api.get('/products/search'+(p.toString()?'?'+p:'')).then(r=>{setRows(r);setBusy(false)}).catch(()=>setBusy(false)) }
+/* ===== pages/AdminDashboard.jsx ===== */
+function AdminDashboard(){
+  const [rev,setRev]=useState({}); const [an,setAn]=useState({}); const [shops,setShops]=useState([])
+  const [wd,setWd]=useState([]); const [emps,setEmps]=useState([]); const [qr,setQr]=useState({})
+  const [genN,setGenN]=useState(50); const [asg,setAsg]=useState({emp_code:'',count:10}); const [dlN,setDlN]=useState(10)
+  const [newEmp,setNewEmp]=useState({full_name:'',mobile:'',password:'',district_id:''})
+  const [cred,setCred]=useState(null); const [empSearch,setEmpSearch]=useState(''); const [empDet,setEmpDet]=useState(null)
+  const [shopSearch,setShopSearch]=useState(''); const [ov,setOv]=useState({}); const [msg,setMsg]=useState('')
+  const [pw,setPw]=useState({current:'',next:''})
+  const load=()=>{ api.get('/admin/revenue').then(setRev).catch(e=>setMsg(e.message))
+    api.get('/admin/analytics').then(setAn).catch(()=>{}); api.get('/admin/shops').then(setShops).catch(()=>{})
+    api.get('/admin/withdrawals/all').then(setWd).catch(()=>api.get('/admin/withdrawals').then(setWd).catch(()=>{}))
+    api.get('/admin/employees').then(setEmps).catch(()=>{}); api.get('/admin/qr/stats').then(setQr).catch(()=>{}); api.get('/admin/overview').then(setOv).catch(()=>{}) }
   useEffect(load,[])
+  const changePw=async()=>{ if(pw.next.length<6){setMsg('New password min 6 chars');return} try{ await api.post('/admin/change-password',{current_password:pw.current,new_password:pw.next}); setMsg('✅ Password changed. Use it next login.'); setPw({current:'',next:''}) }catch(e){ setMsg('❌ '+e.message) } }
+  if(msg && !rev.active_shops && rev.active_shops!==0) return <><Header/><div className="container"><div className="card">{msg}</div></div></>
+  const genQr=async()=>{ const r=await api.post('/admin/qr/generate',{count:+genN}); setMsg(`${r.generated} QR generated`); load() }
+  const assignQr=async()=>{ try{const r=await api.post('/admin/qr/assign',{emp_code:asg.emp_code,count:+asg.count}); setMsg(`${r.assigned} assigned to ${r.emp_code}`); load()}catch(e){setMsg(e.message)} }
+  const dlPdf=(status)=>downloadFile(`/admin/qr/pdf?status=${status}&limit=60`,`nammaoor_qr_${status}.pdf`)
+  // Download only NEW (not-yet-downloaded) QRs — exact count, old ones never repeat.
+  const dlNew=async()=>{ const n=+dlN||1; try{ await downloadFile(`/admin/qr/pdf?status=unassigned&count=${n}&new_only=true&mark=true`,`nammaoor_qr_new_${n}.pdf`); setMsg(`${n} new QR downloaded`); load() }catch(e){ setMsg('❌ '+(e.message||'No new QR — generate first')) } }
+  const createEmp=async()=>{ try{const r=await api.post('/admin/employees',{...newEmp,district_id:newEmp.district_id?+newEmp.district_id:null}); setCred(r); setMsg(''); load()}catch(e){setMsg(e.message)} }
+  const searchEmp=async()=>{ setEmps(await api.get('/admin/employees'+(empSearch?('?search='+encodeURIComponent(empSearch)):''))) }
+  const openEmp=async(code)=>{ try{ setEmpDet(await api.get(`/admin/employees/${code}/details`)) }catch(e){setMsg(e.message)} }
+  const resetPwd=async(code)=>{ const np=prompt('New password for '+code); if(!np)return; const r=await api.post(`/admin/employees/${code}/password`,{new_password:np}); setMsg(`${code} password set: ${r.new_password}`) }
+  const cleanupTests=async()=>{ if(!confirm('Delete ALL draft & unpaid test shops? (Active shops safe)'))return
+    const r=await api.post('/admin/cleanup-tests'); setMsg(`🧹 ${r.deleted} test shops deleted`); load() }
+  const wipeAll=async()=>{ if(!confirm('⚠️ Delete ALL SHOPS (active-um serthu)? Admin & employees mattum meedhi irukkum.'))return
+    if(!confirm('Confirm again: FRESH START — ella shops & shop-owner logins delete aagum. Numbering NM-000001-la irundhu restart. Sure-ah?'))return
+    const r=await api.post('/admin/wipe-all-shops'); setMsg(`🗑 ${r.deleted_shops} shops wiped. Fresh start ready!`); load() }
+  const delShop=async(code)=>{ if(!confirm('Delete shop '+code+'? QR will be permanently disabled.'))return; await api.del(`/admin/shops/${code}`); setMsg(`${code} deleted, QR disabled`); load() }
+  const wStatus=async(id,st)=>{ if(st==='approve'){await api.post(`/admin/withdrawals/${id}/approve`)} else if(st==='reject'){await api.post(`/admin/withdrawals/${id}/reject`)} else {await api.post(`/admin/withdrawals/${id}/status`,{status:st})} load() }
+  const platWithdraw=async()=>{ const a=prompt('Platform withdrawal amount'); if(!a)return; const u=prompt('Your UPI ID'); await api.post('/admin/platform-withdraw',{amount:+a,upi_id:u||''}); setMsg('Platform withdrawal requested') }
+  const fs=shops.filter(s=>!shopSearch||(s.shop_name||'').toLowerCase().includes(shopSearch.toLowerCase())||(s.shop_code||'').includes(shopSearch))
   return (<><Header/><div className="container">
-    <h2 className="brand">Shop Products</h2>
-    <div className="row psearchbar" style={{gap:8}}>
-      <input className="input" style={{flex:2}} placeholder="Search products, brands..." value={q}
-        onChange={e=>setQ(e.target.value)} onKeyDown={e=>e.key==='Enter'&&load()}/>
-      <select className="input" value={cat} onChange={e=>{setCat(e.target.value)}}>{PCATS.map(c=><option key={c}>{c}</option>)}</select>
-      <button className="btn" onClick={load}>Search</button>
+    <h2 className="brand">Super Admin</h2>
+    <div className="card" style={{border:'1px solid #ffd7d7',background:'#fff8f8'}}>
+      <b>🔒 Change Admin Password</b>
+      <div className="grid2" style={{marginTop:8}}>
+        <PwInput value={pw.current} onChange={e=>setPw({...pw,current:e.target.value})} placeholder="Current password"/>
+        <PwInput value={pw.next} onChange={e=>setPw({...pw,next:e.target.value})} placeholder="New password (min 6)"/>
+      </div>
+      <button className="btn" onClick={changePw}>Update Password</button>
+      <p className="muted" style={{fontSize:12,marginTop:6}}>Default password-a udane strong-ah maathunga (security).</p>
     </div>
-    {busy
-      ? <div className="pgrid">{[1,2,3,4,5,6,7,8].map(i=><div key={i} className="pcard"><div className="pcimg-wrap sk"/><div className="pcbody"><div className="skln"/><div className="skln sm"/><div className="skln sm"/></div></div>)}</div>
-      : rows.length===0
-        ? <div className="empty"><div style={{fontSize:44}}>🛍️</div><p className="muted">No products found. Try another search.</p></div>
-        : <div className="pgrid">{rows.map(r=><Card key={r.id} r={r}/>)}</div>}
+    <div className="row" style={{marginTop:10}}>
+      <div className="kpi"><b>Rs.{rev.total_revenue||0}</b><span>Revenue</span></div>
+      <div className="kpi"><b>{rev.active_shops||0}</b><span>Active Shops</span></div>
+      <div className="kpi"><b>{an.shop_views||0}</b><span>Shop Views</span></div>
+      <div className="kpi"><b>{emps.length}</b><span>Employees</span></div>
+    </div>
+    {ov.districts && ov.districts.length>0 && <div className="card" style={{marginTop:14}}><h3>District-wise Shops</h3>
+      {ov.districts.map((d,i)=><div key={i} className="row" style={{justifyContent:'space-between',padding:'3px 0'}}><span>{d.name}</span><b>{d.shops}</b></div>)}
+      <h4 style={{marginTop:10}}>Recent Registrations</h4>
+      {(ov.recent||[]).map((r,i)=><div key={i} className="muted">{r.shop_code} - {r.shop_name}</div>)}
+    </div>}
+    <div className="card" style={{marginTop:14}}><h3>QR Management</h3>
+      <div className="row">
+        <div className="kpi"><b>{qr.total||0}</b><span>Total</span></div>
+        <div className="kpi"><b>{qr.unassigned||0}</b><span>Unassigned</span></div>
+        <div className="kpi"><b>{qr.assigned||0}</b><span>Assigned</span></div>
+        <div className="kpi"><b>{qr.used||0}</b><span>Used</span></div>
+      </div>
+      <div className="row" style={{marginTop:10}}>
+        <input className="input" style={{flex:1}} type="number" placeholder="Generate count" value={genN} onChange={e=>setGenN(e.target.value)}/>
+        <button className="btn" onClick={genQr}>Generate</button>
+      </div>
+      <div style={{marginTop:10,background:'#f6f2ff',border:'1px solid #e3d9fb',borderRadius:12,padding:10}}>
+        <p className="muted" style={{margin:'0 0 8px',fontSize:13}}>Ethana QR venum-nu podu → pudhusa (download aagatha) QR mattum varum. Pazhaya QR marupadi download aagaadhu.</p>
+        <div className="row">
+          <input className="input" style={{flex:1}} type="number" min="1" placeholder="How many?" value={dlN} onChange={e=>setDlN(e.target.value)}/>
+          <button className="btn" onClick={dlNew}>⬇️ Download New QR</button>
+        </div>
+      </div>
+      <div className="row" style={{marginTop:10}}>
+        <input className="input" style={{flex:2}} placeholder="Employee (EMP-0001)" value={asg.emp_code} onChange={e=>setAsg({...asg,emp_code:e.target.value})}/>
+        <input className="input" style={{flex:1}} type="number" value={asg.count} onChange={e=>setAsg({...asg,count:e.target.value})}/>
+        <button className="btn" onClick={assignQr}>Assign</button>
+      </div>
+    </div>
+
+    <div className="card"><h3>Add Employee</h3>
+      <div className="grid2">
+        <input className="input" placeholder="Full name" onChange={e=>setNewEmp({...newEmp,full_name:e.target.value})}/>
+        <input className="input" placeholder="Mobile" onChange={e=>setNewEmp({...newEmp,mobile:e.target.value})}/>
+        <input className="input" placeholder="Password" onChange={e=>setNewEmp({...newEmp,password:e.target.value})}/>
+        <input className="input" placeholder="District ID (optional)" onChange={e=>setNewEmp({...newEmp,district_id:e.target.value})}/>
+      </div>
+      <button className="btn" onClick={createEmp}>Create Employee</button>
+      {cred && <div style={{marginTop:10,padding:12,background:'#eafaf4',borderRadius:12}}>
+        <b>Employee created - save these:</b>
+        <p>Username: <b>{cred.username||cred.emp_code}</b></p><p>Password: <b>{cred.login_password}</b></p></div>}
+    </div>
+
+    <div className="card"><h3>Withdrawals</h3>
+      <button className="btn sm ghost" onClick={platWithdraw}>Platform Withdraw (my earnings)</button>
+      <table><tr><th>Emp</th><th>Rs.</th><th>UPI</th><th>Status</th><th>Action</th></tr>
+        {wd.map(w=><tr key={w.id}><td>{w.emp_code||(w.employee_id||'').slice(0,8)}</td><td>{w.amount}</td><td className="muted">{w.upi||'-'}</td>
+          <td><span className={'tag '+(['completed','paid'].includes(w.status)?'a':'e')}>{w.status}</span></td>
+          <td>{w.status==='requested'&&<><button className="btn sm" onClick={()=>wStatus(w.id,'approve')}>Approve</button> <button className="btn sm ghost" onClick={()=>wStatus(w.id,'reject')}>Reject</button></>}
+              {w.status==='approved'&&<button className="btn sm" onClick={()=>wStatus(w.id,'processing')}>Processing</button>}
+              {w.status==='processing'&&<button className="btn sm" onClick={()=>wStatus(w.id,'completed')}>Mark Paid</button>}</td></tr>)}
+      </table>{wd.length===0 && <p className="muted">No withdrawals.</p>}</div>
+
+    <div className="card"><h3>Employees</h3>
+      <div className="row" style={{marginBottom:8}}>
+        <input className="input" style={{flex:2}} placeholder="Search by phone / code" value={empSearch} onChange={e=>setEmpSearch(e.target.value)}/>
+        <button className="btn sm" onClick={searchEmp}>Search</button>
+      </div>
+      <table><tr><th>Code</th><th>Name</th><th>Mobile</th><th>Wallet</th><th>Action</th></tr>
+        {emps.map((e,i)=><tr key={i}><td><a style={{color:'var(--purple)',cursor:'pointer',fontWeight:700}} onClick={()=>openEmp(e.emp_code)}>{e.emp_code}</a></td>
+          <td>{e.full_name||'-'}</td><td><a style={{cursor:'pointer'}} onClick={()=>openEmp(e.emp_code)}>{e.mobile}</a></td><td>Rs.{e.wallet}</td>
+          <td><button className="btn sm ghost" onClick={()=>resetPwd(e.emp_code)}>Change Pwd</button></td></tr>)}
+      </table>
+      {empDet && <div style={{marginTop:10,padding:12,background:'#f7f6fc',borderRadius:12}}>
+        <b>{empDet.emp_code} - {empDet.full_name}</b>
+        <p className="muted">Mobile: {empDet.mobile} | Wallet: Rs.{empDet.wallet} | Shops: {empDet.total_shops} | Verified: {empDet.verified?'Yes':'No'}</p>
+        <p className="muted">UPI: {empDet.upi_id||'-'} | Password: {empDet.password_note}</p>
+        <button className="btn sm" onClick={()=>resetPwd(empDet.emp_code)}>Change Password</button>
+        <button className="btn sm ghost" onClick={()=>setEmpDet(null)}>Close</button></div>}
+    </div>
+
+    <div className="card"><div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
+        <h3>Shops</h3>
+        <div className="row" style={{gap:6}}>
+          <button className="btn sm ghost" onClick={cleanupTests}>🧹 Clean drafts/unpaid</button>
+          <button className="btn sm" style={{background:'#c0392b'}} onClick={wipeAll}>🗑 Fresh Start (all shops)</button>
+        </div>
+      </div>
+      <input className="input" placeholder="Search shop" value={shopSearch} onChange={e=>setShopSearch(e.target.value)}/>
+      <table><tr><th>ID</th><th>Name</th><th>Status</th><th>Action</th></tr>
+        {fs.slice(0,80).map((s,i)=><tr key={i}><td>{s.shop_code||'-'}</td><td>{s.shop_name}</td>
+          <td><span className={'tag '+(s.status==='active'?'a':'e')}>{s.status}</span></td>
+          <td>{s.shop_code&&<button className="btn sm ghost" onClick={()=>delShop(s.shop_code)}>Delete + Disable QR</button>}</td></tr>)}
+      </table></div>
+    <p style={{color:'var(--teal)'}}>{msg}</p>
   </div></>)
 }
 
 
-
-const LABEL={received:'Order Received',payment_received:'Payment Received',preparing:'Preparing',
-  packed:'Packed',shipped:'Shipped',delivered:'Delivered'}
-
-function OrderTrack(){
-  const token=(location.hash.split('/order/')[1]||'').split('?')[0]
-  const [o,setO]=useState(null)
-  useEffect(()=>{ api.get('/order/'+token).then(setO).catch(()=>setO({found:false})) },[])
-  if(!o) return <><Header/><div className="container"><div className="card">Loading…</div></div></>
-  if(!o.found) return <><Header/><div className="container"><div className="card">Order not found.</div></div></>
-  const flow=o.flow||['received','payment_received','preparing','packed','shipped','delivered']
-  const idx=flow.indexOf(o.status)
-  return (<><Header/><div className="container">
-    <h2 className="brand">Order {o.order_no}</h2>
-    <div className="card">
-      <p><b>{o.product_name}</b> × {o.qty} · Rs.{o.amount}</p>
-      <p className="muted">Shop: {o.shop_name}</p>
-      {o.status==='cancelled'? <div className="dot hidden" style={{fontSize:16}}>Cancelled</div>
-      : <div className="track">{flow.map((s,i)=><div key={s} className={'tstep'+(i<=idx?' done':'')}>
-          <div className="tdot">{i<=idx?'✓':i+1}</div><span>{LABEL[s]||s}</span></div>)}</div>}
-    </div>
-  </div></>)
-}
-
-
-
-const CK_SHOW_PAY = false;  // payment QR — later enable pannalam
-function ckGet(){ try{return JSON.parse(localStorage.getItem('cart')||'[]')}catch{return[]} }
-function ckSet(c){ localStorage.setItem('cart', JSON.stringify(c)) }
-function ckVpa(v){ return /^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test((v||'').trim()) }
-function ckUpi(vpa,name,amt){
-  const p=new URLSearchParams(); p.set('pn',(name||'Shop').trim()); p.set('cu','INR')
-  if(amt&&+amt>0) p.set('am', String(Math.round(+amt)))
-  p.set('tn','NammaOor order')
-  return `upi://pay?pa=${(vpa||'').trim()}&`+p.toString().replace(/\+/g,'%20')
-}
-
-function Cart(){
-  const [items,setItems]=useState(ckGet())
-  const [toast,setToast]=useState('')
-  const flash=m=>{setToast(m);setTimeout(()=>setToast(''),2000)}
-  const save=c=>{ setItems(c); ckSet(c) }
-  const setQty=(id,q)=>save(items.map(x=>x.id===id?{...x,qty:Math.max(1,q)}:x))
-  const remove=id=>save(items.filter(x=>x.id!==id))
-  const clear=()=>save([])
-
-  // group by shop
-  const shops={}
-  items.forEach(it=>{ const k=it.shop_code||'_'; (shops[k]=shops[k]||{info:it,list:[]}).list.push(it) })
-
-  if(items.length===0) return (<><Header/><div className="container" style={{maxWidth:520}}>
-    <h2 className="brand">🛒 Cart</h2>
-    <div className="card" style={{textAlign:'center'}}>
-      <p className="muted">Cart காலியா இருக்கு.</p>
-      <a href="#/products"><button className="btn" style={{marginTop:8}}>Products பாக்க</button></a>
-    </div></div></>)
-
-  return (<><Header/><div className="container" style={{maxWidth:560}}>
-    {toast&&<div className="toast">{toast}</div>}
-    <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
-      <h2 className="brand">🛒 Cart</h2>
-      <button className="btn ghost sm" onClick={clear}>Clear</button>
-    </div>
-
-    {Object.values(shops).map((g,gi)=>{
-      const total=g.list.reduce((s,x)=>s+(+x.price||0)*(x.qty||1),0)
-      const upi=g.info.shop_upi; const wa=(g.info.shop_whatsapp||'').replace(/\D/g,'')
-      const wanum=wa.length===10?'91'+wa:wa
-      const waText=`Hi ${g.info.shop_name||''}! Order via NammaOor:\n`+
-        g.list.map(x=>`• ${x.title} x${x.qty||1} = Rs.${(+x.price||0)*(x.qty||1)}`).join('\n')+
-        `\n\nTotal: Rs.${total}`
-      return (<div key={gi} className="card">
-        <b>{g.info.shop_name||'Shop'}</b>
-        {g.list.map(it=><div key={it.id} className="row" style={{alignItems:'center',gap:10,borderBottom:'1px solid var(--line)',padding:'8px 0'}}>
-          <img src={it.thumb||PLACEHOLDER} onError={onImgErr} style={{width:48,height:48,borderRadius:8,objectFit:'cover'}}/>
-          <div style={{flex:1}}><div style={{fontWeight:600,fontSize:14}}>{it.title}</div>
-            <div className="muted" style={{fontSize:13}}>Rs.{it.price}</div></div>
-          <div className="row" style={{gap:4,alignItems:'center'}}>
-            <button className="btn ghost sm" onClick={()=>setQty(it.id,(it.qty||1)-1)}>−</button>
-            <span style={{minWidth:20,textAlign:'center'}}>{it.qty||1}</span>
-            <button className="btn ghost sm" onClick={()=>setQty(it.id,(it.qty||1)+1)}>+</button>
-          </div>
-          <button className="btn ghost sm" onClick={()=>remove(it.id)}>✕</button>
-        </div>)}
-        <div className="row" style={{justifyContent:'space-between',marginTop:10}}>
-          <b>Total</b><b style={{color:'var(--teal)'}}>Rs.{total}</b></div>
-
-        {CK_SHOW_PAY && ckVpa(upi) && <div style={{marginTop:12,textAlign:'center',background:'#fff',border:'1px solid var(--line)',borderRadius:14,padding:14}}>
-          <img src={qrImg(ckUpi(upi,g.info.shop_name,total))} alt="Pay QR" style={{width:190,height:190,maxWidth:'100%'}}/>
-          <p style={{fontWeight:800,color:'var(--teal)',margin:'8px 0 0'}}>Scan to Pay Rs.{total}</p>
-        </div>}
-
-        {wanum && <a href={`https://wa.me/${wanum}?text=${encodeURIComponent(waText)}`} target="_blank">
-          <button className="btn wa" style={{width:'100%',marginTop:10}}>💬 Order on WhatsApp</button></a>}
-      </div>)
-    })}
-    <p className="muted" style={{textAlign:'center',fontSize:12}}>
-      Order WhatsApp-la pogum — kadaila neradiya pay pannalam.</p>
-  </div></>)
-}
-
-
-function Terms(){
-  return (<><Header/><div className="container" style={{maxWidth:760}}>
-    <h2 className="brand">Terms of Service</h2>
-    <div className="card" style={{lineHeight:1.7}}>
-      <p className="muted">Last updated: July 2026 · Operated by AppCore</p>
-
-      <h3>1. About NammaOor</h3>
-      <p>NammaOor is a hyperlocal marketplace and shop-directory platform operated by AppCore ("we", "us"). We connect customers with verified local shops and sellers ("Sellers"). NammaOor is a technology platform; the goods and services are provided directly by the Sellers.</p>
-
-      <h3>2. Accounts</h3>
-      <p>Shop owners register using a mobile number and OTP. Employees and administrators use assigned credentials. You are responsible for keeping your login secure and for the accuracy of information you provide.</p>
-
-      <h3>3. Seller responsibilities</h3>
-      <p>Sellers are solely responsible for their product listings, prices, stock, order fulfilment, quality, and any applicable taxes. Sellers must provide accurate business, identity and bank details for verification and payouts.</p>
-
-      <h3>4. Orders & payments</h3>
-      <p>Customers may contact Sellers and pay directly via UPI, or (where enabled) through our payment partner. Payments made via UPI go directly to the Seller's account. AppCore is not a party to the sale contract between customer and Seller.</p>
-
-      <h3>5. Fees</h3>
-      <p>Registration or subscription fees, if any, are shown at the time of purchase. Payment-gateway charges may apply on gateway transactions.</p>
-
-      <h3>6. Prohibited use</h3>
-      <p>You may not use NammaOor for unlawful, fraudulent, or harmful activity, or to list prohibited goods/services. We may suspend or remove any listing or account that violates these terms.</p>
-
-      <h3>7. Limitation of liability</h3>
-      <p>NammaOor is provided "as is". To the extent permitted by law, AppCore is not liable for disputes, losses, or damages arising from transactions between customers and Sellers. Disputes about goods/services should be resolved directly with the Seller.</p>
-
-      <h3>8. Changes</h3>
-      <p>We may update these terms from time to time. Continued use of NammaOor means you accept the updated terms.</p>
-
-      <h3>9. Contact</h3>
-      <p>AppCore · Email: rajesh.ai.python@gmail.com · Phone: +91 9791923458</p>
-    </div>
-    <p className="muted" style={{textAlign:'center'}}><a href="#/privacy">Privacy Policy</a> · <a href="#/">Home</a></p>
-  </div></>)
-}
-
-
-function Privacy(){
-  return (<><Header/><div className="container" style={{maxWidth:760}}>
-    <h2 className="brand">Privacy Policy</h2>
-    <div className="card" style={{lineHeight:1.7}}>
-      <p className="muted">Last updated: July 2026 · Operated by AppCore</p>
-
-      <h3>1. Information we collect</h3>
-      <p>We collect information you provide: shop and owner details, mobile number, address, product listings and images, and (for payouts) bank and PAN details of Sellers. Customers may provide name and mobile when placing an order or review. We also collect basic usage events (shop views, calls, clicks) to improve the service.</p>
-
-      <h3>2. How we use it</h3>
-      <p>To operate the directory and marketplace, verify Sellers, enable orders and payouts, send OTP and order notifications by SMS, show analytics to shop owners, and improve NammaOor.</p>
-
-      <h3>3. Sharing</h3>
-      <p>We share information only as needed to run the service — for example, with our SMS provider (to send OTP/alerts) and our payment partner (to process payments and settlements). We do not sell your personal data.</p>
-
-      <h3>4. Payment & bank data</h3>
-      <p>Bank and PAN details provided for payouts are used only for verification and settlement through our payment partner. Card/UPI payment details are handled by the payment gateway and are not stored by us.</p>
-
-      <h3>5. Data retention</h3>
-      <p>We keep information for as long as your account is active or as required for legal, audit, and accounting purposes.</p>
-
-      <h3>6. Your choices</h3>
-      <p>You may request correction or deletion of your data by contacting us. Some data may be retained where required by law.</p>
-
-      <h3>7. Security</h3>
-      <p>We use reasonable technical measures to protect your data. No method of transmission is 100% secure, but we work to keep your information safe.</p>
-
-      <h3>8. Contact</h3>
-      <p>AppCore · Email: rajesh.ai.python@gmail.com · Phone: +91 9791923458</p>
-    </div>
-    <p className="muted" style={{textAlign:'center'}}><a href="#/terms">Terms of Service</a> · <a href="#/">Home</a></p>
-  </div></>)
-}
-
+/* ===== pages/Dashboard.jsx ===== */
+function Dashboard(){ return null }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <Router>
