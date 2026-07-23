@@ -1,0 +1,2151 @@
+<!doctype html><html lang="ta"><head><!-- build:geo-20260723054852 --><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>நம்மூர் · NammaOor</title>
+<meta name="description" content="Tamil Nadu local shops directory — scan QR, view products & offers, call or WhatsApp your local shop.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="நம்மூர் NammaOor — Local Shops Directory">
+<meta property="og:description" content="Scan QR → products, offers, call, WhatsApp. Tamil Nadu ulloor kadaigal ellam oru idathula!">
+<meta property="og:image" content="https://nammaoor.shop/logo.png">
+<meta property="og:url" content="https://nammaoor.shop/">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#FF2E7E">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Thambi+2:wght@400..800&family=Poppins:wght@400;600;700;800&family=Mukta+Malar:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+<style>:root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
+  --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif}
+body{background:var(--bg);color:var(--ink)}
+a{text-decoration:none;color:inherit}
+.brand{font-family:'Baloo Thambi 2';font-weight:800;
+  background:linear-gradient(135deg,var(--saffron),var(--magenta),var(--purple));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.btn{background:linear-gradient(135deg,var(--saffron),var(--magenta),var(--purple));
+  color:#fff;border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;font-size:14px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:#fff;color:var(--purple);border:1px solid var(--line)}
+.btn.sm{padding:7px 12px;font-size:12px;border-radius:9px}
+.btn.tl{background:var(--teal)}
+.card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 8px 22px rgba(30,20,70,.07);
+  border:1px solid var(--line);margin-bottom:14px}
+.input,select,textarea{width:100%;padding:11px 13px;border:1px solid var(--line);
+  border-radius:10px;margin:6px 0;font-size:14px;background:#fff}
+.container{max-width:940px;margin:0 auto;padding:18px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;
+  background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.header img{height:38px}
+.nav a{margin-left:16px;font-weight:600;font-size:14px;color:var(--muted)}
+.kpi{flex:1;min-width:130px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px}
+.kpi b{font-size:24px;display:block}.kpi span{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;background:#eafaf4;color:var(--teal);padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.pill.red{background:#fdeaea;color:#c0392b}
+.hero{background:linear-gradient(135deg,#fff,#f1ecff);border-radius:22px;padding:34px;text-align:center;margin-bottom:18px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:9px;border-bottom:1px solid var(--line);text-align:left}
+.tag{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:700}
+.tag.a{background:#eafaf4;color:#008C78}.tag.e{background:#fdeaea;color:#c0392b}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tabx{flex:1;text-align:center;padding:10px;border:1px solid var(--line);border-radius:10px;
+  background:#fff;cursor:pointer;font-weight:600;font-size:13px}
+.tabx.on{background:linear-gradient(135deg,var(--saffron),var(--magenta),var(--purple));color:#fff;border-color:transparent}
+.muted{color:var(--muted);font-size:13px}
+.qrbox{width:180px;height:180px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px}
+.qrbox img{width:100%;height:100%}
+label{font-size:12px;font-weight:600;color:var(--muted)}
+
+/* ===== AI Listing + Product (V1.4, additive) ===== */
+.ai-banner{background:linear-gradient(135deg,#fff,#fbf3ff);border:1px solid #ecd9ff}
+.ai-cta{background:linear-gradient(135deg,var(--purple),var(--magenta))!important;color:#fff!important;box-shadow:0 6px 16px rgba(122,47,247,.28)}
+.ai-msg{background:#f4f0ff;border:1px solid #e4d7ff;color:#4b2a8a;font-size:14px}
+.steps{display:flex;gap:6px;margin:14px 0;flex-wrap:wrap}
+.stepdot{flex:1;min-width:60px;text-align:center;opacity:.45;transition:.3s}
+.stepdot b{display:block;width:30px;height:30px;line-height:30px;margin:0 auto 4px;border-radius:50%;
+  background:#eee;color:#888;font-weight:800}
+.stepdot span{font-size:11px;color:var(--muted)}
+.stepdot.on{opacity:1}.stepdot.on b{background:linear-gradient(135deg,var(--purple),var(--magenta));color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:560px){.grid2{grid-template-columns:1fr}}
+.lbl{font-size:12px;font-weight:600;color:var(--muted);display:block;margin:8px 0 3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}
+.chip{background:#f1ecff;color:#5b2ea6;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.ai-photowrap{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+.ai-photo{width:200px;height:200px;object-fit:cover;border-radius:14px;border:1px solid var(--line)}
+.quality{margin-top:12px;padding:12px;border-radius:12px;font-size:14px}
+.quality.good{background:#eafaf1;border:1px solid #bfe8d0}
+.quality.mid{background:#fff7e6;border:1px solid #ffe0a3}
+.quality.bad{background:#fdeaea;border:1px solid #f2b8b8}
+.quality ul{margin:6px 0 0 18px}
+.ppreview{border:2px dashed #d9c9ff}
+.prow{display:flex;gap:16px;flex-wrap:wrap}
+.prow .pimg{width:180px;height:180px;object-fit:cover;border-radius:14px}
+.pprice{font-size:24px;font-weight:800;color:var(--magenta);margin:6px 0}
+.pprice s{font-size:15px;font-weight:500;margin-left:8px}
+/* catalog grid */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:10px}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  transition:transform .18s,box-shadow .18s;display:block;color:inherit}
+.pcard:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(30,20,70,.12)}
+.pcimg{width:100%;height:140px;object-fit:cover;display:block;background:#f3f0fb}
+.pcimg.ph,.pbig.ph{display:flex;align-items:center;justify-content:center;color:#b7b2c8;font-size:13px}
+.pcbody{padding:9px 11px;display:flex;flex-direction:column;gap:2px}
+.pctitle{font-size:13px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pcprice{font-weight:800;color:var(--ink)}.pcprice s{font-weight:500;margin-left:5px;font-size:12px}
+.dot{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+.dot.published{background:#eafaf1;color:var(--teal)}.dot.hidden,.dot.draft{background:#f0eef5;color:#8a8699}
+/* product page */
+.product-page .pmain{display:flex;gap:22px;flex-wrap:wrap;margin:14px 0}
+.pgallery{flex:1;min-width:280px}
+.pbig{width:100%;max-height:420px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:16px}
+.pthumbs{display:flex;gap:8px;margin-top:8px}
+.pthumbs img{width:60px;height:60px;object-fit:cover;border-radius:9px;border:2px solid transparent;cursor:pointer}
+.pthumbs img.on{border-color:var(--magenta)}
+.pinfo{flex:1;min-width:280px}
+.ptitle{font-size:26px;margin:8px 0}
+.pshort{font-size:15px;color:#4a4760}
+.badge-verify{background:#eafaf4;color:var(--teal);font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px}
+.offbadge{background:var(--magenta);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px}
+.stars span{color:#d8d5e2;font-size:15px}.stars span.on{color:#ffb400}
+.pbtns{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.orderbox{background:#f7f4ff;border:1px solid #e6dbff;border-radius:14px;padding:14px;margin-top:8px}
+.btn.wa{background:#25D366!important;color:#fff!important;margin-top:8px;width:100%}
+.thankyou{background:#eafaf1;border:1px solid #bfe8d0;border-radius:10px;padding:10px;margin-top:10px;font-size:14px}
+.hl{margin:6px 0 0 18px}.hl li{margin:3px 0}
+table.spec td{padding:7px 9px;font-size:14px}
+.rbar{display:flex;align-items:center;gap:8px;font-size:12px;margin:2px 0}
+.rtrack{flex:1;height:7px;background:#eee;border-radius:6px;overflow:hidden}
+.rfill{height:100%;background:#ffb400}
+.revform{background:#faf9ff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0}
+.revform>*{margin-bottom:7px}
+.starpick span,.review .stars span{cursor:pointer;font-size:22px;color:#d8d5e2}.starpick span.on{color:#ffb400}
+.revthumb{width:52px;height:52px;object-fit:cover;border-radius:8px}
+.review{border-top:1px solid var(--line);padding:10px 0}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:10px 18px;border-radius:999px;font-size:14px;z-index:99;box-shadow:0 8px 22px rgba(0,0,0,.25)}
+/* order track */
+.track{display:flex;flex-direction:column;gap:0;margin-top:10px}
+.tstep{display:flex;align-items:center;gap:12px;padding:8px 0;position:relative;opacity:.5}
+.tstep.done{opacity:1}
+.tdot{width:30px;height:30px;border-radius:50%;background:#eee;color:#999;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:13px}
+.tstep.done .tdot{background:linear-gradient(135deg,var(--teal),#00b894);color:#fff}
+.orderrow{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  border-bottom:1px solid var(--line);padding:10px 0;flex-wrap:wrap}
+/* skeleton */
+.skel .sk,.skln{background:linear-gradient(90deg,#eee,#f6f6f6,#eee);background-size:200% 100%;
+  animation:sh 1.2s infinite;border-radius:6px}
+.skln{height:11px;margin:5px 0}.skln.sm{width:60%}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ===== Premium product cards (V1.5) ===== */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:14px}
+@media(max-width:520px){.pgrid{grid-template-columns:repeat(2,1fr);gap:11px}}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;
+  flex-direction:column;color:inherit;text-decoration:none;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s;will-change:transform}
+.pcard:hover{transform:translateY(-5px);box-shadow:0 16px 34px rgba(60,30,120,.15)}
+.pcimg-wrap{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;
+  background:linear-gradient(135deg,#f6f2fc,#ece4f8);display:block}
+.pcimg{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease}
+.pcard:hover .pcimg{transform:scale(1.06)}
+.off-tag{position:absolute;top:9px;left:9px;background:linear-gradient(135deg,var(--magenta),var(--saffron));
+  color:#fff;font-size:11px;font-weight:800;padding:3px 9px;border-radius:8px;box-shadow:0 3px 8px rgba(255,46,126,.35)}
+.oos-tag{position:absolute;bottom:9px;left:9px;background:rgba(20,18,37,.82);color:#fff;font-size:11px;
+  font-weight:700;padding:3px 9px;border-radius:8px}
+.pcbody{padding:11px 12px 13px;display:flex;flex-direction:column;gap:4px}
+.pc-brand{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#9a8fc0}
+.pctitle{font-size:14px;font-weight:600;line-height:1.35;color:var(--ink);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
+.pc-rate{display:flex;align-items:center;gap:5px;font-size:12px}
+.stars.sm span{font-size:12px}
+.stars span{color:#d8d5e2}.stars span.on{color:#ffb400}
+.pcprice{font-size:17px;font-weight:800;color:var(--ink);display:flex;align-items:baseline;gap:7px}
+.pcprice s{font-size:12px;font-weight:500;color:var(--muted)}
+.pc-desc{font-size:12px;color:var(--muted);line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.pc-shop{font-size:11.5px;color:#7c74a0;margin-top:2px}
+.empty{text-align:center;padding:50px 10px}
+.psearchbar{margin-top:10px}
+/* skeleton */
+.pcimg-wrap.sk{background:linear-gradient(90deg,#eee,#f6f6f6,#eee);background-size:200% 100%;animation:sh 1.2s infinite}
+.pcard .skln{height:12px;border-radius:6px;background:linear-gradient(90deg,#eee,#f6f6f6,#eee);background-size:200% 100%;animation:sh 1.2s infinite;margin:4px 0}
+.pcard .skln.sm{width:60%}
+/* product page big image */
+.pbig{width:100%;aspect-ratio:1/1;max-height:460px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:16px}
+
+/* ============ PREMIUM SHOP/PRODUCT ANIMATIONS (v24) ============ */
+@keyframes nmRise { from{opacity:0;transform:translateY(24px) scale(.97)} to{opacity:1;transform:none} }
+@keyframes nmShimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+@keyframes nmFadeIn { from{opacity:0} to{opacity:1} }
+@keyframes nmPop { 0%{transform:scale(.8);opacity:0} 60%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+
+/* product grid cards — staggered entrance */
+.pgrid .pcard{ animation: nmRise .5s cubic-bezier(.22,.61,.36,1) both; }
+.pgrid .pcard:nth-child(1){animation-delay:.02s}.pgrid .pcard:nth-child(2){animation-delay:.06s}
+.pgrid .pcard:nth-child(3){animation-delay:.10s}.pgrid .pcard:nth-child(4){animation-delay:.14s}
+.pgrid .pcard:nth-child(5){animation-delay:.18s}.pgrid .pcard:nth-child(6){animation-delay:.22s}
+.pgrid .pcard:nth-child(7){animation-delay:.26s}.pgrid .pcard:nth-child(8){animation-delay:.30s}
+.pgrid .pcard:nth-child(n+9){animation-delay:.34s}
+
+/* card hover — lift + shadow + image zoom */
+.pcard{ transition: transform .28s cubic-bezier(.22,.61,.36,1), box-shadow .28s; will-change:transform; }
+.pcard:hover{ transform: translateY(-8px); box-shadow: 0 18px 40px -12px rgba(122,47,247,.28); }
+.pcard:active{ transform: translateY(-3px) scale(.99); }
+.pcimg-wrap{ overflow:hidden; }
+.pcimg{ transition: transform .5s cubic-bezier(.22,.61,.36,1); }
+.pcard:hover .pcimg{ transform: scale(1.09); }
+.off-tag{ animation: nmPop .4s .3s both; }
+
+/* offer tag shine sweep on hover */
+.pcard:hover .off-tag{ box-shadow:0 2px 12px rgba(255,46,126,.5); }
+
+/* shimmer skeleton (loading) */
+.pcimg-wrap.sk, .skln{
+  background:linear-gradient(90deg,#efeaf7 25%,#f7f3fd 37%,#efeaf7 63%);
+  background-size:800px 100%; animation: nmShimmer 1.3s infinite linear; border-radius:10px;
+}
+.skln{height:12px;margin:7px 0}.skln.sm{height:9px;width:60%}
+
+/* search result shop cards — slide-in stagger + hover slide */
+.container > a > .card.row{ animation: nmRise .45s cubic-bezier(.22,.61,.36,1) both;
+  transition: transform .25s ease, box-shadow .25s ease; }
+.container > a:nth-of-type(1) > .card{animation-delay:.02s}
+.container > a:nth-of-type(2) > .card{animation-delay:.07s}
+.container > a:nth-of-type(3) > .card{animation-delay:.12s}
+.container > a:nth-of-type(4) > .card{animation-delay:.17s}
+.container > a:nth-of-type(n+5) > .card{animation-delay:.22s}
+.container > a > .card.row:hover{ transform: translateX(6px); box-shadow:0 10px 26px -10px rgba(122,47,247,.25); }
+.container > a > .card.row:hover img{ transform:scale(1.08); transition:transform .35s; }
+
+/* landing hero slide — smoother */
+.empty{ animation: nmFadeIn .5s both; }
+
+/* respect reduced-motion users */
+@media (prefers-reduced-motion: reduce){
+  .pgrid .pcard,.container>a>.card.row,.off-tag,.empty{animation:none!important}
+  .pcard:hover{transform:none} .pcard:hover .pcimg{transform:none}
+}
+
+/* ===== Dynamic contact / social buttons (shop page) ===== */
+.socrow{ display:flex; gap:9px; margin-top:12px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+  padding-bottom:4px; scrollbar-width:none; }
+.socrow::-webkit-scrollbar{ display:none; }
+.socpill{ display:inline-flex; align-items:center; gap:7px; flex:0 0 auto;
+  padding:9px 14px; border-radius:24px; color:#fff; font-weight:700; font-size:13.5px;
+  text-decoration:none; white-space:nowrap; box-shadow:0 3px 10px rgba(0,0,0,.16);
+  transition:transform .16s ease, box-shadow .16s ease, filter .16s ease; }
+.socpill:hover{ transform:translateY(-2px); box-shadow:0 7px 18px rgba(0,0,0,.24); filter:brightness(1.05); }
+.socpill:active{ transform:translateY(0) scale(.97); }
+.socpill-ic{ display:inline-flex; align-items:center; }
+.socpill-ic svg{ display:block; }
+
+/* ===== Owner dashboard: contact & social editor ===== */
+.socgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:9px; }
+.socbtn{ display:flex !important; align-items:center; gap:10px; text-align:left;
+  padding:10px 12px !important; justify-content:flex-start !important; }
+.socbtn-ic{ font-size:20px; line-height:1; }
+.socbtn-tx{ display:flex; flex-direction:column; line-height:1.25; flex:1; min-width:0; }
+.socbtn-tx small{ font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.socbtn-ed{ font-size:12px; font-weight:700; color:var(--brand,#6d28d9); opacity:.9; }
+</style>
+</head><body><div id="root"></div>
+<script type="text/babel" data-presets="react">
+
+const { useState, useEffect, useRef } = React;
+function useHashPath(){ const [p,setP]=React.useState(location.hash.slice(1)||'/');
+  React.useEffect(()=>{const h=()=>setP(location.hash.slice(1)||'/');window.addEventListener('hashchange',h);return()=>window.removeEventListener('hashchange',h);},[]); return p; }
+function Router({children}){ return children; }
+function useLocation(){ const p=useHashPath(); const i=p.indexOf('?'); return {pathname:i<0?p:p.slice(0,i), search:i<0?'':p.slice(i)}; }
+function useNavigate(){ return (to)=>{ location.hash='#'+to; }; }
+function Link(props){ const {to,children,...rest}=props; return React.createElement('a',{href:'#'+to,...rest},children); }
+const ParamsCtx=React.createContext({});
+function useParams(){ return React.useContext(ParamsCtx); }
+function _match(pattern,path){ const pp=pattern.split('/'),ap=path.split('/'); if(pp.length!==ap.length)return null; const o={}; for(let i=0;i<pp.length;i++){ if(pp[i][0]===':')o[pp[i].slice(1)]=decodeURIComponent(ap[i]||''); else if(pp[i]!==ap[i])return null; } return o; }
+function Routes({children}){ const loc=useLocation(); const arr=React.Children.toArray(children);
+  for(const ch of arr){ const m=_match(ch.props.path, loc.pathname||'/'); if(m) return React.createElement(ParamsCtx.Provider,{value:m},ch.props.element); }
+  return React.createElement('div',{className:'container'},'Page not found'); }
+function Route(){ return null; }
+
+const BASE = 'https://nammoor.onrender.com/v1' || '/v1'
+let token = localStorage.getItem('token') || ''
+function setToken(t){ token = t; localStorage.setItem('token', t) }
+function getRole(){ return localStorage.getItem('role') || '' }
+function setRole(r){ localStorage.setItem('role', r) }
+function logout(){ localStorage.removeItem('token'); localStorage.removeItem('role'); token='' }
+async function req(path, opts = {}) {
+  const res = await fetch(BASE + path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json',
+               ...(token ? { Authorization: `Bearer ${token}` } : {}),
+               ...(opts.headers || {}) },
+  })
+  const txt = await res.text()
+  let data; try { data = txt ? JSON.parse(txt) : {} } catch { data = { detail: txt } }
+  if (!res.ok) throw new Error(data.detail || res.statusText)
+  return data
+}
+const api = {
+  get: (p) => req(p),
+  post: (p, b) => req(p, { method:'POST', body: JSON.stringify(b||{}) }),
+  patch: (p, b) => req(p, { method:'PATCH', body: JSON.stringify(b||{}) }),
+  del: (p) => req(p, { method:'DELETE' }),
+}
+async function downloadFile(path, filename){
+  const res = await fetch(('https://nammoor.onrender.com/v1'||'/v1')+path,{
+    headers: token?{Authorization:`Bearer ${token}`}:{} })
+  if(!res.ok){ alert('Download failed'); return }
+  const blob = await res.blob(); const u=URL.createObjectURL(blob)
+  const a=document.createElement('a'); a.href=u; a.download=filename; a.click(); URL.revokeObjectURL(u)
+}
+function pickImage(maxW=900, camera=false){
+  return new Promise((resolve)=>{
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; if(camera) inp.capture='environment'
+    inp.onchange=()=>{ const file=inp.files&&inp.files[0]; if(!file){resolve(null);return}
+      const rd=new FileReader()
+      rd.onload=()=>{ const img=new Image()
+        img.onload=()=>{ const sc=Math.min(1,maxW/img.width); const w=img.width*sc,h=img.height*sc
+          const c=document.createElement('canvas'); c.width=w; c.height=h
+          c.getContext('2d').drawImage(img,0,0,w,h)
+          resolve(c.toDataURL('image/jpeg',0.72)) }
+        img.src=rd.result }
+      rd.readAsDataURL(file) }
+    inp.click()
+  })
+}
+const SITE = (typeof window!=='undefined' && window.location && window.location.origin) ? window.location.origin : 'https://nammor-site.pages.dev'
+const qrImg = (data) =>
+  `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data)}`
+const PLACEHOLDER="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f4f0fb'/%3E%3Cstop offset='1' stop-color='%23e6ddf5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='500' height='500' fill='url(%23g)'/%3E%3Cg fill='none' stroke='%23b6a8d6' stroke-width='11' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M172 210h156l-16 120H188z'/%3E%3Cpath d='M214 210a36 36 0 0172 0'/%3E%3C/g%3E%3Ctext x='250' y='392' font-family='sans-serif' font-size='26' fill='%23a597c6' text-anchor='middle'%3ENammaOor%3C/text%3E%3C/svg%3E"
+const onImgErr=e=>{e.target.onerror=null;e.target.src=PLACEHOLDER}
+
+// GET with retry — recovers automatically from a cold (sleeping) free-tier server
+// instead of failing with "failed to fetch". Keeps trying for up to ~tries*gap ms.
+async function getRetry(path, tries=10, gap=1500){
+  let last
+  for(let i=0;i<tries;i++){
+    try{ return await api.get(path) }
+    catch(e){ last=e; await new Promise(r=>setTimeout(r, gap)) }
+  }
+  throw last
+}
+
+// Embedded 38 TN districts (stable IDs) so the District dropdown fills INSTANTLY,
+// even while the backend is waking up. Categories/assemblies load via getRetry.
+const NM_DISTRICTS=[[1,"Ariyalur","ARI"],[2,"Chengalpattu","CGL"],[3,"Chennai","CHE"],[4,"Coimbatore","CBE"],[5,"Cuddalore","CUD"],[6,"Dharmapuri","DPI"],[7,"Dindigul","DGL"],[8,"Erode","ERD"],[9,"Kallakurichi","KLK"],[10,"Kancheepuram","KAN"],[11,"Kanniyakumari","KKM"],[12,"Karur","KAR"],[13,"Krishnagiri","KGI"],[14,"Madurai","MDU"],[15,"Mayiladuthurai","MYL"],[16,"Nagapattinam","NGP"],[17,"Namakkal","NMK"],[18,"Nilgiris","NIL"],[19,"Perambalur","PER"],[20,"Pudukkottai","PDK"],[21,"Ramanathapuram","RMD"],[22,"Ranipet","RNP"],[23,"Salem","SLM"],[24,"Sivaganga","SVG"],[25,"Tenkasi","TEN"],[26,"Thanjavur","TNJ"],[27,"Theni","THN"],[28,"Thoothukudi","TUT"],[29,"Tiruchirappalli","TRY"],[30,"Tirunelveli","TNV"],[31,"Tirupathur","TPT"],[32,"Tiruppur","TUP"],[33,"Tiruvallur","TVL"],[34,"Tiruvannamalai","TVM"],[35,"Tiruvarur","TVR"],[36,"Vellore","VLR"],[37,"Viluppuram","VPM"],[38,"Virudhunagar","VNR"]].map(d=>({id:d[0],name:d[1],code:d[2]}))
+
+// Warm the (possibly sleeping) backend on load, and keep pinging until it responds
+// so the first real fetch is fast. Render free tier sleeps after ~15 min idle.
+try{ if(typeof window!=='undefined'){
+  const _base=BASE.replace(/\/v1$/,''); let _n=0;
+  const _ping=()=>{ fetch(_base+'/health',{cache:'no-store'})
+    .then(r=>{ if(!r.ok && _n++<8) setTimeout(_ping,2500) })
+    .catch(()=>{ if(_n++<8) setTimeout(_ping,2500) }) };
+  _ping(); window.nm_warmup=1;
+} }catch(_){}
+
+
+
+// Reusable password field with show/hide eye (global in the built bundle)
+function PwInput({value,onChange,placeholder}){
+  const [show,setShow]=useState(false)
+  return (<div style={{position:'relative'}}>
+    <input className="input" type={show?'text':'password'} placeholder={placeholder||'Password'}
+      value={value} onChange={onChange} style={{paddingRight:42}}/>
+    <span onClick={()=>setShow(s=>!s)} title={show?'Hide':'Show'}
+      style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',cursor:'pointer',userSelect:'none',fontSize:16}}>
+      {show?'🙈':'👁️'}</span>
+  </div>)
+}
+
+function Header(){
+  const role = getRole(); const nav = useNavigate()
+  const h = (typeof location!=='undefined' && location.hash) || ''
+  const atHome = (h==='' || h==='#' || h==='#/')
+  return (
+    <div className="header">
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        {!atHome && <a onClick={()=>window.history.back()} title="Back"
+          style={{cursor:'pointer',fontSize:20,fontWeight:800,lineHeight:1,textDecoration:'none'}}>←</a>}
+        <Link to="/"><img src="/logo.png" alt="NammaOor"/></Link>
+      </div>
+      <div className="nav">
+        <Link to="/search">Search</Link>
+        <Link to="/cart">🛒 Cart</Link>
+        {role
+          ? <>
+              <Link to={`/app/${role==='super_admin'?'admin':role==='employee'?'employee':'owner'}`}>Dashboard</Link>
+              <a onClick={()=>{logout();nav('/')}} style={{cursor:'pointer'}}>Logout</a>
+            </>
+          : <Link to="/login">Login</Link>}
+      </div>
+    </div>
+  )
+}
+
+
+
+const SLIDES=[
+  {icon:'💳', title:'Easy to Pay', sub:'QR scan pannunga — GPay / PhonePe / Paytm. Instant, no app install.', g:'linear-gradient(135deg,#00b894,#0984e3)'},
+  {icon:'💼', title:'Easy to Earn', sub:'Employees kadai register panni ₹100 sambadhikkalaam. Wallet + withdrawals.', g:'linear-gradient(135deg,#6c5ce7,#a55eea)'},
+  {icon:'✨', title:'AI Listing', sub:'Photo eduthu podunga — AI title, description, price ready. Publish in seconds.', g:'linear-gradient(135deg,#e17055,#fdcb6e)'},
+  {icon:'📱', title:'WhatsApp · Call · Reviews', sub:'Customers neenga nera contact pannuvaanga. Ratings-la nambikkai valarum.', g:'linear-gradient(135deg,#ff2e7e,#7a2ff7)'},
+]
+
+function Landing(){
+  const [i,setI]=useState(0)
+  useEffect(()=>{ const t=setInterval(()=>setI(p=>(p+1)%SLIDES.length),3000); return ()=>clearInterval(t) },[])
+  const s=SLIDES[i]
+  return (<>
+    <Header/>
+    <div className="container">
+      <div style={{position:'relative',borderRadius:20,overflow:'hidden',minHeight:230,
+        background:s.g,transition:'background .6s ease',color:'#fff',
+        display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+        textAlign:'center',padding:'34px 22px',boxShadow:'0 10px 30px rgba(0,0,0,.12)'}}>
+        <div key={i} style={{animation:'nmFade .6s ease'}}>
+          <div style={{fontSize:56,lineHeight:1}}>{s.icon}</div>
+          <h1 style={{fontSize:30,fontWeight:800,margin:'12px 0 6px'}}>{s.title}</h1>
+          <p style={{maxWidth:420,margin:'0 auto',opacity:.95,fontSize:15}}>{s.sub}</p>
+        </div>
+        <div style={{display:'flex',gap:8,marginTop:20}}>
+          {SLIDES.map((_,k)=><span key={k} onClick={()=>setI(k)} style={{width:k===i?22:9,height:9,
+            borderRadius:9,background:k===i?'#fff':'rgba(255,255,255,.5)',transition:'all .3s',cursor:'pointer'}}/>)}
+        </div>
+      </div>
+      <style>{'@keyframes nmFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'}</style>
+
+      <div style={{textAlign:'center',marginTop:22}}>
+        <img src="/logo.png" style={{height:70,display:'block',margin:'0 auto'}}/>
+      </div>
+
+      <div className="row" style={{justifyContent:'center',marginTop:16}}>
+        <Link to="/search"><button className="btn">🔍 கடைகளை தேடு</button></Link>
+        <Link to="/register?emp=EMP0001"><button className="btn ghost">🏪 கடை பதிவு</button></Link>
+      </div>
+
+      <div className="grid2" style={{marginTop:18}}>
+        <Link to="/search"><div className="card"><h3>🙋 Customer</h3><p className="muted">Login venaam — scan QR → pay, call, WhatsApp, maps, offers, reviews</p></div></Link>
+        <Link to="/login"><div className="card"><h3>🧑‍💼 Shop Owner</h3><p className="muted">Mobile OTP login → AI listing, products, offers, QR, payments</p></div></Link>
+        <Link to="/login"><div className="card"><h3>👷 Employee</h3><p className="muted">Kadai register, wallet, ₹100 commission, withdrawals</p></div></Link>
+      </div>
+      <p className="muted" style={{textAlign:'center',marginTop:18}}>Powered by NammaOor</p>
+      <p className="muted" style={{textAlign:'center',fontSize:12,marginTop:2}}>
+        <a href="#/terms">Terms</a> · <a href="#/privacy">Privacy</a></p>
+    </div>
+  </>)
+}
+
+
+
+function Register(){
+  const _h = (typeof window!=='undefined' && window.location.hash) || ''
+  const _q = _h.includes('?') ? _h.split('?')[1] : (typeof window!=='undefined' ? window.location.search.slice(1) : '')
+  const emp = new URLSearchParams(_q).get('emp') || 'EMP0001'
+  const [districts,setD]=useState(NM_DISTRICTS); const [assemblies,setA]=useState([]); const [cats,setC]=useState([])
+  const [loadingCat,setLoadingCat]=useState(true); const [loadingAsm,setLoadingAsm]=useState(false)
+  const [f,setF]=useState({emp_code:emp,shop_name:'',owner_name:'',mobile:'',whatsapp:'',
+    district_id:'',assembly_id:'',town:'',area:'',category_id:'',address:'',google_maps:'',
+    lat:null,lng:null,description:'',bio:'',open_time:'',close_time:'',leave_days:'',upi_id:'',facebook:'',instagram:'',website:'',logo_url:'',cover_url:'',photos:[]})
+  const [products,setProducts]=useState([]); const [pf,setPf]=useState({name:'',price:''})
+  const [shopId,setShopId]=useState(localStorage.getItem('draft_id')||null)
+  const [step,setStep]=useState('form'); const [otp,setOtp]=useState('')
+  const [token,setTok]=useState(''); const [msg,setMsg]=useState(''); const [result,setResult]=useState(null)
+  const [scanning,setScanning]=useState(false); const videoRef=useRef(null)
+  const set=(k)=>(e)=>setF({...f,[k]:e.target.value})
+
+  useEffect(()=>{
+    // Districts already shown from embedded data; refresh from server (authoritative) when awake.
+    getRetry('/geo/districts').then(d=>{ if(d&&d.length) setD(d) }).catch(()=>{})
+    setLoadingCat(true)
+    getRetry('/geo/categories').then(c=>{ if(c&&c.length) setC(c); setLoadingCat(false) }).catch(()=>setLoadingCat(false))
+  },[])
+  useEffect(()=>{ if(!f.district_id){ setA([]); return }
+    setLoadingAsm(true); setA([])
+    getRetry('/geo/assemblies?district_id='+f.district_id).then(a=>{ setA(a||[]); setLoadingAsm(false) }).catch(()=>setLoadingAsm(false))
+  },[f.district_id])
+
+  function grabLocation(){
+    setMsg('Location edukkirathu...')
+    navigator.geolocation.getCurrentPosition(
+      p=>{ const {latitude:lat,longitude:lng}=p.coords
+        setF(v=>({...v,lat,lng,google_maps:`https://maps.google.com/?q=${lat},${lng}`}))
+        setMsg(`Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}`) },
+      ()=>setMsg('GPS denied. Address manual-aa podunga.'),{enableHighAccuracy:true})
+  }
+  const addProduct=()=>{ if(pf.name){ setProducts([...products,pf]); setPf({name:'',price:''}) } }
+  async function saveDraft(){
+    try{ const b={...f,district_id:f.district_id?+f.district_id:null,
+        assembly_id:f.assembly_id?+f.assembly_id:null,category_id:f.category_id?+f.category_id:null}
+      let id=shopId
+      if(id){ await api.patch(`/shops/${id}/draft`,b) }
+      else { const r=await api.post('/shops/draft',b); id=r.id; setShopId(id); localStorage.setItem('draft_id',id) }
+      setMsg('Draft saved'); return id }catch(e){ setMsg('Error: '+e.message); return null }
+  }
+  async function reqOtp(){
+    const id=await saveDraft(); if(!id) return
+    for(const p of products){ try{ await api.post(`/shops/${id}/product`,{name:p.name,price:p.price?+p.price:null}) }catch{} }
+    await api.post('/auth/otp/request',{mobile:f.mobile})
+    setOtp(''); setStep('otp'); setMsg('✅ OTP sent to '+f.mobile+'. Valid 5 min.')
+  }
+  async function verifyPay(){
+    const v=await api.post('/auth/otp/verify',{mobile:f.mobile,code:(otp||'').trim()}).catch(()=>null)
+    if(!v){ setMsg('Wrong OTP'); return }
+    const pay=await api.post('/payments/create',{shop_id:shopId,type:'registration'})
+    if(pay.gateway==='razorpay' && window.Razorpay){
+      const rzp=new window.Razorpay({
+        key:pay.key_id, amount:pay.amount*100, currency:'INR',
+        name:'NammaOor', description:'Shop Registration Rs.299',
+        order_id:pay.order_id, prefill:{contact:f.mobile, name:f.owner_name},
+        theme:{color:'#FF2E7E'},
+        handler: async (resp)=>{
+          try{ const d=await api.post('/payments/verify',{razorpay_order_id:resp.razorpay_order_id,
+                 razorpay_payment_id:resp.razorpay_payment_id, razorpay_signature:resp.razorpay_signature})
+            setResult(d); setStep('linkqr'); setMsg('Payment success! QR sticker scan pannunga.') }
+          catch(e){ setMsg('Verify failed: '+e.message) }
+        }
+      })
+      rzp.on('payment.failed', ()=>setMsg('Payment failed. Marupadi try pannunga.'))
+      rzp.open(); setMsg('Payment window open aaguthu...')
+    } else {
+      const done=await api.post(`/payments/dev/mark-paid/${pay.txn_id}`)
+      setResult(done); setStep('linkqr'); setMsg('Payment success (dev). QR sticker scan pannunga.')
+    }
+  }
+  async function linkQr(){
+    try{ const r=await api.post(`/shops/${shopId}/link-qr`,{token:token.trim(),emp_code:emp})
+      setResult({...result,qr_token:r.qr_token,public_url:r.public_url}); setStep('done')
+      localStorage.removeItem('draft_id') }
+    catch(e){ setMsg('Error: '+e.message) }
+  }
+  async function startScan(){
+    if(!('BarcodeDetector' in window)){ setMsg('Camera scan illa - code-ai type pannunga'); return }
+    try{
+      setScanning(true)
+      const det=new window.BarcodeDetector({formats:['qr_code']})
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+      const vd=videoRef.current; vd.srcObject=stream; await vd.play()
+      const loop=async()=>{
+        if(!vd.srcObject) return
+        try{ const codes=await det.detect(vd)
+          if(codes.length){ let val=codes[0].rawValue||''
+            if(val.includes('/s/')) val=val.split('/s/')[1]
+            setTok((val||'').replace(/\/$/,'').toUpperCase())
+            stream.getTracks().forEach(t=>t.stop()); vd.srcObject=null; setScanning(false); return } }catch{}
+        requestAnimationFrame(loop)
+      }; loop()
+    }catch(e){ setMsg('Camera error - type the code'); setScanning(false) }
+  }
+
+  if(step==='done' && result) return (<>
+    <Header/><div className="container"><div className="card" style={{textAlign:'center'}}>
+      <span className="pill">Registered</span>
+      <h2 className="brand" style={{marginTop:10}}>{f.shop_name}</h2>
+      <p style={{fontSize:20,fontWeight:800}}>{result.shop_code}</p>
+      <div className="qrbox" style={{margin:'14px auto'}}>
+        <img src={qrImg(`${SITE}/#/s/${result.qr_token}`)}/></div>
+      <p className="muted">QR Token: <b>{result.qr_token}</b></p>
+      <a href={`#/s/${result.qr_token}`}><button className="btn" style={{marginTop:10}}>View Shop Page</button></a>
+    </div></div></>)
+
+  return (<>
+    <Header/>
+    <div className="container">
+      <h2 className="brand">Kadai Pathivu / Shop Registration</h2>
+      <p className="muted">Employee: {emp}</p>
+
+      {step==='form' && <div className="card">
+        <label>Shop Name</label><input className="input" onChange={set('shop_name')}/>
+        <div className="grid2">
+          <div><label>Owner Name</label><input className="input" onChange={set('owner_name')}/></div>
+          <div><label>Category {loadingCat&&!cats.length&&<span className="muted">(loading…)</span>}</label>
+            <select onChange={set('category_id')}><option value="">{loadingCat&&!cats.length?'Loading…':'--'}</option>
+            {cats.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+        </div>
+        <div className="grid2">
+          <div><label>Mobile</label><input className="input" onChange={set('mobile')}/></div>
+          <div><label>WhatsApp</label><input className="input" onChange={set('whatsapp')}/></div>
+        </div>
+        <div className="grid2">
+          <div><label>District</label><select onChange={set('district_id')}><option value="">--</option>
+            {districts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
+          <div><label>Assembly {loadingAsm&&<span className="muted">(loading…)</span>}</label>
+            <select onChange={set('assembly_id')}><option value="">{!f.district_id?'District select pannunga':(loadingAsm?'Loading…':'--')}</option>
+            {assemblies.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+        </div>
+        <div className="grid2">
+          <div><label>Town / Village</label><input className="input" onChange={set('town')}/></div>
+          <div><label>Area</label><input className="input" onChange={set('area')}/></div>
+        </div>
+        <label>Address</label><textarea rows="2" onChange={set('address')}></textarea>
+        <button className="btn tl" onClick={grabLocation}>Use current location (auto map)</button>
+        <input className="input" placeholder="Google Maps link" value={f.google_maps} onChange={set('google_maps')}/>
+        <label>UPI ID (Pay button)</label><input className="input" placeholder="name@upi" onChange={set('upi_id')}/>
+        <label>Description</label><textarea rows="2" onChange={set('description')}></textarea>
+        <label>Bio (short tagline)</label><input className="input" onChange={set('bio')}/>
+        <div className="grid2">
+          <div><label>Opening Time</label><input className="input" placeholder="9:00 AM" onChange={set('open_time')}/></div>
+          <div><label>Closing Time</label><input className="input" placeholder="9:00 PM" onChange={set('close_time')}/></div>
+        </div>
+        <label>Weekly Leave Days</label><input className="input" placeholder="Sunday" onChange={set('leave_days')}/>
+
+        <h3 style={{marginTop:12}}>Media (DP / Cover / Photos)</h3>
+        <div className="row">
+          <button className="btn ghost" onClick={async()=>{const d=await pickImage(400); if(d)setF(v=>({...v,logo_url:d}))}}>Upload Logo</button>
+          <button className="btn ghost" onClick={async()=>{const d=await pickImage(1000); if(d)setF(v=>({...v,cover_url:d}))}}>Upload Cover</button>
+          <button className="btn ghost" onClick={async()=>{const d=await pickImage(900); if(d)setF(v=>({...v,photos:[...(v.photos||[]),d]}))}}>Add Photo</button>
+          <button className="btn tl" onClick={async()=>{const d=await pickImage(900,true); if(d)setF(v=>({...v,photos:[...(v.photos||[]),d]}))}}>Camera Photo</button>
+        </div>
+        {f.logo_url && <img src={f.logo_url} style={{height:46,marginTop:6,borderRadius:8}}/>}
+        {(f.photos||[]).length>0 && <p className="muted">{f.photos.length} photo(s) added</p>}
+
+        <h3 style={{marginTop:12}}>Products</h3>
+        {products.map((p,i)=><div key={i} className="muted">- {p.name} {p.price?`Rs.${p.price}`:''}</div>)}
+        <div className="row" style={{marginTop:6}}>
+          <input className="input" style={{flex:2}} placeholder="Product name" value={pf.name} onChange={e=>setPf({...pf,name:e.target.value})}/>
+          <input className="input" style={{flex:1}} placeholder="Price" value={pf.price} onChange={e=>setPf({...pf,price:e.target.value})}/>
+          <button className="btn ghost" onClick={addProduct}>Add</button>
+        </div>
+        <div className="grid2" style={{marginTop:8}}>
+          <input className="input" placeholder="Facebook" onChange={set('facebook')}/>
+          <input className="input" placeholder="Instagram" onChange={set('instagram')}/>
+        </div>
+        <div className="row" style={{marginTop:10}}>
+          <button className="btn ghost" onClick={saveDraft}>Save Draft</button>
+          <button className="btn" onClick={reqOtp} disabled={!f.mobile||!f.shop_name}>Continue - OTP + Rs.299</button>
+        </div>
+        <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
+      </div>}
+
+      {step==='otp' && <div className="card">
+        <h3>Mobile OTP Verification</h3>
+        <p className="muted">OTP sent to <b>{f.mobile}</b> — SMS check pannunga.</p>
+        <input className="input" placeholder="Enter OTP" value={otp} onChange={e=>setOtp(e.target.value)}/>
+        <button className="btn" onClick={verifyPay}>Verify & Pay Rs.299</button>
+        <p className="muted" style={{marginTop:8,cursor:'pointer',color:'var(--purple)'}}
+           onClick={async()=>{await api.post('/auth/otp/request',{mobile:f.mobile}); setMsg('✅ OTP resent.')}}>Resend OTP</p>
+        <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
+      </div>}
+
+      {step==='linkqr' && <div className="card">
+        <span className="pill">Payment Success - Rs.299</span>
+        <h3 style={{marginTop:8}}>QR Sticker Scan pannunga</h3>
+        <p className="muted">Admin kodutha QR sticker-ai scan pannunga - athu inda kadaikku nirandara QR aagum.</p>
+        {scanning && <video ref={videoRef} style={{width:'100%',borderRadius:12,marginTop:8}} muted playsInline></video>}
+        <div className="row" style={{marginTop:8}}>
+          <button className="btn" onClick={startScan}>Scan QR</button>
+        </div>
+        <p className="muted" style={{marginTop:10}}>Allathu sticker-la achitta code-ai type pannunga:</p>
+        <input className="input" placeholder="QR code (e.g. A1B2C3D4)" value={token} onChange={e=>setTok(e.target.value)}/>
+        <button className="btn" onClick={linkQr} disabled={!token}>Link QR - Finish</button>
+        <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
+      </div>}
+    </div>
+  </>)
+}
+
+
+
+
+const SHOW_PAY = false;  // payment QR/pay buttons — later enable pannalam
+// ---- Inline UPI app icons (no external images) ----
+function IcGPay(){return(<svg width="26" height="26" viewBox="0 0 48 48">
+  <path fill="#4285F4" d="M45.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11.8c-.5 2.8-2.1 5.1-4.4 6.7v5.5h7.1c4.2-3.9 6.6-9.6 6.6-16.2z"/>
+  <path fill="#34A853" d="M24 46c6 0 11-2 14.6-5.3l-7.1-5.5c-2 1.3-4.5 2.1-7.5 2.1-5.8 0-10.7-3.9-12.4-9.2H4.3v5.7C7.9 40.9 15.4 46 24 46z"/>
+  <path fill="#FBBC04" d="M11.6 28.1c-.5-1.3-.7-2.7-.7-4.1s.3-2.8.7-4.1v-5.7H4.3C2.8 17.1 2 20.4 2 24s.8 6.9 2.3 9.8l7.3-5.7z"/>
+  <path fill="#EA4335" d="M24 10.8c3.3 0 6.2 1.1 8.5 3.3l6.3-6.3C35 4.3 30 2 24 2 15.4 2 7.9 7.1 4.3 14.2l7.3 5.7c1.7-5.3 6.6-9.1 12.4-9.1z"/></svg>)}
+function IcPhonePe(){return(<svg width="26" height="26" viewBox="0 0 48 48">
+  <circle cx="24" cy="24" r="22" fill="#5f259f"/>
+  <text x="24" y="31" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="bold" fontSize="20" fill="#fff">Pe</text></svg>)}
+function IcPaytm(){return(<svg width="26" height="26" viewBox="0 0 48 48">
+  <rect x="2" y="2" width="44" height="44" rx="10" fill="#fff" stroke="#e3e3ee"/>
+  <text x="24" y="29" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="bold" fontSize="13"><tspan fill="#002E6E">Pay</tspan><tspan fill="#00B9F1">tm</tspan></text></svg>)}
+function IcBhim(){return(<svg width="26" height="26" viewBox="0 0 48 48">
+  <rect x="2" y="2" width="44" height="44" rx="10" fill="#fff" stroke="#e3e3ee"/>
+  <polygon points="14,34 24,12 27,19 20,34" fill="#FF6F00"/>
+  <polygon points="24,34 31,20 34,27 30,34" fill="#00A651"/></svg>)}
+function IcUpi(){return(<svg width="26" height="26" viewBox="0 0 48 48">
+  <rect x="2" y="2" width="44" height="44" rx="10" fill="#fff" stroke="#e3e3ee"/>
+  <text x="24" y="30" textAnchor="middle" fontFamily="Arial,sans-serif" fontWeight="bold" fontSize="14" fill="#3d3d63">UPI</text></svg>)}
+
+// ---- Real brand icons for contact / social buttons (inline SVG, no external images) ----
+function IcCall(){return(<svg width="22" height="22" viewBox="0 0 24 24"><path fill="#fff" d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.4.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.3 1L6.6 10.8z"/></svg>)}
+function IcWhats(){return(<svg width="22" height="22" viewBox="0 0 24 24"><path fill="#fff" d="M12 2a10 10 0 00-8.6 15l-1.3 4.9 5-1.3A10 10 0 1012 2zm0 2a8 8 0 11-4.1 14.9l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 0112 4zm4.5 10.4c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 01-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5.2-.4v-.4l-.8-1.9c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.7.7-.9 1.6-.6 2.6.4 1.4 1.3 2.6 2.5 3.6 1.6 1.4 3.3 1.9 4.3 1.9.6 0 1.2-.2 1.6-.7.2-.3.3-.7.2-1 0-.1-.2-.2-.4-.3z"/></svg>)}
+function IcFb(){return(<svg width="22" height="22" viewBox="0 0 24 24"><path fill="#fff" d="M22 12a10 10 0 10-11.6 9.9v-7h-2.5V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0022 12z"/></svg>)}
+function IcInsta(){return(<svg width="22" height="22" viewBox="0 0 24 24"><path fill="#fff" d="M12 8.1a3.9 3.9 0 100 7.8 3.9 3.9 0 000-7.8zm0 6.4a2.5 2.5 0 110-5 2.5 2.5 0 010 5zm4-6.6a.9.9 0 11-1.8 0 .9.9 0 011.8 0zM12 5.8c1.9 0 2.1 0 2.9.1 1.9.1 2.8 1 2.9 2.9 0 .8.1 1 .1 2.9s0 2.1-.1 2.9c-.1 1.9-1 2.8-2.9 2.9-.8 0-1 .1-2.9.1s-2.1 0-2.9-.1c-1.9-.1-2.8-1-2.9-2.9 0-.8-.1-1-.1-2.9s0-2.1.1-2.9c.1-1.9 1-2.8 2.9-2.9.8 0 1-.1 2.9-.1zM12 4.5c-2 0-2.2 0-3 .1-2.5.1-3.9 1.5-4 4-.1.8-.1 1-.1 3s0 2.2.1 3c.1 2.5 1.5 3.9 4 4 .8.1 1 .1 3 .1s2.2 0 3-.1c2.5-.1 3.9-1.5 4-4 .1-.8.1-1 .1-3s0-2.2-.1-3c-.1-2.5-1.5-3.9-4-4-.8-.1-1-.1-3-.1z"/></svg>)}
+function IcYt(){return(<svg width="22" height="22" viewBox="0 0 24 24"><path fill="#fff" d="M21.6 7.2a2.5 2.5 0 00-1.7-1.8C18.3 5 12 5 12 5s-6.3 0-7.9.4A2.5 2.5 0 002.4 7.2 26 26 0 002 12a26 26 0 00.4 4.8 2.5 2.5 0 001.7 1.8C5.7 19 12 19 12 19s6.3 0 7.9-.4a2.5 2.5 0 001.7-1.8A26 26 0 0022 12a26 26 0 00-.4-4.8zM10 15V9l5.2 3-5.2 3z"/></svg>)}
+function IcWeb(){return(<svg width="22" height="22" viewBox="0 0 24 24"><path fill="#fff" d="M12 2a10 10 0 100 20 10 10 0 000-20zm6.9 6h-2.9a15.7 15.7 0 00-1.3-3.4A8 8 0 0118.9 8zM12 4c.8 1.1 1.4 2.5 1.8 4h-3.6c.4-1.5 1-2.9 1.8-4zM4.3 14a8 8 0 010-4h3.3a17.6 17.6 0 000 4H4.3zm.8 2h2.9c.3 1.2.8 2.4 1.3 3.4A8 8 0 015.1 16zm2.9-8H5.1a8 8 0 014.2-3.4C8.8 5.6 8.3 6.8 8 8zM12 20c-.8-1.1-1.4-2.5-1.8-4h3.6c-.4 1.5-1 2.9-1.8 4zm2.2-6H9.8a15.6 15.6 0 010-4h4.4a15.6 15.6 0 010 4zm.5 5.4c.5-1 1-2.2 1.3-3.4h2.9a8 8 0 01-4.2 3.4zM16.4 14a17.6 17.6 0 000-4h3.3a8 8 0 010 4h-3.3z"/></svg>)}
+function IcTg(){return(<svg width="22" height="22" viewBox="0 0 24 24"><path fill="#fff" d="M21.9 5.3l-3.3 15.5c-.2 1.1-.9 1.3-1.8.8l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.3-5 9.1-8.2c.4-.4-.1-.6-.6-.2L6.3 13.1l-4.8-1.5c-1-.3-1-1 .2-1.5l18.8-7.2c.9-.3 1.6.2 1.4 1.4z"/></svg>)}
+
+// Prepend https:// for safety on any stored link that is missing a scheme.
+function ext(u){ u=(u||'').trim(); if(!u) return ''
+  return /^https?:\/\//i.test(u) ? u : 'https://'+u.replace(/^\/+/,'') }
+
+// Dynamic contact + social row. Only renders a button when its field is set.
+// Real platform brand colours + icons; opens in new tab / native app.
+function SocialRow({s,ev,review}){
+  const btns=[]
+  if(s.mobile)    btns.push(['#16a34a', IcCall,  'Call',      `tel:${s.mobile}`,                 'call',     false])
+  if(s.whatsapp)  btns.push(['#25D366', IcWhats, 'WhatsApp',  `https://wa.me/91${s.whatsapp}`,   'whatsapp', true])
+  if(s.instagram) btns.push(['#E1306C', IcInsta, 'Instagram', ext(s.instagram),                  'instagram',true])
+  if(s.facebook)  btns.push(['#1877F2', IcFb,    'Facebook',  ext(s.facebook),                   'facebook', true])
+  if(s.youtube)   btns.push(['#FF0000', IcYt,    'YouTube',   ext(s.youtube),                    'youtube',  true])
+  if(s.website)   btns.push(['#0ea5e9', IcWeb,   'Website',   ext(s.website),                    'website',  true])
+  if(s.telegram)  btns.push(['#229ED9', IcTg,    'Telegram',  ext(s.telegram),                   'telegram', true])
+  if(s.google_maps) btns.push(['#EA4335', IcWeb, 'Maps',      s.google_maps,                     'maps',     true])
+  return (
+    <div className="socrow">
+      {btns.map(([c,Ic,label,href,evt,blank],i)=>(
+        <a key={i} href={href} onClick={()=>ev(evt)}
+           {...(blank?{target:'_blank',rel:'noopener noreferrer'}:{})}
+           className="socpill" style={{background:c}}>
+          <span className="socpill-ic"><Ic/></span><span>{label}</span>
+        </a>
+      ))}
+      <a href={review} onClick={()=>ev('review')} target="_blank" rel="noopener noreferrer"
+         className="socpill" style={{background:'#5f6368'}}>
+        <span className="socpill-ic"><IcWeb/></span><span>Google</span>
+      </a>
+    </div>
+  )
+}
+
+// ---- UPI helpers (NPCI-compliant deep link) ----
+function isValidVpa(v){ return !!v && /^[\w.\-]{2,256}@[a-zA-Z]{2,64}$/.test(v.trim()) }
+function buildUpiUri(vpa, name, amount, note){
+  const pa=(vpa||'').trim()
+  if(!isValidVpa(pa)) return null
+  // Build params with URLSearchParams (encodes each value), then fix UPI quirks:
+  //  - spaces must be %20 (not '+'), so GPay/PhonePe parse the note/name correctly
+  //  - the VPA (pa) '@' must stay literal, so it is prepended raw (not via URLSearchParams)
+  const params=new URLSearchParams()
+  params.set('pn',(name||'Shop').trim())
+  const amt=Number(amount)
+  if(amt>0) params.set('am', String(amt))          // am=1 (no forced decimals)
+  params.set('cu','INR')
+  params.set('tn',(note||('Payment to '+(name||'Shop').trim())).slice(0,50))
+  const qs=params.toString().replace(/\+/g,'%20')  // UPI needs %20 for spaces, not '+'
+  return `upi://pay?pa=${pa}&${qs}`
+}
+function launchUpi(uri, app){
+  // app-specific schemes work far better than generic upi:// (esp. GPay)
+  let target=uri
+  if(app==='gpay')    target=uri.replace(/^upi:\/\//,'tez://upi/')
+  if(app==='phonepe') target=uri.replace(/^upi:\/\//,'phonepe://')
+  if(app==='paytm')   target=uri.replace(/^upi:\/\//,'paytmmp://')
+  try{ window.location.assign(target) }
+  catch(e){ try{ window.location.href=target }catch(_){}}
+}
+
+function Stars({value,onPick}){
+  return <span>{[1,2,3,4,5].map(n=><span key={n} onClick={onPick?()=>onPick(n):undefined}
+    style={{cursor:onPick?'pointer':'default',fontSize:22,color:n<=value?'#FFB800':'#ddd'}}>*</span>)}</span>
+}
+
+function ProdCards({items}){
+  return (
+    <div className="pgrid">
+      {items.map(p=>{
+        const price=p.offer_price||p.price
+        const off=p.offer_price&&p.price?Math.round((1-p.offer_price/p.price)*100):0
+        return (
+          <a key={p.id} href={'#/p/'+p.id} className="pcard">
+            <div className="pcimg-wrap">
+              <img className="pcimg" loading="lazy" src={p.thumbnail||(p.images&&p.images[0])||PLACEHOLDER} onError={onImgErr} alt={p.title||p.name}/>
+              {off>0 && <span className="off-tag">{off}% OFF</span>}
+            </div>
+            <div className="pcbody">
+              <b className="pctitle">{p.title||p.name}</b>
+              <span className="pcprice">Rs.{price||'—'}{off>0 && <s className="muted">Rs.{p.price}</s>}</span>
+              {p.short_desc && <span className="pc-desc">{p.short_desc}</span>}
+            </div>
+          </a>
+        )
+      })}
+    </div>
+  )
+}
+
+function ShopPage(){
+  const { code } = useParams(); const loc = useLocation()
+  const base = loc.pathname.startsWith('/s/') ? '/s/' : '/shop/'
+  const [s,setS]=useState(null); const [view,setView]=useState('landing'); const [paid,setPaid]=useState(false)
+  const [rev,setRev]=useState({avg:0,count:0,reviews:[]}); const [myR,setMyR]=useState({rating:0,name:'',text:''})
+  const [catalog,setCatalog]=useState([]); const [payAmt,setPayAmt]=useState('')
+  const tokenKey='rvtok_'+code
+  let rtok=localStorage.getItem(tokenKey); if(!rtok){ rtok='r'+Math.random().toString(36).slice(2,10); localStorage.setItem(tokenKey,rtok) }
+  useEffect(()=>{ api.get(`${base}${code}`).then(d=>{ setS(d); if(d.found && d.shop_code){ try{api.post(`/shop/${d.shop_code}/event?event_type=qr_scan`)}catch{}; loadRev(d.shop_code); api.get(`/shop/${d.shop_code}/catalog`).then(setCatalog).catch(()=>{}) } }).catch(()=>setS({found:false})) },[code])
+  const loadRev=(sc)=>api.get(`/shop/${sc}/reviews`).then(r=>{ setRev(r); const mine=(r.reviews||[]).find(x=>x.token===rtok); if(mine)setMyR({rating:mine.rating,name:mine.name,text:mine.text||''}) }).catch(()=>{})
+  const ev=(t)=>{ try{ api.post(`/shop/${s?.shop_code||code}/event?event_type=${t}`) }catch{} }
+
+  if(!s) return <div className="container">Loading...</div>
+  if(!s.found) return <div className="container"><div className="card"><h2>Shop not found</h2><p className="muted">QR inactive or shop removed.</p></div></div>
+  if(s.status==='expired') return <div className="container"><div className="card"><h2>{s.shop_name}</h2><p style={{color:'#c0392b',marginTop:10}}>Subscription mudinjiduchu. Renewal panniya piragu QR marupadi active aagum.</p></div></div>
+
+  const review=`https://www.google.com/search?q=${encodeURIComponent(s.shop_name+' '+(s.address||''))}`
+  const hasUpi=isValidVpa(s.upi_id)
+  const payNow=(app)=>{ const uri=buildUpiUri(s.upi_id, s.shop_name, payAmt, 'Payment to '+(s.shop_name||'').trim()); if(!uri){ alert('Invalid UPI id: '+(s.upi_id||'(empty)')); return } ev('pay_now'); setPaid(true); launchUpi(uri, app) }
+  const shareQr=async()=>{
+    const uri=buildUpiUri(s.upi_id, s.shop_name, payAmt, 'Payment to '+(s.shop_name||'').trim())
+    if(!uri){ alert('Invalid UPI id'); return }
+    const msg=`Pay ${(s.shop_name||'').trim()}`+(payAmt?` Rs.${payAmt}`:'')+` — UPI: ${(s.upi_id||'').trim()}`
+    try{
+      // share the QR IMAGE so GPay/PhonePe appear in the share sheet & can scan it
+      const res=await fetch(qrImg(uri)); const blob=await res.blob()
+      const file=new File([blob],'nammaoor-pay-qr.png',{type:blob.type||'image/png'})
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:'NammaOor Pay', text:msg})
+      } else if(navigator.share){
+        await navigator.share({title:'NammaOor Pay', text:msg+' '+uri})
+      } else {
+        const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='nammaoor-pay-qr.png'
+        document.body.appendChild(a); a.click(); setTimeout(()=>{try{document.body.removeChild(a)}catch{}},1000); flash('QR saved')
+      }
+    }catch(e){ try{ await navigator.clipboard.writeText(uri); flash('UPI link copied!') }catch(_){ alert('Screenshot the QR to pay.') } }
+  }
+  const submitReview=async()=>{ if(!myR.rating){return} await api.post(`/shop/${s.shop_code}/reviews`,{reviewer_token:rtok,name:myR.name,rating:myR.rating,text:myR.text}); loadRev(s.shop_code) }
+  const delReview=async()=>{ await api.del(`/shop/${s.shop_code}/reviews/${rtok}`); setMyR({rating:0,name:'',text:''}); loadRev(s.shop_code) }
+
+  const Cover=()=>(<div style={{height:120,borderRadius:16,background:s.cover_url?`center/cover url(${s.cover_url})`:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'}}></div>)
+  const Head=()=>(<div className="row" style={{alignItems:'center'}}>
+    <div style={{width:56,height:56,borderRadius:14,background:'#fff',boxShadow:'0 4px 12px rgba(0,0,0,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,overflow:'hidden'}}>
+      {s.logo_url?<img src={s.logo_url} style={{width:'100%'}}/>:'S'}</div>
+    <div><div className="brand" style={{fontSize:22}}>{s.shop_name}</div>
+      <span className="pill">Active</span> <span className="muted">{s.shop_code}</span>
+      {rev.count>0 && <div className="muted"><Stars value={Math.round(rev.avg)}/> {rev.avg} ({rev.count})</div>}
+    </div></div>)
+
+  const previewUri=buildUpiUri(s.upi_id, s.shop_name, payAmt, 'Payment to '+(s.shop_name||'').trim())
+  const PayBox=()=>(
+    <div style={{display:'grid',gap:10}}>
+      <input className="input" type="number" inputMode="decimal" min="1" placeholder="Amount (Rs.) - optional"
+        value={payAmt} onChange={e=>setPayAmt(e.target.value)} style={{textAlign:'center',fontSize:16}}/>
+      {previewUri && <div style={{background:'#fff',border:'1px solid var(--line)',borderRadius:14,padding:16,textAlign:'center'}}>
+        <img src={qrImg(previewUri)} alt="UPI QR" style={{width:210,height:210,maxWidth:'100%'}}/>
+        <p style={{margin:'10px 0 0',fontWeight:800,fontSize:17,color:'var(--teal)'}}>
+          {payAmt&&Number(payAmt)>0?`Scan to Pay Rs.${payAmt}`:'Scan to Pay'}</p>
+        <button className="btn ghost" style={{marginTop:10,width:'100%'}} onClick={shareQr}>📤 Share QR</button>
+      </div>}
+      <div>
+        <p className="muted" style={{textAlign:'center',fontSize:12,margin:'0 0 8px'}}>
+          Idhe phone-la {payAmt&&Number(payAmt)>0?`Rs.${payAmt} `:''}pay panna — app-a thattunga:</p>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+          {[['gpay','GPay',IcGPay],['phonepe','PhonePe',IcPhonePe],['paytm','Paytm',IcPaytm],['','BHIM/UPI',IcBhim]].map(([app,label,Ic])=>(
+            <button key={label} onClick={()=>payNow(app||undefined)}
+              style={{display:'flex',flexDirection:'column',alignItems:'center',gap:5,padding:'10px 4px',
+                      background:'#fff',border:'1px solid var(--line)',borderRadius:12,cursor:'pointer'}}>
+              <Ic/><span style={{fontSize:11,fontWeight:600,color:'#3d3d63'}}>{label}</span>
+            </button>))}
+        </div>
+      </div>
+    </div>
+  )
+
+  if(view==='landing') return (
+    <div className="container" style={{maxWidth:480}}>
+      <img src="/logo.png" style={{height:34,display:'block',margin:'6px auto 14px'}}/>
+      <Cover/>
+      <div className="card" style={{marginTop:-30,textAlign:'center'}}>
+        <Head/>
+        {s.bio && <p className="muted" style={{marginTop:8}}>{s.bio}</p>}
+        <p className="muted" style={{marginTop:14}}>Etha seyya virumbureenga?</p>
+        <div style={{display:'grid',gap:12,marginTop:12}}>
+          {SHOW_PAY && hasUpi && <PayBox/>}
+          {catalog.length>0 &&
+            <button className="btn ai-cta" style={{padding:'18px',fontSize:16}} onClick={()=>{ev('details_view');setView('details')}}>🛍 Our Products ({catalog.length})<br/><span style={{fontWeight:400,fontSize:12}}>View - Order - WhatsApp</span></button>}
+          <button className="btn" style={{padding:'18px',fontSize:16}} onClick={()=>{ev('details_view');setView('details')}}>Shop Details<br/><span style={{fontWeight:400,fontSize:12}}>Products - Offers - Call - Maps - Reviews</span></button>
+        </div>
+        {paid && <div style={{marginTop:16,padding:12,background:'#eafaf4',borderRadius:12}}>
+          <p style={{color:'var(--teal)',fontWeight:700}}>Payment app-ku poninga?</p>
+          <button className="btn ghost" style={{marginTop:8}} onClick={()=>{ev('details_view');setView('details')}}>Know More About Our Shop</button>
+        </div>}
+      </div>
+      <p className="muted" style={{textAlign:'center'}}>Powered by NammaOor</p>
+    </div>
+  )
+
+  return (
+    <div className="container" style={{maxWidth:480}}>
+      <button className="btn ghost sm" onClick={()=>setView('landing')}>Back</button>
+      <Cover/>
+      <div className="card" style={{marginTop:-30}}>
+        <Head/>
+        {s.bio && <p className="muted" style={{marginTop:6}}>{s.bio}</p>}
+        {s.address && <p className="muted" style={{marginTop:6}}>{s.address}</p>}
+        <SocialRow s={s} ev={ev} review={review}/>
+        {SHOW_PAY && hasUpi && <div style={{marginTop:12}}><PayBox/></div>}
+      </div>
+
+      {catalog.length>0 && <div className="card"><h3>🛍 Products ({catalog.length})</h3>
+        <p className="muted" style={{marginTop:2,marginBottom:6}}>Oru product-a click panni details, order &amp; WhatsApp order paakalaam.</p>
+        <ProdCards items={catalog}/></div>}
+
+      {s.offers?.length>0 && <div className="card"><h3>Offers</h3>
+        {s.offers.map((o,i)=><p key={i} style={{marginTop:6}} onMouseEnter={()=>ev('offer_view')}>- {o.title} {o.detail&&<span className="muted">- {o.detail}</span>}</p>)}</div>}
+      {catalog.length===0 && s.products?.length>0 && <div className="card"><h3>Products</h3>
+        {s.products.map((p,i)=><div key={i} className="row" style={{justifyContent:'space-between',borderBottom:'1px solid var(--line)',padding:'6px 0'}}>
+          <span>{p.name}</span><b>{p.price?`Rs.${p.price}`:''}</b></div>)}</div>}
+      {s.photos?.length>0 && <div className="card"><h3>Photos</h3><div className="row">
+        {s.photos.map((ph,i)=><img key={i} src={ph} style={{width:90,height:90,borderRadius:10,objectFit:'cover'}}/>)}</div></div>}
+      {(s.open_time||s.leave_days) && <div className="card"><h3>Working Hours</h3>
+        <p className="muted">Hours: {s.open_time||'-'} to {s.close_time||'-'}</p>
+        {s.leave_days && <p className="muted">Weekly Leave: {s.leave_days}</p>}</div>}
+      {s.description && <div className="card"><h3>About</h3><p className="muted">{s.description}</p></div>}
+      {s.google_place_id && <div className="card"><h3>Google Business</h3>
+        <a href={`https://search.google.com/local/reviews?placeid=${s.google_place_id}`} target="_blank"><button className="btn ghost">View Google Reviews</button></a></div>}
+
+      <div className="card"><h3>Ratings & Reviews</h3>
+        {rev.count>0 && <p><Stars value={Math.round(rev.avg)}/> <b>{rev.avg}</b> <span className="muted">({rev.count} ratings, {rev.reviews.filter(r=>r.text).length} reviews)</span></p>}
+        <div style={{marginTop:8,padding:10,background:'#f7f6fc',borderRadius:10}}>
+          <p className="muted">Your rating:</p>
+          <Stars value={myR.rating} onPick={n=>setMyR({...myR,rating:n})}/>
+          <input className="input" placeholder="Your name (optional)" value={myR.name} onChange={e=>setMyR({...myR,name:e.target.value})}/>
+          <textarea rows="2" placeholder="Write a review" value={myR.text} onChange={e=>setMyR({...myR,text:e.target.value})}></textarea>
+          <div className="row"><button className="btn sm" onClick={submitReview}>Submit</button>
+            <button className="btn sm ghost" onClick={delReview}>Delete mine</button></div>
+        </div>
+        {rev.reviews.map((r,i)=><div key={i} style={{borderBottom:'1px solid var(--line)',padding:'8px 0'}}>
+          <b>{r.name}</b> <Stars value={r.rating}/><div className="muted">{r.text}</div></div>)}
+        {rev.count===0 && <p className="muted">No reviews yet. Be the first!</p>}
+      </div>
+      <p className="muted" style={{textAlign:'center'}}>Powered by NammaOor</p>
+    </div>
+  )
+}
+
+
+function StarsRow({v}){ return <span>{[1,2,3,4,5].map(n=><span key={n} style={{color:n<=Math.round(v)?'#FFB800':'#ddd'}}>*</span>)}</span> }
+function Search(){
+  const [districts,setD]=useState([]); const [assemblies,setA]=useState([]); const [cats,setC]=useState([])
+  const [q,setQ]=useState({text:'',district:'',assembly:'',town:'',category:''}); const [res,setRes]=useState([]); const [done,setDone]=useState(false)
+  useEffect(()=>{ api.get('/geo/districts').then(setD).catch(()=>{}); api.get('/geo/categories').then(setC).catch(()=>{}) },[])
+  useEffect(()=>{ if(q.district) api.get('/geo/assemblies?district_id='+q.district).then(setA).catch(()=>{}) },[q.district])
+  async function search(){
+    const p=new URLSearchParams()
+    if(q.text)p.set('q',q.text); if(q.district)p.set('district',q.district); if(q.assembly)p.set('assembly',q.assembly)
+    if(q.town)p.set('town',q.town); if(q.category)p.set('category',q.category)
+    setRes(await api.get('/search?'+p.toString()).catch(()=>[])); setDone(true)
+  }
+  const [near,setNear]=useState(false); const [geoMsg,setGeoMsg]=useState('')
+  function nearMe(){
+    if(!navigator.geolocation){ setGeoMsg('Location support illa'); return }
+    setGeoMsg('📍 Location edukkiraen...')
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      const p=new URLSearchParams({lat:pos.coords.latitude,lng:pos.coords.longitude,radius_km:'8'})
+      if(q.text)p.set('q',q.text); if(q.category)p.set('category',q.category)
+      try{ const r=await api.get('/search/near?'+p.toString()); setRes(r); setNear(true); setDone(true)
+        setGeoMsg(r.length?'':'Pakkathula kadai illa (8km)') }
+      catch(e){ setGeoMsg('Search fail: '+e.message) }
+    }, err=>setGeoMsg('Location deny aachu. Allow pannunga.'), {enableHighAccuracy:true,timeout:10000})
+  }
+  const set=k=>e=>setQ({...q,[k]:e.target.value})
+  return (<><Header/><div className="container">
+    <h2 className="brand">Kadaigalai Thedu / Find Shops</h2>
+    <div className="card">
+      <input className="input" style={{fontSize:16}} placeholder="Search shop name, product, area..." value={q.text}
+        onChange={set('text')} onKeyDown={e=>e.key==='Enter'&&search()}/>
+      <div className="grid2">
+        <select onChange={set('district')}><option value="">District</option>{districts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>
+        <select onChange={set('assembly')}><option value="">Assembly</option>{assemblies.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select>
+        <input className="input" placeholder="Town / Village" onChange={set('town')}/>
+        <select onChange={set('category')}><option value="">Category</option>{cats.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>
+      </div>
+      <div className="row"><button className="btn" onClick={()=>{setNear(false);search()}}>🔍 Search</button><button className="btn ghost" onClick={nearMe}>📍 Near me</button></div>
+      {geoMsg&&<p className="muted" style={{marginTop:6}}>{geoMsg}</p>}
+    </div>
+    {res.map(s=><Link key={s.shop_code} to={`/shop/${(s.shop_code||'').replace('-','')}`}>
+      <div className="card row" style={{alignItems:'center',gap:12}}>
+        <div style={{width:44,height:44,borderRadius:12,background:'#f1ecff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,overflow:'hidden'}}>
+          {s.logo_url?<img src={s.logo_url} style={{width:'100%'}}/>:'S'}</div>
+        <div style={{flex:1}}><b>{s.shop_name}</b>
+          <div className="muted">{s.category||''} {s.town?('- '+s.town):''}{s.distance_km!=null?(' · 📍 '+s.distance_km+' km'):''}</div>
+          {s.reviews>0 && <div style={{fontSize:13}}><StarsRow v={s.rating}/> {s.rating} ({s.reviews})</div>}
+          {s.bio && <div className="muted" style={{fontSize:12}}>{s.bio}</div>}
+        </div></div></Link>)}
+    {done && res.length===0 && <p className="muted">No shops found. Try a different search.</p>}
+    {!done && <p className="muted">Search by name, category, or area.</p>}
+  </div></>)
+}
+
+
+
+function Login(){
+  const nav=useNavigate(); const [tab,setTab]=useState('owner'); const [msg,setMsg]=useState('')
+  // owner OTP
+  const [mobile,setMobile]=useState(''); const [code,setCode]=useState(''); const [sent,setSent]=useState(false)
+  const [otpUntil,setOtpUntil]=useState(0)
+  // employee
+  const [u,setU]=useState(''); const [p,setP]=useState('')
+  // admin (hidden)
+  const [showAdmin,setShowAdmin]=useState(false)
+  // forgot (employee)
+  const [showForgot,setShowForgot]=useState(false)
+  const [fMobile,setFMobile]=useState(''); const [fCode,setFCode]=useState(''); const [fNew,setFNew]=useState('')
+  const [fSent,setFSent]=useState(false); const [fUntil,setFUntil]=useState(0); const [fDone,setFDone]=useState(null)
+  // 1-second ticker for countdowns
+  const [,setTick]=useState(0)
+  useEffect(()=>{ const t=setInterval(()=>setTick(x=>x+1),1000); return ()=>clearInterval(t) },[])
+  const left=(until)=> until? Math.max(0, Math.ceil((until-Date.now())/1000)) : 0
+
+  function go(role){ setRole(role); nav('/app/'+(role==='super_admin'?'admin':role==='shop_owner'?'owner':role)) }
+
+  async function reqOtp(){ try{ const r=await api.post('/auth/otp/request',{mobile}); setSent(true)
+    setOtpUntil(Date.now()+60000); setMsg('✅ OTP sent to your number. Valid 5 min.') }
+    catch(e){ setMsg('❌ '+e.message) } }
+  async function verify(){ try{ const r=await api.post('/auth/otp/verify',{mobile,code}); setToken(r.access_token); go('shop_owner') }
+    catch(e){ setMsg('❌ '+e.message) } }
+  async function empLogin(){ try{ const r=await api.post('/auth/employee/login',{emp_code:u,password:p}); setToken(r.access_token); go('employee') }
+    catch(e){ setMsg('❌ '+e.message) } }
+  async function adminLogin(){ try{ const r=await api.post('/auth/admin/login',{username:u,password:p}); setToken(r.access_token); go('super_admin') }
+    catch(e){ setMsg('❌ '+e.message) } }
+  // forgot
+  async function fReq(){ try{ const r=await api.post('/auth/forgot/request',{mobile:fMobile}); setFSent(true)
+    setFUntil(Date.now()+60000); setMsg('✅ OTP sent to your number. Valid 5 min.') }
+    catch(e){ setMsg('❌ '+e.message) } }
+  async function fReset(){ try{ const r=await api.post('/auth/forgot/reset',{mobile:fMobile,code:fCode,new_password:fNew})
+    setFDone(r.username); setMsg('') } catch(e){ setMsg('❌ '+e.message) } }
+
+  const backToLogin=()=>{ setShowForgot(false); setFSent(false); setFDone(null); setFMobile(''); setFCode(''); setFNew(''); setMsg('') }
+
+  return (<><Header/><div className="container" style={{maxWidth:440}}>
+    <h2 className="brand">Login</h2>
+
+    {/* ---------- FORGOT PASSWORD (employee) ---------- */}
+    {showForgot && <div className="card">
+      <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
+        <b>🔑 Reset Employee Password</b>
+        <a className="muted" style={{cursor:'pointer'}} onClick={backToLogin}>← Back</a>
+      </div>
+      {fDone ? <>
+        <div style={{padding:12,background:'#eafaf4',borderRadius:10}}>
+          <p>✅ Password changed!</p>
+          <p>Your username: <b>{fDone}</b></p>
+        </div>
+        <button className="btn" style={{marginTop:10}} onClick={backToLogin}>Go to Login</button>
+      </> : <>
+        <label style={{marginTop:8}}>Registered Mobile Number</label>
+        <input className="input" value={fMobile} onChange={e=>setFMobile(e.target.value)} placeholder="10-digit mobile"/>
+        {!fSent
+          ? <button className="btn" onClick={fReq}>Send OTP</button>
+          : <>
+              <label>Enter OTP</label>
+              <input className="input" value={fCode} onChange={e=>setFCode(e.target.value)}/>
+              <label>New Password</label>
+              <PwInput value={fNew} onChange={e=>setFNew(e.target.value)} placeholder="New password (min 6)"/>
+              <button className="btn" style={{marginTop:8}} onClick={fReset}>Reset Password</button>
+              <div style={{marginTop:8}}>
+                {left(fUntil)>0
+                  ? <span className="muted">Resend OTP in {left(fUntil)}s</span>
+                  : <a style={{cursor:'pointer',color:'var(--purple)'}} onClick={fReq}>Resend OTP</a>}
+              </div>
+            </>}
+      </>}
+      <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
+    </div>}
+
+    {/* ---------- MAIN LOGIN ---------- */}
+    {!showForgot && !showAdmin && <>
+      <div className="tabs">
+        <div className={'tabx'+(tab==='owner'?' on':'')} onClick={()=>{setTab('owner');setMsg('')}}>Shop Owner</div>
+        <div className={'tabx'+(tab==='employee'?' on':'')} onClick={()=>{setTab('employee');setMsg('')}}>Employee</div>
+      </div>
+      <div className="card">
+        {tab==='owner' && <>
+          <label>Mobile Number</label>
+          <input className="input" value={mobile} onChange={e=>setMobile(e.target.value)} placeholder="10-digit mobile"/>
+          {!sent
+            ? <button className="btn" onClick={reqOtp}>Send OTP</button>
+            : <>
+                <label>Enter OTP</label>
+                <input className="input" value={code} onChange={e=>setCode(e.target.value)}/>
+                <button className="btn" onClick={verify}>Verify &amp; Login</button>
+                <div style={{marginTop:8}}>
+                  {left(otpUntil)>0
+                    ? <span className="muted">Resend OTP in {left(otpUntil)}s</span>
+                    : <a style={{cursor:'pointer',color:'var(--purple)'}} onClick={reqOtp}>Resend OTP</a>}
+                </div>
+              </>}
+        </>}
+        {tab==='employee' && <>
+          <label>Employee ID (EMP-0001)</label>
+          <input className="input" value={u} onChange={e=>setU(e.target.value)}/>
+          <label>Password</label>
+          <PwInput value={p} onChange={e=>setP(e.target.value)}/>
+          <button className="btn" style={{marginTop:8}} onClick={empLogin}>Login</button>
+          <p className="muted" style={{marginTop:8,cursor:'pointer',color:'var(--purple)'}}
+             onClick={()=>{setShowForgot(true);setMsg('')}}>Forgot password?</p>
+        </>}
+        <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
+      </div>
+    </>}
+
+    {/* ---------- HIDDEN ADMIN ---------- */}
+    {showAdmin && <div className="card">
+      <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
+        <b>🛡️ Admin Login</b>
+        <a className="muted" style={{cursor:'pointer'}} onClick={()=>{setShowAdmin(false);setMsg('')}}>← Back</a>
+      </div>
+      <label style={{marginTop:8}}>Username</label>
+      <input className="input" value={u} onChange={e=>setU(e.target.value)}/>
+      <label>Password</label>
+      <PwInput value={p} onChange={e=>setP(e.target.value)}/>
+      <button className="btn" style={{marginTop:8}} onClick={adminLogin}>Login</button>
+      <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
+    </div>}
+
+    {!showForgot && <div style={{textAlign:'center',marginTop:16,opacity:.35,cursor:'pointer',userSelect:'none'}}
+         onClick={()=>{setShowAdmin(v=>!v);setU('');setP('');setMsg('')}} title="admin">🔒</div>}
+  </div></>)
+}
+
+
+function OwnerDashboard(){
+  const [s,setS]=useState(null); const [an,setAn]=useState({}); const [pays,setPays]=useState([])
+  const [prod,setProd]=useState({name:'',price:''}); const [offer,setOffer]=useState({title:'',detail:''})
+  const [edit,setEdit]=useState(null); const [ef,setEf]=useState({name:'',price:''})
+  const [psearch,setPsearch]=useState(''); const [msg,setMsg]=useState('')
+  const [route,setRoute]=useState(null); const [bankF,setBankF]=useState({bank_account:'',bank_ifsc:'',beneficiary_name:'',pan:'',email:''})
+  const load=()=>{ api.get('/me/shop').then(setS).catch(e=>setMsg(e.message))
+    api.get('/me/shop/analytics').then(setAn).catch(()=>{})
+    api.get('/me/shop/payments').then(setPays).catch(()=>{})
+    api.get('/me/shop/route/status').then(setRoute).catch(()=>{}) }
+  useEffect(load,[])
+  if(!s) return <><Header/><div className="container"><div className="card">{msg||'Loading...'}<p className="muted">Shop owner-aa login pannirukanum.</p></div></div></>
+  const save=async(patch,note)=>{ await api.patch('/me/shop',patch); setMsg(note||'Saved'); load() }
+  // Validate + https-prepend a social/website link. Empty clears it (hides the button).
+  const normUrl=(v)=>{ v=(v||'').trim(); if(!v) return ''
+    if(!/^https?:\/\//i.test(v)) v='https://'+v.replace(/^\/+/,'')
+    if(!/^https?:\/\/[\w.-]+\.[A-Za-z]{2,}/i.test(v)) return null; return v }
+  const saveLink=async(field,label,current)=>{
+    const raw=prompt(label+' (empty to remove)', current||''); if(raw==null) return
+    const v=normUrl(raw); if(v===null){ setMsg('❌ Invalid link — check and try again'); return }
+    await save({[field]:v}, v?(label+' saved'):(label+' removed')) }
+  const saveNum=async(field,label,current)=>{
+    const raw=prompt(label+' (10-digit mobile, empty to remove)', current||''); if(raw==null) return
+    const d=(raw||'').replace(/\D/g,''); if(raw.trim() && d.length<10){ setMsg('❌ Enter a valid 10-digit number'); return }
+    await save({[field]:d.slice(-10)}, d?(label+' saved'):(label+' removed')) }
+  const onboardRoute=async()=>{ if(!bankF.bank_account||!bankF.bank_ifsc||!bankF.beneficiary_name){setMsg('Bank details fill pannunga');return} try{ const r=await api.post('/me/shop/route/onboard',bankF); setMsg(r.note||'Payout account submitted'); api.get('/me/shop/route/status').then(setRoute) }catch(e){setMsg(e.message)} }
+  const addProduct=async()=>{ await api.post('/me/shop/products',{name:prod.name,price:prod.price?+prod.price:null}); setProd({name:'',price:''}); load() }
+  const delProduct=async(id)=>{ await api.del('/me/shop/products/'+id); load() }
+  const saveEdit=async(id)=>{ await api.patch('/me/shop/products/'+id,{name:ef.name,price:ef.price?+ef.price:null}); setEdit(null); load() }
+  const addOffer=async()=>{ await api.post('/me/shop/offers',offer); setOffer({title:'',detail:''}); load() }
+  const delOffer=async(id)=>{ await api.del('/me/shop/offers/'+id); load() }
+  const renew=async()=>{ const r=await api.post('/me/shop/renew'); if(r.gateway==='razorpay'&&window.Razorpay){ new window.Razorpay({key:r.key_id,amount:r.amount*100,currency:'INR',name:'NammaOor',description:'Renewal Rs.299',order_id:r.order_id,theme:{color:'#FF2E7E'},handler:async(x)=>{await api.post('/payments/verify',{razorpay_order_id:x.razorpay_order_id,razorpay_payment_id:x.razorpay_payment_id,razorpay_signature:x.razorpay_signature});setMsg('Renewed!');load()}}).open() } else { await api.post(`/payments/dev/mark-paid/${r.txn_id}`); setMsg('Renewed 6 months'); load() } }
+  const daysLeft = s.expires_at ? Math.max(0, Math.ceil((new Date(s.expires_at)-new Date())/86400000)) : 0
+  const pub=`${SITE}/#/shop/${(s.shop_code||'').replace('-','')}`
+  const fp = pays.filter(p=>!psearch || (p.gateway_payment_id||'').includes(psearch) || (''+p.amount).includes(psearch) || (p.status||'').includes(psearch))
+  return (<><Header/><div className="container">
+    <h2 className="brand">{s.shop_name}</h2>
+    <p className="muted">{s.shop_code} - <span className="pill">{s.status}</span> {s.bio&&<span> - {s.bio}</span>}</p>
+    <div className="row" style={{marginTop:12}}>
+      <div className="kpi"><b>{an.qr_scans||0}</b><span>QR Scans</span></div>
+      <div className="kpi"><b>{an.pay_now||0}</b><span>Pay Now</span></div>
+      <div className="kpi"><b>{an.calls||0}</b><span>Calls</span></div>
+      <div className="kpi"><b>{an.whatsapp||0}</b><span>WhatsApp</span></div>
+    </div>
+
+    <div className="grid2" style={{marginTop:14}}>
+      <div className="card"><h3>QR Code</h3>
+        <div className="qrbox" style={{margin:'10px auto'}}><img src={qrImg(pub)}/></div>
+        <p className="muted" style={{textAlign:'center'}}>{pub}</p>
+        <button className="btn" style={{width:'100%',marginTop:8}}
+          onClick={()=>downloadFile('/me/shop/poster','nammaoor_poster.pdf')}>
+          🖨 Download Poster (print & stick)</button></div>
+      <div className="card"><h3>Membership</h3>
+        <p className="muted">Plan: <b>NammaOor Basic (6 months)</b></p>
+        <p className="muted">Renewal date: <b>{s.expires_at?new Date(s.expires_at).toDateString():'-'}</b></p>
+        <p style={{fontWeight:800,fontSize:18,color:daysLeft<15?'#c0392b':'#008C78'}}>{daysLeft} days remaining</p>
+        <button className="btn" onClick={renew}>Renew Rs.299 / 6 months</button>
+        <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p>
+      </div>
+    </div>
+
+    <div className="card"><h3>Profile</h3>
+      <div className="row">
+        <button className="btn ghost" onClick={async()=>{const d=await pickImage(400); if(d)save({logo_url:d},'DP updated')}}>Upload DP</button>
+        <button className="btn ghost" onClick={async()=>{const d=await pickImage(1200); if(d)save({cover_url:d},'Cover updated')}}>Upload Cover</button>
+        <button className="btn ghost" onClick={async()=>{const d=await pickImage(900); if(d)save({photos:[...(s.photos||[]),d]},'Photo added')}}>Add Photo</button>
+        <button className="btn ghost" onClick={async()=>{const u=prompt('UPI ID (name@upi)',s.upi_id||''); if(u!=null)save({upi_id:u},'UPI saved')}}>Set UPI</button>
+      </div>
+      <div className="row" style={{marginTop:8}}>
+        {s.logo_url && <img src={s.logo_url} style={{height:44,borderRadius:8}}/>}
+        {(s.photos||[]).map((ph,i)=><img key={i} src={ph} style={{height:56,borderRadius:8}}/>)}
+      </div>
+      {s.cover_url && <img src={s.cover_url} style={{width:'100%',height:90,objectFit:'cover',borderRadius:10,marginTop:8}}/>}
+      <div className="row" style={{marginTop:8}}>
+        <button className="btn ghost" onClick={()=>{const b=prompt('Bio / tagline',s.bio||''); if(b!=null)save({bio:b},'Bio saved')}}>Edit Bio</button>
+        <button className="btn ghost" onClick={()=>{const o=prompt('Opening time',s.open_time||''); if(o!=null)save({open_time:o},'Saved')}}>Opening Time</button>
+        <button className="btn ghost" onClick={()=>{const c=prompt('Closing time',s.close_time||''); if(c!=null)save({close_time:c},'Saved')}}>Closing Time</button>
+        <button className="btn ghost" onClick={()=>{const l=prompt('Weekly leave days',s.leave_days||''); if(l!=null)save({leave_days:l},'Saved')}}>Leave Days</button>
+        <button className="btn ghost" onClick={()=>{const g=prompt('Google Place ID / Business link',s.google_place_id||''); if(g!=null)save({google_place_id:g},'Google linked')}}>Link Google Business</button>
+      </div>
+      <p className="muted" style={{marginTop:6}}>UPI: {s.upi_id||'-'} | Hours: {s.open_time||'-'} to {s.close_time||'-'} | Leave: {s.leave_days||'-'}</p>
+    </div>
+
+    <div className="card">
+      <h3>📇 Contact &amp; Social Links</h3>
+      <p className="muted" style={{marginTop:2}}>Neenga fill panra buttons mattum customer shop page-la varum. Kaali-a vittaal antha button hide aagum.</p>
+      <div className="socgrid" style={{marginTop:10}}>
+        {[
+          ['mobile','📞','Call Number',s.mobile,'num'],
+          ['whatsapp','💬','WhatsApp Number',s.whatsapp,'num'],
+          ['instagram','📷','Instagram',s.instagram,'url'],
+          ['facebook','👍','Facebook',s.facebook,'url'],
+          ['youtube','▶️','YouTube',s.youtube,'url'],
+          ['website','🌐','Website',s.website,'url'],
+          ['telegram','✈️','Telegram',s.telegram,'url'],
+        ].map(([f,ic,label,val,typ])=>(
+          <button key={f} className="btn ghost socbtn"
+            onClick={()=> typ==='num' ? saveNum(f,label,val) : saveLink(f,label,val)}>
+            <span className="socbtn-ic">{ic}</span>
+            <span className="socbtn-tx"><b>{label}</b>
+              <small className="muted">{val ? (typ==='num'?val:'✓ '+val.replace(/^https?:\/\//,'').slice(0,24)) : 'Not set — tap to add'}</small></span>
+            <span className="socbtn-ed">{val?'Edit':'Add'}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div className="card ai-banner">
+      <div className="row" style={{justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10}}>
+        <div><h3 style={{margin:0}}>✨ AI Listing Generator</h3>
+          <p className="muted" style={{margin:'4px 0 0'}}>Photo podunga - AI title, description, tags, SEO auto generate pannum. Premium product page + WhatsApp order.</p></div>
+        <a className="btn ai-cta" href="#/app/ai">Create AI Product →</a>
+      </div>
+    </div>
+
+    <div className="card">
+      <h3>💰 Bank & Payouts (direct settlement)</h3>
+      <p className="muted" style={{marginTop:2}}>UPI QR-la customer pay panna, money direct-ah unga account-ku varum. Future-la card payments enable aagum bothu direct settlement-ku indha bank + PAN details use aagum.</p>
+      {route && route.route_status==='active'
+        ? <p style={{marginTop:8}}><span className="pill">✔ Active</span> <span className="muted">Payouts to {route.beneficiary_name} · A/c {route.bank_account} · {route.bank_ifsc}</span></p>
+        : route && route.route_status==='pending'
+        ? <div style={{marginTop:8}}><span className="pill red">⏳ Verification pending</span> <span className="muted">Details submitted. Activation aana udane direct settlement start aagum.</span></div>
+        : <div className="grid2" style={{marginTop:8}}>
+            <div><label className="lbl">Bank Account Number</label><input className="input" value={bankF.bank_account} onChange={e=>setBankF({...bankF,bank_account:e.target.value})}/></div>
+            <div><label className="lbl">IFSC Code</label><input className="input" value={bankF.bank_ifsc} onChange={e=>setBankF({...bankF,bank_ifsc:e.target.value.toUpperCase()})}/></div>
+            <div><label className="lbl">Account Holder Name</label><input className="input" value={bankF.beneficiary_name} onChange={e=>setBankF({...bankF,beneficiary_name:e.target.value})}/></div>
+            <div><label className="lbl">PAN</label><input className="input" value={bankF.pan} onChange={e=>setBankF({...bankF,pan:e.target.value.toUpperCase()})}/></div>
+            <div style={{gridColumn:'1 / -1'}}><label className="lbl">Email (optional)</label><input className="input" value={bankF.email} onChange={e=>setBankF({...bankF,email:e.target.value})}/></div>
+          </div>}
+      {(!route || route.route_status==='none') && <>
+        <button className="btn ai-cta" style={{marginTop:10}} onClick={onboardRoute}>Submit for direct payouts</button>
+        <p className="muted" style={{fontSize:12,marginTop:6}}>PAN illaya? Aadhaar vechu free instant e-PAN edunga → <a href="https://www.incometax.gov.in/iec/foportal/" target="_blank">incometax.gov.in</a></p>
+      </>}
+    </div>
+
+    <div className="card"><h3>Products</h3>
+      {(s.products||[]).map(p=><div key={p.id} className="row" style={{justifyContent:'space-between',borderBottom:'1px solid var(--line)',padding:'6px 0',alignItems:'center'}}>
+        {edit===p.id
+          ? <><input className="input" style={{flex:2}} value={ef.name} onChange={e=>setEf({...ef,name:e.target.value})}/>
+              <input className="input" style={{flex:1}} value={ef.price} onChange={e=>setEf({...ef,price:e.target.value})}/>
+              <button className="btn sm" onClick={()=>saveEdit(p.id)}>Save</button></>
+          : <><span>{p.name} {p.price?`- Rs.${p.price}`:''}</span>
+              <span><button className="btn sm ghost" onClick={()=>{setEdit(p.id);setEf({name:p.name,price:p.price||''})}}>Edit</button> <button className="btn sm ghost" onClick={()=>delProduct(p.id)}>Delete</button></span></>}
+      </div>)}
+      <div className="row" style={{marginTop:8}}>
+        <input className="input" style={{flex:2}} placeholder="Product name" value={prod.name} onChange={e=>setProd({...prod,name:e.target.value})}/>
+        <input className="input" style={{flex:1}} placeholder="Price" value={prod.price} onChange={e=>setProd({...prod,price:e.target.value})}/>
+        <button className="btn" onClick={addProduct}>Add</button></div>
+    </div>
+
+    <div className="card"><h3>Offers</h3>
+      {(s.offers||[]).map(o=><div key={o.id} className="row" style={{justifyContent:'space-between',borderBottom:'1px solid var(--line)',padding:'6px 0'}}>
+        <span>{o.title}</span><button className="btn sm ghost" onClick={()=>delOffer(o.id)}>Delete</button></div>)}
+      <div className="row" style={{marginTop:8}}>
+        <input className="input" style={{flex:2}} placeholder="Offer title" value={offer.title} onChange={e=>setOffer({...offer,title:e.target.value})}/>
+        <button className="btn" onClick={addOffer}>Add</button></div>
+    </div>
+
+    <div className="card"><h3>Payment History</h3>
+      <input className="input" placeholder="Search (txn id / amount / status)" value={psearch} onChange={e=>setPsearch(e.target.value)}/>
+      <table><tr><th>Date</th><th>Amount</th><th>Type</th><th>Txn ID</th><th>Status</th></tr>
+        {fp.map((p,i)=><tr key={i}><td>{p.date?new Date(p.date).toLocaleString():'-'}</td><td>Rs.{p.amount}</td><td>{p.type}</td>
+          <td className="muted">{(p.gateway_payment_id||p.txn_id||'').slice(0,14)}</td>
+          <td><span className={'tag '+(p.status==='paid'?'a':'e')}>{p.status}</span></td></tr>)}
+      </table>{fp.length===0 && <p className="muted">No payments yet.</p>}
+    </div>
+  </div></>)
+}
+
+
+function EmployeeDashboard(){
+  const [d,setD]=useState(null); const [shops,setShops]=useState([]); const [inv,setInv]=useState({})
+  const [msg,setMsg]=useState(''); const [wh,setWh]=useState([]); const [ver,setVer]=useState({upi_id:'',upi_name:''}); const [amt,setAmt]=useState('')
+  const load=()=>{ api.get('/me/employee/dashboard').then(setD).catch(e=>setMsg(e.message))
+    api.get('/me/employee/shops').then(setShops).catch(()=>{})
+    api.get('/me/employee/qr-inventory').then(setInv).catch(()=>{})
+    api.get('/me/employee/withdrawals').then(setWh).catch(()=>{}) }
+  useEffect(load,[])
+  if(!d) return <><Header/><div className="container"><div className="card">{msg||'Loading…'}<p className="muted">Employee-ஆ login பண்ணியிருக்கணும்.</p></div></div></>
+  const verify=async()=>{ await api.patch('/me/employee/verification',ver); setMsg('✅ Verified'); load() }
+  const withdraw=async()=>{ try{await api.post('/me/employee/withdrawals',{amount:+amt}); setMsg('✅ Requested'); load()}catch(e){setMsg('❌ '+e.message)} }
+  const regUrl=`${SITE}/#/register?emp=${(d.emp_code||'').replace('-','')}`
+  return (<><Header/><div className="container">
+    <h2 className="brand">Employee — {d.emp_code}</h2>
+    <div className="row" style={{marginTop:10}}>
+      <div className="kpi"><b>₹{d.wallet_balance}</b><span>Wallet</span></div>
+      <div className="kpi"><b>{d.total_registrations}</b><span>Total Shops</span></div>
+      <div className="kpi"><b>{d.today_registrations}</b><span>Today</span></div>
+      <div className="kpi"><b>{d.is_verified?'✅':'❌'}</b><span>Verified</span></div>
+    </div>
+    <div className="card" style={{marginTop:14}}><h3>📦 My QR Stickers (Admin assigned)</h3>
+      <div className="row">
+        <div className="kpi"><b>{inv.assigned||0}</b><span>Total Assigned</span></div>
+        <div className="kpi"><b>{inv.available||0}</b><span>Available</span></div>
+        <div className="kpi"><b>{inv.used||0}</b><span>Used</span></div>
+      </div>
+      {inv.tokens && inv.tokens.length>0 && <p className="muted" style={{marginTop:8}}>Next codes: {inv.tokens.slice(0,8).join(', ')}…</p>}
+      {(!inv.assigned) && <p className="muted" style={{marginTop:8}}>Admin இன்னும் QR assign பண்ணல. Admin-ஐ கேளுங்க.</p>}
+    </div>
+    <div className="grid2">
+      <div className="card"><h3>📱 My Registration QR</h3>
+        <div className="qrbox" style={{margin:'10px auto'}}><img src={qrImg(regUrl)}/></div>
+        <p className="muted" style={{textAlign:'center'}}>{regUrl}</p></div>
+      <div className="card"><h3>💸 Withdrawal (min ₹500)</h3>
+        {!d.is_verified && <><input className="input" placeholder="UPI ID" onChange={e=>setVer({...ver,upi_id:e.target.value})}/>
+          <input className="input" placeholder="UPI Name" onChange={e=>setVer({...ver,upi_name:e.target.value})}/>
+          <button className="btn sm" onClick={verify}>Verify UPI</button></>}
+        {d.is_verified && <><input className="input" placeholder="Amount" value={amt} onChange={e=>setAmt(e.target.value)}/>
+          <button className="btn" onClick={withdraw}>Request Withdrawal</button></>}
+        <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p></div>
+    </div>
+    <div className="card"><h3>My Withdrawals</h3>
+      <table><tr><th>Requested</th><th>Amount</th><th>Status</th><th>Paid On</th></tr>
+        {wh.map((w,i)=><tr key={i}><td>{w.created_at?new Date(w.created_at).toLocaleDateString():'-'}</td><td>Rs.{w.amount}</td>
+          <td><span className={'tag '+(['completed','paid'].includes(w.status)?'a':'e')}>{w.status}</span></td>
+          <td>{w.paid_at?new Date(w.paid_at).toLocaleDateString():'-'}</td></tr>)}
+      </table>{wh.length===0 && <p className="muted">No withdrawals yet.</p>}
+    </div>
+    <div className="card"><h3>🏪 My Shops</h3>
+      <table><tr><th>ID</th><th>Shop</th><th>Status</th></tr>
+        {shops.map((s,i)=><tr key={i}><td>{s.shop_code||'draft'}</td><td>{s.shop_name}</td><td><span className={'tag '+(s.status==='active'?'a':'e')}>{s.status}</span></td></tr>)}
+      </table>{shops.length===0 && <p className="muted">இன்னும் shops இல்ல.</p>}</div>
+  </div></>)
+}
+
+
+function AdminDashboard(){
+  const [rev,setRev]=useState({}); const [an,setAn]=useState({}); const [shops,setShops]=useState([])
+  const [wd,setWd]=useState([]); const [emps,setEmps]=useState([]); const [qr,setQr]=useState({})
+  const [genN,setGenN]=useState(50); const [asg,setAsg]=useState({emp_code:'',count:10})
+  const [newEmp,setNewEmp]=useState({full_name:'',mobile:'',password:'',district_id:''})
+  const [cred,setCred]=useState(null); const [empSearch,setEmpSearch]=useState(''); const [empDet,setEmpDet]=useState(null)
+  const [shopSearch,setShopSearch]=useState(''); const [ov,setOv]=useState({}); const [msg,setMsg]=useState('')
+  const [pw,setPw]=useState({current:'',next:''})
+  const load=()=>{ api.get('/admin/revenue').then(setRev).catch(e=>setMsg(e.message))
+    api.get('/admin/analytics').then(setAn).catch(()=>{}); api.get('/admin/shops').then(setShops).catch(()=>{})
+    api.get('/admin/withdrawals/all').then(setWd).catch(()=>api.get('/admin/withdrawals').then(setWd).catch(()=>{}))
+    api.get('/admin/employees').then(setEmps).catch(()=>{}); api.get('/admin/qr/stats').then(setQr).catch(()=>{}); api.get('/admin/overview').then(setOv).catch(()=>{}) }
+  useEffect(load,[])
+  const changePw=async()=>{ if(pw.next.length<6){setMsg('New password min 6 chars');return} try{ await api.post('/admin/change-password',{current_password:pw.current,new_password:pw.next}); setMsg('✅ Password changed. Use it next login.'); setPw({current:'',next:''}) }catch(e){ setMsg('❌ '+e.message) } }
+  if(msg && !rev.active_shops && rev.active_shops!==0) return <><Header/><div className="container"><div className="card">{msg}</div></div></>
+  const genQr=async()=>{ const r=await api.post('/admin/qr/generate',{count:+genN}); setMsg(`${r.generated} QR generated`); load() }
+  const assignQr=async()=>{ try{const r=await api.post('/admin/qr/assign',{emp_code:asg.emp_code,count:+asg.count}); setMsg(`${r.assigned} assigned to ${r.emp_code}`); load()}catch(e){setMsg(e.message)} }
+  const dlPdf=(status)=>downloadFile(`/admin/qr/pdf?status=${status}&limit=60`,`nammaoor_qr_${status}.pdf`)
+  const createEmp=async()=>{ try{const r=await api.post('/admin/employees',{...newEmp,district_id:newEmp.district_id?+newEmp.district_id:null}); setCred(r); setMsg(''); load()}catch(e){setMsg(e.message)} }
+  const searchEmp=async()=>{ setEmps(await api.get('/admin/employees'+(empSearch?('?search='+encodeURIComponent(empSearch)):''))) }
+  const openEmp=async(code)=>{ try{ setEmpDet(await api.get(`/admin/employees/${code}/details`)) }catch(e){setMsg(e.message)} }
+  const resetPwd=async(code)=>{ const np=prompt('New password for '+code); if(!np)return; const r=await api.post(`/admin/employees/${code}/password`,{new_password:np}); setMsg(`${code} password set: ${r.new_password}`) }
+  const cleanupTests=async()=>{ if(!confirm('Delete ALL draft & unpaid test shops? (Active shops safe)'))return
+    const r=await api.post('/admin/cleanup-tests'); setMsg(`🧹 ${r.deleted} test shops deleted`); load() }
+  const wipeAll=async()=>{ if(!confirm('⚠️ Delete ALL SHOPS (active-um serthu)? Admin & employees mattum meedhi irukkum.'))return
+    if(!confirm('Confirm again: FRESH START — ella shops & shop-owner logins delete aagum. Numbering NM-000001-la irundhu restart. Sure-ah?'))return
+    const r=await api.post('/admin/wipe-all-shops'); setMsg(`🗑 ${r.deleted_shops} shops wiped. Fresh start ready!`); load() }
+  const delShop=async(code)=>{ if(!confirm('Delete shop '+code+'? QR will be permanently disabled.'))return; await api.del(`/admin/shops/${code}`); setMsg(`${code} deleted, QR disabled`); load() }
+  const wStatus=async(id,st)=>{ if(st==='approve'){await api.post(`/admin/withdrawals/${id}/approve`)} else if(st==='reject'){await api.post(`/admin/withdrawals/${id}/reject`)} else {await api.post(`/admin/withdrawals/${id}/status`,{status:st})} load() }
+  const platWithdraw=async()=>{ const a=prompt('Platform withdrawal amount'); if(!a)return; const u=prompt('Your UPI ID'); await api.post('/admin/platform-withdraw',{amount:+a,upi_id:u||''}); setMsg('Platform withdrawal requested') }
+  const fs=shops.filter(s=>!shopSearch||(s.shop_name||'').toLowerCase().includes(shopSearch.toLowerCase())||(s.shop_code||'').includes(shopSearch))
+  return (<><Header/><div className="container">
+    <h2 className="brand">Super Admin</h2>
+    <div className="card" style={{border:'1px solid #ffd7d7',background:'#fff8f8'}}>
+      <b>🔒 Change Admin Password</b>
+      <div className="grid2" style={{marginTop:8}}>
+        <PwInput value={pw.current} onChange={e=>setPw({...pw,current:e.target.value})} placeholder="Current password"/>
+        <PwInput value={pw.next} onChange={e=>setPw({...pw,next:e.target.value})} placeholder="New password (min 6)"/>
+      </div>
+      <button className="btn" onClick={changePw}>Update Password</button>
+      <p className="muted" style={{fontSize:12,marginTop:6}}>Default password-a udane strong-ah maathunga (security).</p>
+    </div>
+    <div className="row" style={{marginTop:10}}>
+      <div className="kpi"><b>Rs.{rev.total_revenue||0}</b><span>Revenue</span></div>
+      <div className="kpi"><b>{rev.active_shops||0}</b><span>Active Shops</span></div>
+      <div className="kpi"><b>{an.shop_views||0}</b><span>Shop Views</span></div>
+      <div className="kpi"><b>{emps.length}</b><span>Employees</span></div>
+    </div>
+    {ov.districts && ov.districts.length>0 && <div className="card" style={{marginTop:14}}><h3>District-wise Shops</h3>
+      {ov.districts.map((d,i)=><div key={i} className="row" style={{justifyContent:'space-between',padding:'3px 0'}}><span>{d.name}</span><b>{d.shops}</b></div>)}
+      <h4 style={{marginTop:10}}>Recent Registrations</h4>
+      {(ov.recent||[]).map((r,i)=><div key={i} className="muted">{r.shop_code} - {r.shop_name}</div>)}
+    </div>}
+    <div className="card" style={{marginTop:14}}><h3>QR Management</h3>
+      <div className="row">
+        <div className="kpi"><b>{qr.total||0}</b><span>Total</span></div>
+        <div className="kpi"><b>{qr.unassigned||0}</b><span>Unassigned</span></div>
+        <div className="kpi"><b>{qr.assigned||0}</b><span>Assigned</span></div>
+        <div className="kpi"><b>{qr.used||0}</b><span>Used</span></div>
+      </div>
+      <div className="row" style={{marginTop:10}}>
+        <input className="input" style={{flex:1}} type="number" value={genN} onChange={e=>setGenN(e.target.value)}/>
+        <button className="btn" onClick={genQr}>Generate</button>
+        <button className="btn ghost" onClick={()=>dlPdf('unassigned')}>PDF (unassigned)</button>
+        <button className="btn ghost" onClick={()=>dlPdf('assigned')}>PDF (assigned)</button>
+      </div>
+      <div className="row" style={{marginTop:10}}>
+        <input className="input" style={{flex:2}} placeholder="Employee (EMP-0001)" value={asg.emp_code} onChange={e=>setAsg({...asg,emp_code:e.target.value})}/>
+        <input className="input" style={{flex:1}} type="number" value={asg.count} onChange={e=>setAsg({...asg,count:e.target.value})}/>
+        <button className="btn" onClick={assignQr}>Assign</button>
+      </div>
+    </div>
+
+    <div className="card"><h3>Add Employee</h3>
+      <div className="grid2">
+        <input className="input" placeholder="Full name" onChange={e=>setNewEmp({...newEmp,full_name:e.target.value})}/>
+        <input className="input" placeholder="Mobile" onChange={e=>setNewEmp({...newEmp,mobile:e.target.value})}/>
+        <input className="input" placeholder="Password" onChange={e=>setNewEmp({...newEmp,password:e.target.value})}/>
+        <input className="input" placeholder="District ID (optional)" onChange={e=>setNewEmp({...newEmp,district_id:e.target.value})}/>
+      </div>
+      <button className="btn" onClick={createEmp}>Create Employee</button>
+      {cred && <div style={{marginTop:10,padding:12,background:'#eafaf4',borderRadius:12}}>
+        <b>Employee created - save these:</b>
+        <p>Username: <b>{cred.username||cred.emp_code}</b></p><p>Password: <b>{cred.login_password}</b></p></div>}
+    </div>
+
+    <div className="card"><h3>Withdrawals</h3>
+      <button className="btn sm ghost" onClick={platWithdraw}>Platform Withdraw (my earnings)</button>
+      <table><tr><th>Emp</th><th>Rs.</th><th>UPI</th><th>Status</th><th>Action</th></tr>
+        {wd.map(w=><tr key={w.id}><td>{w.emp_code||(w.employee_id||'').slice(0,8)}</td><td>{w.amount}</td><td className="muted">{w.upi||'-'}</td>
+          <td><span className={'tag '+(['completed','paid'].includes(w.status)?'a':'e')}>{w.status}</span></td>
+          <td>{w.status==='requested'&&<><button className="btn sm" onClick={()=>wStatus(w.id,'approve')}>Approve</button> <button className="btn sm ghost" onClick={()=>wStatus(w.id,'reject')}>Reject</button></>}
+              {w.status==='approved'&&<button className="btn sm" onClick={()=>wStatus(w.id,'processing')}>Processing</button>}
+              {w.status==='processing'&&<button className="btn sm" onClick={()=>wStatus(w.id,'completed')}>Mark Paid</button>}</td></tr>)}
+      </table>{wd.length===0 && <p className="muted">No withdrawals.</p>}</div>
+
+    <div className="card"><h3>Employees</h3>
+      <div className="row" style={{marginBottom:8}}>
+        <input className="input" style={{flex:2}} placeholder="Search by phone / code" value={empSearch} onChange={e=>setEmpSearch(e.target.value)}/>
+        <button className="btn sm" onClick={searchEmp}>Search</button>
+      </div>
+      <table><tr><th>Code</th><th>Name</th><th>Mobile</th><th>Wallet</th><th>Action</th></tr>
+        {emps.map((e,i)=><tr key={i}><td><a style={{color:'var(--purple)',cursor:'pointer',fontWeight:700}} onClick={()=>openEmp(e.emp_code)}>{e.emp_code}</a></td>
+          <td>{e.full_name||'-'}</td><td><a style={{cursor:'pointer'}} onClick={()=>openEmp(e.emp_code)}>{e.mobile}</a></td><td>Rs.{e.wallet}</td>
+          <td><button className="btn sm ghost" onClick={()=>resetPwd(e.emp_code)}>Change Pwd</button></td></tr>)}
+      </table>
+      {empDet && <div style={{marginTop:10,padding:12,background:'#f7f6fc',borderRadius:12}}>
+        <b>{empDet.emp_code} - {empDet.full_name}</b>
+        <p className="muted">Mobile: {empDet.mobile} | Wallet: Rs.{empDet.wallet} | Shops: {empDet.total_shops} | Verified: {empDet.verified?'Yes':'No'}</p>
+        <p className="muted">UPI: {empDet.upi_id||'-'} | Password: {empDet.password_note}</p>
+        <button className="btn sm" onClick={()=>resetPwd(empDet.emp_code)}>Change Password</button>
+        <button className="btn sm ghost" onClick={()=>setEmpDet(null)}>Close</button></div>}
+    </div>
+
+    <div className="card"><div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
+        <h3>Shops</h3>
+        <div className="row" style={{gap:6}}>
+          <button className="btn sm ghost" onClick={cleanupTests}>🧹 Clean drafts/unpaid</button>
+          <button className="btn sm" style={{background:'#c0392b'}} onClick={wipeAll}>🗑 Fresh Start (all shops)</button>
+        </div>
+      </div>
+      <input className="input" placeholder="Search shop" value={shopSearch} onChange={e=>setShopSearch(e.target.value)}/>
+      <table><tr><th>ID</th><th>Name</th><th>Status</th><th>Action</th></tr>
+        {fs.slice(0,80).map((s,i)=><tr key={i}><td>{s.shop_code||'-'}</td><td>{s.shop_name}</td>
+          <td><span className={'tag '+(s.status==='active'?'a':'e')}>{s.status}</span></td>
+          <td>{s.shop_code&&<button className="btn sm ghost" onClick={()=>delShop(s.shop_code)}>Delete + Disable QR</button>}</td></tr>)}
+      </table></div>
+    <p style={{color:'var(--teal)'}}>{msg}</p>
+  </div></>)
+}
+
+
+
+// client-side image enhance (brightness/contrast) + thumbnail — free, no API
+function enhance(dataUrl, bright, contrast, maxW){
+  return new Promise(res=>{
+    const img=new Image()
+    img.onload=()=>{
+      const sc=Math.min(1,(maxW||1000)/img.width), w=img.width*sc, h=img.height*sc
+      const c=document.createElement('canvas'); c.width=w; c.height=h
+      const ctx=c.getContext('2d')
+      ctx.filter=`brightness(${bright}%) contrast(${contrast}%)`
+      ctx.drawImage(img,0,0,w,h)
+      res(c.toDataURL('image/jpeg',0.78))
+    }
+    img.src=dataUrl
+  })
+}
+
+const CATS=['Clothing','Footwear','Grocery','Electronics','Jewellery','Home & Kitchen',
+  'Beauty & Care','Food & Bakery','Stationery','Toys','Hardware','Mobile & Accessories','Other']
+
+const empty={name:'',brand:'',category:'',subcategory:'',color:'',material:'',pattern:'',
+  size:'',gender:'',quantity:'',price:'',offer_price:'',stock:'',
+  title:'',short_desc:'',full_desc:'',highlights:[],features:[],specs:{},tags:[],
+  seo_keywords:[],meta_description:'',images:[],original_image:'',thumbnail:'',
+  ai_confidence:0,quality_score:0}
+
+function AiChips({items}){ return <div className="chips">{(items||[]).map((t,i)=><span key={i} className="chip">{t}</span>)}</div> }
+
+function AIListing(){
+  const [p,setP]=useState({...empty})
+  const [step,setStep]=useState(1)
+  const [busy,setBusy]=useState('')
+  const [msg,setMsg]=useState('')
+  const [aiOn,setAiOn]=useState(false)
+  const [quality,setQuality]=useState(null)
+  const [bright,setBright]=useState(100); const [contrast,setContrast]=useState(100)
+  const [list,setList]=useState([])
+  const [orders,setOrders]=useState([])
+  const [preview,setPreview]=useState(false)
+  const set=(k,v)=>setP(o=>({...o,[k]:v}))
+
+  const ORDER_STEPS=['received','payment_received','preparing','packed','shipped','delivered']
+  const loadList=()=>api.get('/me/shop/catalog').then(setList).catch(()=>{})
+  const loadOrders=()=>api.get('/me/shop/orders').then(setOrders).catch(()=>{})
+  const setOrderStatus=async(oid,st)=>{ await api.patch('/me/shop/orders/'+oid,{status:st}); loadOrders() }
+  useEffect(()=>{ api.get('/me/shop/ai/status').then(r=>setAiOn(r.ai_enabled)).catch(()=>{}); loadList(); loadOrders() },[])
+
+  const uploadPhoto=async(camera)=>{
+    const raw=await pickImage(1200,camera); if(!raw) return
+    const enh=await enhance(raw,bright,contrast,1000)
+    const thumb=await enhance(raw,bright,contrast,320)
+    setP(o=>({...o,original_image:raw,images:[enh],thumbnail:thumb}))
+    setStep(2)
+  }
+  const reEnhance=async(b,c)=>{
+    if(!p.original_image) return
+    const enh=await enhance(p.original_image,b,c,1000)
+    const thumb=await enhance(p.original_image,b,c,320)
+    setP(o=>({...o,images:[enh],thumbnail:thumb}))
+  }
+
+  const analyze=async()=>{
+    setBusy('analyze'); setMsg('')
+    try{
+      const r=await api.post('/me/shop/ai/analyze',{image:p.original_image||p.images[0]||'',hint:p.name||''})
+      setP(o=>({...o,
+        name:r.name||o.name, category:r.category||o.category, subcategory:r.subcategory||o.subcategory,
+        brand:r.brand||o.brand, color:r.color||o.color, material:r.material||o.material,
+        pattern:r.pattern||o.pattern, size:r.size||o.size, gender:r.gender||o.gender,
+        quantity:r.quantity||o.quantity, ai_confidence:r.confidence||0}))
+      setMsg(r.source==='gemini'
+        ? (r.needs_confirm? `AI detected (confidence ${r.confidence}%). Please confirm the category before publishing.` : `AI detected with ${r.confidence}% confidence.`)
+        : (r.note||'Add a Gemini key for auto-detection. For now, fill name & category.'))
+      setStep(3)
+    }catch(e){ setMsg(e.message) } finally{ setBusy('') }
+  }
+
+  const generate=async()=>{
+    if(!p.name){ setMsg('Product name is required.'); return }
+    setBusy('generate'); setMsg('')
+    try{
+      const body={name:p.name,brand:p.brand,category:p.category,subcategory:p.subcategory,
+        color:p.color,material:p.material,pattern:p.pattern,size:p.size,gender:p.gender,quantity:p.quantity}
+      const r=await api.post('/me/shop/ai/generate',body)
+      setP(o=>({...o,title:r.title||o.title,short_desc:r.short_desc||'',full_desc:r.full_desc||'',
+        highlights:r.highlights||[],features:r.features||[],specs:r.specs||{},
+        tags:r.tags||[],seo_keywords:r.seo_keywords||[],meta_description:r.meta_description||''}))
+      setMsg(r.source==='gemini'?'AI-generated listing ready. Edit anything, then check quality.':'Listing generated. Edit anything, then check quality.')
+      setStep(4)
+    }catch(e){ setMsg(e.message) } finally{ setBusy('') }
+  }
+
+  const improve=async()=>{
+    setBusy('improve'); setMsg('')
+    try{
+      const r=await api.post('/me/shop/ai/improve',{...p,highlights:p.highlights,features:p.features,
+        specs:p.specs,tags:p.tags,seo_keywords:p.seo_keywords})
+      setP(o=>({...o,title:r.title||o.title,short_desc:r.short_desc||o.short_desc,
+        full_desc:r.full_desc||o.full_desc,highlights:r.highlights||o.highlights,
+        features:r.features||o.features,specs:r.specs||o.specs,tags:r.tags||o.tags,
+        seo_keywords:r.seo_keywords||o.seo_keywords,meta_description:r.meta_description||o.meta_description}))
+      setMsg('Improved with AI ✨')
+    }catch(e){ setMsg(e.message) } finally{ setBusy('') }
+  }
+
+  const runQuality=async()=>{
+    setBusy('quality')
+    try{
+      const r=await api.post('/me/shop/ai/quality',{...p,price:p.price?+p.price:null})
+      setQuality(r); setP(o=>({...o,quality_score:r.score}))
+    }catch(e){ setMsg(e.message) } finally{ setBusy('') }
+  }
+
+  const savePayload=(status)=>({
+    name:p.name,title:p.title||p.name,brand:p.brand,category:p.category,subcategory:p.subcategory,
+    color:p.color,material:p.material,pattern:p.pattern,size:p.size,gender:p.gender,quantity:p.quantity,
+    price:p.price?+p.price:null,offer_price:p.offer_price?+p.offer_price:null,stock:p.stock?+p.stock:0,
+    short_desc:p.short_desc,full_desc:p.full_desc,highlights:p.highlights,features:p.features,
+    specs:p.specs,tags:p.tags,keywords:p.tags,seo_keywords:p.seo_keywords,meta_description:p.meta_description,
+    images:p.images,original_image:p.original_image,thumbnail:p.thumbnail,
+    ai_confidence:p.ai_confidence,quality_score:p.quality_score,status})
+
+  const publish=async(status)=>{
+    if(!p.name){ setMsg('Product name required.'); return }
+    setBusy('publish')
+    try{
+      const r=await api.post('/me/shop/catalog',savePayload(status))
+      setMsg(status==='published'?`Published! Live at ${SITE}/#/p/${r.id}`:'Saved as draft.')
+      setP({...empty}); setStep(1); setQuality(null); setPreview(false); loadList()
+    }catch(e){ setMsg(e.message) } finally{ setBusy('') }
+  }
+
+  const togglePublish=async(it)=>{ await api.patch('/me/shop/catalog/'+it.id,{status:it.status==='published'?'hidden':'published'}); loadList() }
+  const removeItem=async(id)=>{ if(!confirm('Delete this product?'))return; await api.del('/me/shop/catalog/'+id); loadList() }
+
+  const price=p.offer_price||p.price
+  return (<><Header/><div className="container">
+    <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
+      <h2 className="brand" style={{margin:0}}>✨ AI Listing Generator</h2>
+      <a className="btn ghost sm" href="#/app/owner">← Dashboard</a>
+    </div>
+    <p className="muted">{aiOn? '🟢 Gemini AI active — real photo detection + copywriting.' : '🟡 Demo mode — smart templates. Add a free Gemini key in Render for real AI vision.'}</p>
+
+    <div className="steps">
+      {['Photo','Detect','Details','Content','Publish'].map((t,i)=>
+        <div key={i} className={'stepdot'+(step>=i+1?' on':'')}><b>{i+1}</b><span>{t}</span></div>)}
+    </div>
+
+    {msg && <div className="card ai-msg">{msg}</div>}
+
+    {/* STEP 1: photo */}
+    <div className="card">
+      <h3>1 · Product Photo</h3>
+      {p.images[0]
+        ? <div className="ai-photowrap">
+            <img src={p.images[0]} className="ai-photo"/>
+            <div style={{flex:1,minWidth:200}}>
+              <label className="muted">Brightness {bright}%</label>
+              <input type="range" min="60" max="160" value={bright} onChange={e=>{setBright(+e.target.value);reEnhance(+e.target.value,contrast)}} style={{width:'100%'}}/>
+              <label className="muted">Contrast {contrast}%</label>
+              <input type="range" min="60" max="160" value={contrast} onChange={e=>{setContrast(+e.target.value);reEnhance(bright,+e.target.value)}} style={{width:'100%'}}/>
+              <p className="muted" style={{fontSize:12}}>Auto-enhanced &amp; thumbnail created in-browser. Original kept safe.</p>
+              <button className="btn ghost sm" onClick={()=>uploadPhoto(false)}>Change photo</button>
+            </div>
+          </div>
+        : <div className="row">
+            <button className="btn" onClick={()=>uploadPhoto(true)}>📷 Take Photo</button>
+            <button className="btn ghost" onClick={()=>uploadPhoto(false)}>🖼 Upload</button>
+          </div>}
+    </div>
+
+    {/* STEP 2: detect */}
+    {p.images[0] && <div className="card">
+      <h3>2 · AI Detection</h3>
+      <p className="muted">AI reads the photo and fills the details. You can always edit.</p>
+      <button className="btn ai-cta" disabled={busy==='analyze'} onClick={analyze}>{busy==='analyze'?'Analyzing…':'🔍 Analyze with AI'}</button>
+      {p.ai_confidence>0 && <span className="pill" style={{marginLeft:10}}>Confidence {p.ai_confidence}%</span>}
+    </div>}
+
+    {/* STEP 3: details */}
+    {step>=3 && <div className="card">
+      <h3>3 · Product Details</h3>
+      <div className="grid2">
+        <Field l="Product name *" v={p.name} on={v=>set('name',v)}/>
+        <Field l="Brand" v={p.brand} on={v=>set('brand',v)}/>
+        <div><label className="lbl">Category *</label>
+          <select className="input" value={p.category} onChange={e=>set('category',e.target.value)}>
+            <option value="">Select…</option>{CATS.map(c=><option key={c}>{c}</option>)}</select></div>
+        <Field l="Sub-category" v={p.subcategory} on={v=>set('subcategory',v)}/>
+        <Field l="Colour" v={p.color} on={v=>set('color',v)}/>
+        <Field l="Material" v={p.material} on={v=>set('material',v)}/>
+        <Field l="Pattern" v={p.pattern} on={v=>set('pattern',v)}/>
+        <Field l="Size" v={p.size} on={v=>set('size',v)}/>
+        <Field l="Gender / For" v={p.gender} on={v=>set('gender',v)}/>
+        <Field l="Quantity / Pack" v={p.quantity} on={v=>set('quantity',v)}/>
+        <Field l="Price (Rs.)" v={p.price} on={v=>set('price',v)} type="number"/>
+        <Field l="Offer price (Rs.)" v={p.offer_price} on={v=>set('offer_price',v)} type="number"/>
+        <Field l="Stock" v={p.stock} on={v=>set('stock',v)} type="number"/>
+      </div>
+      <button className="btn ai-cta" style={{marginTop:12}} disabled={busy==='generate'} onClick={generate}>{busy==='generate'?'Generating…':'🪄 Generate Listing with AI'}</button>
+    </div>}
+
+    {/* STEP 4: content */}
+    {step>=4 && <div className="card">
+      <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
+        <h3 style={{margin:0}}>4 · AI Content</h3>
+        <button className="btn ghost sm" disabled={busy==='improve'} onClick={improve}>{busy==='improve'?'Improving…':'✨ Improve with AI'}</button>
+      </div>
+      <label className="lbl">Title</label>
+      <input className="input" value={p.title} onChange={e=>set('title',e.target.value)}/>
+      <label className="lbl">Short description</label>
+      <input className="input" value={p.short_desc} onChange={e=>set('short_desc',e.target.value)}/>
+      <label className="lbl">Full description</label>
+      <textarea className="input" rows="3" value={p.full_desc} onChange={e=>set('full_desc',e.target.value)}/>
+      {p.highlights.length>0 && <><label className="lbl">Highlights</label><AiChips items={p.highlights}/></>}
+      {p.tags.length>0 && <><label className="lbl">Tags</label><AiChips items={p.tags}/></>}
+      {p.seo_keywords.length>0 && <><label className="lbl">SEO keywords</label><AiChips items={p.seo_keywords}/></>}
+      <div className="row" style={{marginTop:12}}>
+        <button className="btn ghost" disabled={busy==='quality'} onClick={runQuality}>✅ Quality Check</button>
+        <button className="btn ghost" onClick={()=>setPreview(v=>!v)}>{preview?'Hide preview':'👁 Preview'}</button>
+      </div>
+      {quality && <div className={'quality '+(quality.score>=75?'good':quality.score>=50?'mid':'bad')}>
+        <b>Quality: {quality.score}/100 · {quality.grade}</b>
+        {quality.issues.length>0 && <ul>{quality.issues.map((x,i)=><li key={i}>{x}</li>)}</ul>}
+      </div>}
+    </div>}
+
+    {/* preview */}
+    {preview && step>=4 && <div className="card ppreview">
+      <span className="muted" style={{fontSize:12}}>Customer preview</span>
+      <div className="prow">
+        {p.images[0] && <img src={p.images[0]} className="pimg"/>}
+        <div style={{flex:1}}>
+          <h2 style={{margin:'0 0 4px'}}>{p.title||p.name}</h2>
+          {p.brand&&<p className="muted" style={{margin:0}}>{p.brand}</p>}
+          <div className="pprice">{price?`Rs.${price}`:'—'} {p.offer_price&&p.price&&<s className="muted">Rs.{p.price}</s>}</div>
+          <p>{p.full_desc}</p>
+          {p.highlights.length>0&&<ul>{p.highlights.map((h,i)=><li key={i}>{h}</li>)}</ul>}
+        </div>
+      </div>
+    </div>}
+
+    {/* publish */}
+    {step>=4 && <div className="card">
+      <h3>5 · Publish</h3>
+      <p className="muted">Publishing makes it live immediately on your shop's product page + search.</p>
+      <div className="row">
+        <button className="btn ai-cta" disabled={busy==='publish'} onClick={()=>publish('published')}>🚀 Publish Live</button>
+        <button className="btn ghost" disabled={busy==='publish'} onClick={()=>publish('draft')}>Save Draft</button>
+      </div>
+    </div>}
+
+    {/* existing catalog */}
+    <div className="card">
+      <h3>My AI Products ({list.length})</h3>
+      {list.length===0 && <p className="muted">No AI products yet. Create your first above.</p>}
+      <div className="pgrid">
+        {list.map(it=><div key={it.id} className="pcard">
+          {it.thumbnail&&<img src={it.thumbnail} className="pcimg"/>}
+          <div className="pcbody">
+            <b className="pctitle">{it.title||it.name}</b>
+            <span className="muted">{it.offer_price?`Rs.${it.offer_price}`:it.price?`Rs.${it.price}`:''} · <span className={'dot '+it.status}>{it.status}</span></span>
+            <div className="row" style={{marginTop:6,gap:6}}>
+              <a className="btn sm ghost" href={'#/p/'+it.id}>View</a>
+              <button className="btn sm ghost" onClick={()=>togglePublish(it)}>{it.status==='published'?'Hide':'Publish'}</button>
+              <button className="btn sm ghost" onClick={()=>removeItem(it.id)}>Del</button>
+            </div>
+          </div>
+        </div>)}
+      </div>
+    </div>
+
+    {/* orders */}
+    <div className="card">
+      <h3>Orders ({orders.length})</h3>
+      {orders.length===0 && <p className="muted">No orders yet. Orders appear here when customers tap "Order on WhatsApp".</p>}
+      {orders.map(o=><div key={o.id} className="orderrow">
+        <div><b>{o.order_no}</b> · {o.product_name} ×{o.qty} · Rs.{o.amount}
+          <div className="muted" style={{fontSize:12}}>{o.customer_name||'—'} {o.customer_mobile||''}</div></div>
+        <select className="input" style={{maxWidth:170}} value={o.status} onChange={e=>setOrderStatus(o.id,e.target.value)}>
+          {ORDER_STEPS.map(s=><option key={s} value={s}>{s.replace('_',' ')}</option>)}
+          <option value="cancelled">cancelled</option>
+        </select>
+      </div>)}
+    </div>
+  </div></>)
+}
+
+function Field({l,v,on,type}){
+  return <div><label className="lbl">{l}</label>
+    <input className="input" type={type||'text'} value={v||''} onChange={e=>on(e.target.value)}/></div>
+}
+
+
+
+
+function PStars({v}){ const f=Math.round(v||0)
+  return <span className="stars">{[1,2,3,4,5].map(i=><span key={i} className={i<=f?'on':''}>★</span>)}</span> }
+
+function custToken(){ let t=localStorage.getItem('cust_token'); if(!t){ t='c'+Math.random().toString(36).slice(2,12); localStorage.setItem('cust_token',t)} return t }
+function wishGet(){ try{return JSON.parse(localStorage.getItem('wishlist')||'[]')}catch{return[]} }
+function cartGet(){ try{return JSON.parse(localStorage.getItem('cart')||'[]')}catch{return[]} }
+
+function ProductPage(){
+  const id=(location.hash.split('/p/')[1]||'').split('?')[0]
+  const [d,setD]=useState(null); const [img,setImg]=useState(0)
+  const [rv,setRv]=useState({avg:0,count:0,breakdown:{},reviews:[]})
+  const [form,setForm]=useState({name:'',rating:5,text:'',photos:[]})
+  const [order,setOrder]=useState({name:'',mobile:'',qty:1})
+  const [placed,setPlaced]=useState(null)
+  const [wish,setWish]=useState(wishGet().includes(id))
+  const [toast,setToast]=useState('')
+
+  const load=()=>{ api.get('/product/'+id).then(setD).catch(()=>setD({found:false}))
+    api.get('/product/'+id+'/reviews').then(setRv).catch(()=>{}) }
+  useEffect(load,[])
+  const flash=(m)=>{ setToast(m); setTimeout(()=>setToast(''),2500) }
+
+  if(!d) return <><Header/><div className="container"><div className="card">Loading…</div></div></>
+  if(!d.found) return <><Header/><div className="container"><div className="card">Product not found or not published.</div></div></>
+
+  const price=d.offer_price||d.price
+  const off=d.offer_price&&d.price? Math.round((1-d.offer_price/d.price)*100):0
+  const imgs=(d.images&&d.images.length?d.images:(d.thumbnail?[d.thumbnail]:[])).filter(Boolean)
+  const mainImg=imgs[img]||PLACEHOLDER
+
+  const addCart=()=>{ const c=cartGet(); if(!c.find(x=>x.id===id)){ c.push({id,title:d.title||d.name,price,thumb:imgs[0]||d.thumbnail,qty:1,shop_code:d.shop_code,shop_name:d.shop_name,shop_upi:d.shop_upi,shop_whatsapp:d.shop_whatsapp}); localStorage.setItem('cart',JSON.stringify(c)) } flash('Added to cart 🛒') }
+  const toggleWish=()=>{ let w=wishGet(); if(w.includes(id)){w=w.filter(x=>x!==id);setWish(false)}else{w.push(id);setWish(true)} localStorage.setItem('wishlist',JSON.stringify(w)); flash(wish?'Removed from wishlist':'Saved to wishlist ❤️') }
+  const share=async()=>{ const url=`${SITE}/#/p/${id}`
+    if(navigator.share){ try{await navigator.share({title:d.title||d.name,url})}catch{} }
+    else { try{await navigator.clipboard.writeText(url); flash('Link copied!')}catch{ flash(url) } } }
+
+  const orderWhatsApp=async()=>{
+    try{
+      const r=await api.post('/order',{product_id:id,qty:+order.qty||1,customer_name:order.name,customer_mobile:order.mobile})
+      const wa=(r.shop_whatsapp||'').replace(/\D/g,''); const wanum=wa.length===10?'91'+wa:wa
+      const txt=`Hi ${r.shop_name||''}! I want to order:\n\n*${d.title||d.name}*\nQty: ${order.qty||1}\nAmount: Rs.${r.amount}\nOrder No: ${r.order_no}\n\n(via NammaOor)`
+      setPlaced({...r})
+      if(wanum) window.open(`https://wa.me/${wanum}?text=${encodeURIComponent(txt)}`,'_blank')
+    }catch(e){ flash(e.message) }
+  }
+
+  const addReviewPhoto=async()=>{ const im=await pickImage(700); if(im&&form.photos.length<4) setForm(f=>({...f,photos:[...f.photos,im]})) }
+  const submitReview=async()=>{
+    if(!form.text&&!form.rating) return
+    await api.post('/product/'+id+'/reviews',{reviewer_token:custToken(),name:form.name||'Customer',rating:form.rating,text:form.text,photos:form.photos})
+    setForm({name:'',rating:5,text:'',photos:[]}); api.get('/product/'+id+'/reviews').then(setRv); flash('Thanks for your review!')
+  }
+
+  return (<><Header/><div className="container product-page">
+    {toast&&<div className="toast">{toast}</div>}
+    <a className="btn ghost sm" href="#/products">← All products</a>
+    <div className="pmain">
+      <div className="pgallery">
+        <img src={mainImg} className="pbig" loading="lazy" onError={onImgErr} alt={d.title||d.name}/>
+        {imgs.length>1&&<div className="pthumbs">{imgs.map((im,i)=><img key={i} src={im} loading="lazy" onError={onImgErr} className={i===img?'on':''} onClick={()=>setImg(i)}/>)}</div>}
+      </div>
+      <div className="pinfo">
+        <div className="row" style={{gap:8,alignItems:'center'}}>
+          {d.brand&&<span className="pill">{d.brand}</span>}
+          <span className="badge-verify">✔ Verified Shop</span>
+          {d.in_stock? <span className="dot published">In stock</span>:<span className="dot hidden">Out of stock</span>}
+        </div>
+        <h1 className="ptitle">{d.title||d.name}</h1>
+        <div className="row" style={{gap:8,alignItems:'center'}}><PStars v={d.rating}/><span className="muted">{d.rating||0} ({d.review_count||0})</span></div>
+        <div className="pprice">₹{price||'—'} {off>0&&<><s className="muted">₹{d.price}</s> <span className="offbadge">{off}% OFF</span></>}</div>
+        {d.short_desc&&<p className="pshort">{d.short_desc}</p>}
+        <p className="muted">Sold by <b>{d.shop_name}</b>{d.shop_town?` · ${d.shop_town}`:''}</p>
+
+        <div className="pbtns">
+          <button className="btn" onClick={addCart}>🛒 Add to Cart</button>
+          <button className="btn ai-cta" onClick={()=>document.getElementById('orderbox').scrollIntoView({behavior:'smooth'})}>⚡ Buy Now</button>
+          <button className="btn ghost" onClick={toggleWish}>{wish?'❤️ Wishlisted':'🤍 Wishlist'}</button>
+          <button className="btn ghost" onClick={share}>🔗 Share</button>
+        </div>
+
+        <div id="orderbox" className="orderbox">
+          <b>Order via WhatsApp</b>
+          <p className="muted" style={{fontSize:13,margin:'4px 0'}}>Free &amp; direct. Message opens ready — you just tap send.</p>
+          <div className="row">
+            <input className="input" placeholder="Your name" value={order.name} onChange={e=>setOrder({...order,name:e.target.value})}/>
+            <input className="input" placeholder="Mobile" value={order.mobile} onChange={e=>setOrder({...order,mobile:e.target.value})}/>
+            <input className="input" style={{maxWidth:80}} type="number" min="1" value={order.qty} onChange={e=>setOrder({...order,qty:e.target.value})}/>
+          </div>
+          <button className="btn wa" onClick={orderWhatsApp}>💬 Order on WhatsApp</button>
+          {placed&&<div className="thankyou">🎉 Thank you! Order <b>{placed.order_no}</b> placed. <a href={'#/order/'+placed.token}>Track order →</a></div>}
+        </div>
+      </div>
+    </div>
+
+    {(d.highlights&&d.highlights.length>0)&&<div className="card"><h3>Highlights</h3><ul className="hl">{d.highlights.map((h,i)=><li key={i}>{h}</li>)}</ul></div>}
+    {d.full_desc&&<div className="card"><h3>Description</h3><p>{d.full_desc}</p></div>}
+    {(d.features&&d.features.length>0)&&<div className="card"><h3>Features</h3><ul className="hl">{d.features.map((f,i)=><li key={i}>{f}</li>)}</ul></div>}
+    {d.specs&&Object.keys(d.specs).length>0&&<div className="card"><h3>Specifications</h3>
+      <table className="spec">{Object.entries(d.specs).map(([k,v])=><tr key={k}><td className="muted">{k}</td><td>{String(v)}</td></tr>)}</table></div>}
+
+    <div className="card">
+      <h3>Reviews ({rv.count})</h3>
+      <div className="row" style={{gap:20,alignItems:'center',flexWrap:'wrap'}}>
+        <div style={{textAlign:'center'}}><div style={{fontSize:34,fontWeight:800}}>{rv.avg||0}</div><PStars v={rv.avg}/></div>
+        <div style={{flex:1,minWidth:180}}>{[5,4,3,2,1].map(n=>{const c=(rv.breakdown&&rv.breakdown[n])||0;const pct=rv.count?Math.round(c/rv.count*100):0;
+          return <div key={n} className="rbar"><span>{n}★</span><div className="rtrack"><div className="rfill" style={{width:pct+'%'}}/></div><span className="muted">{c}</span></div>})}</div>
+      </div>
+      <div className="revform">
+        <b>Write a review</b>
+        <div className="row" style={{alignItems:'center',gap:8}}>
+          <span className="starpick">{[1,2,3,4,5].map(i=><span key={i} className={i<=form.rating?'on':''} onClick={()=>setForm({...form,rating:i})}>★</span>)}</span>
+          <input className="input" placeholder="Name (optional)" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
+        </div>
+        <textarea className="input" rows="2" placeholder="Share your experience…" value={form.text} onChange={e=>setForm({...form,text:e.target.value})}/>
+        <div className="row" style={{alignItems:'center',gap:8}}>
+          <button className="btn ghost sm" onClick={addReviewPhoto}>📷 Add photo ({form.photos.length}/4)</button>
+          {form.photos.map((p,i)=><img key={i} src={p} className="revthumb"/>)}
+        </div>
+        <button className="btn sm" onClick={submitReview}>Submit review</button>
+      </div>
+      {rv.reviews.map(r=><div key={r.id} className="review">
+        <div className="row" style={{justifyContent:'space-between'}}><b>{r.name}</b><PStars v={r.rating}/></div>
+        {r.text&&<p style={{margin:'4px 0'}}>{r.text}</p>}
+        {r.photos&&r.photos.length>0&&<div className="row" style={{gap:6}}>{r.photos.map((p,i)=><img key={i} src={p} loading="lazy" className="revthumb"/>)}</div>}
+      </div>)}
+      {rv.reviews.length===0&&<p className="muted">No reviews yet. Be the first!</p>}
+    </div>
+
+    {d.related&&d.related.length>0&&<div className="card"><h3>Similar products</h3>
+      <div className="pgrid">{d.related.map(r=><a key={r.id} href={'#/p/'+r.id} className="pcard">
+        <div className="pcimg-wrap"><img src={r.thumbnail||PLACEHOLDER} loading="lazy" onError={onImgErr} className="pcimg"/></div>
+        <div className="pcbody"><b className="pctitle">{r.title||r.name}</b>
+          <span className="pcprice">₹{r.offer_price||r.price||'—'}</span>
+          <span className="pc-shop">🏪 {r.shop_name}</span></div></a>)}</div></div>}
+  </div></>)
+}
+
+
+
+const PCATS=['All','Clothing','Footwear','Grocery','Electronics','Jewellery','Home & Kitchen',
+  'Beauty & Care','Food & Bakery','Mobile & Accessories']
+
+
+function CStars({v}){const f=Math.round(v||0);return <span className="stars sm">{[1,2,3,4,5].map(i=><span key={i} className={i<=f?'on':''}>★</span>)}</span>}
+
+function Card({r}){
+  const price=r.offer_price||r.price
+  const off=r.offer_price&&r.price?Math.round((1-r.offer_price/r.price)*100):0
+  return (
+    <a href={'#/p/'+r.id} className="pcard">
+      <div className="pcimg-wrap">
+        <img className="pcimg" loading="lazy" src={r.thumbnail||PLACEHOLDER} onError={onImgErr} alt={r.title||r.name}/>
+        {off>0 && <span className="off-tag">{off}% OFF</span>}
+        {r.in_stock===false && <span className="oos-tag">Out of stock</span>}
+      </div>
+      <div className="pcbody">
+        {r.brand && <span className="pc-brand">{r.brand}</span>}
+        <b className="pctitle">{r.title||r.name}</b>
+        {(r.rating>0) && <span className="pc-rate"><CStars v={r.rating}/><span className="muted">({r.review_count||0})</span></span>}
+        <span className="pcprice">₹{price||'—'}{off>0 && <s className="muted">₹{r.price}</s>}</span>
+        {r.short_desc && <span className="pc-desc">{r.short_desc}</span>}
+        <span className="pc-shop">🏪 {r.shop_name}{r.town?` · ${r.town}`:''}</span>
+      </div>
+    </a>
+  )
+}
+
+function Products(){
+  const [q,setQ]=useState(''); const [cat,setCat]=useState('All')
+  const [rows,setRows]=useState([]); const [busy,setBusy]=useState(true)
+  const load=()=>{ setBusy(true)
+    const p=new URLSearchParams(); if(q)p.set('q',q); if(cat&&cat!=='All')p.set('category',cat)
+    api.get('/products/search'+(p.toString()?'?'+p:'')).then(r=>{setRows(r);setBusy(false)}).catch(()=>setBusy(false)) }
+  useEffect(load,[])
+  return (<><Header/><div className="container">
+    <h2 className="brand">Shop Products</h2>
+    <div className="row psearchbar" style={{gap:8}}>
+      <input className="input" style={{flex:2}} placeholder="Search products, brands..." value={q}
+        onChange={e=>setQ(e.target.value)} onKeyDown={e=>e.key==='Enter'&&load()}/>
+      <select className="input" value={cat} onChange={e=>{setCat(e.target.value)}}>{PCATS.map(c=><option key={c}>{c}</option>)}</select>
+      <button className="btn" onClick={load}>Search</button>
+    </div>
+    {busy
+      ? <div className="pgrid">{[1,2,3,4,5,6,7,8].map(i=><div key={i} className="pcard"><div className="pcimg-wrap sk"/><div className="pcbody"><div className="skln"/><div className="skln sm"/><div className="skln sm"/></div></div>)}</div>
+      : rows.length===0
+        ? <div className="empty"><div style={{fontSize:44}}>🛍️</div><p className="muted">No products found. Try another search.</p></div>
+        : <div className="pgrid">{rows.map(r=><Card key={r.id} r={r}/>)}</div>}
+  </div></>)
+}
+
+
+
+const LABEL={received:'Order Received',payment_received:'Payment Received',preparing:'Preparing',
+  packed:'Packed',shipped:'Shipped',delivered:'Delivered'}
+
+function OrderTrack(){
+  const token=(location.hash.split('/order/')[1]||'').split('?')[0]
+  const [o,setO]=useState(null)
+  useEffect(()=>{ api.get('/order/'+token).then(setO).catch(()=>setO({found:false})) },[])
+  if(!o) return <><Header/><div className="container"><div className="card">Loading…</div></div></>
+  if(!o.found) return <><Header/><div className="container"><div className="card">Order not found.</div></div></>
+  const flow=o.flow||['received','payment_received','preparing','packed','shipped','delivered']
+  const idx=flow.indexOf(o.status)
+  return (<><Header/><div className="container">
+    <h2 className="brand">Order {o.order_no}</h2>
+    <div className="card">
+      <p><b>{o.product_name}</b> × {o.qty} · Rs.{o.amount}</p>
+      <p className="muted">Shop: {o.shop_name}</p>
+      {o.status==='cancelled'? <div className="dot hidden" style={{fontSize:16}}>Cancelled</div>
+      : <div className="track">{flow.map((s,i)=><div key={s} className={'tstep'+(i<=idx?' done':'')}>
+          <div className="tdot">{i<=idx?'✓':i+1}</div><span>{LABEL[s]||s}</span></div>)}</div>}
+    </div>
+  </div></>)
+}
+
+
+
+const CK_SHOW_PAY = false;  // payment QR — later enable pannalam
+function ckGet(){ try{return JSON.parse(localStorage.getItem('cart')||'[]')}catch{return[]} }
+function ckSet(c){ localStorage.setItem('cart', JSON.stringify(c)) }
+function ckVpa(v){ return /^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test((v||'').trim()) }
+function ckUpi(vpa,name,amt){
+  const p=new URLSearchParams(); p.set('pn',(name||'Shop').trim()); p.set('cu','INR')
+  if(amt&&+amt>0) p.set('am', String(Math.round(+amt)))
+  p.set('tn','NammaOor order')
+  return `upi://pay?pa=${(vpa||'').trim()}&`+p.toString().replace(/\+/g,'%20')
+}
+
+function Cart(){
+  const [items,setItems]=useState(ckGet())
+  const [toast,setToast]=useState('')
+  const flash=m=>{setToast(m);setTimeout(()=>setToast(''),2000)}
+  const save=c=>{ setItems(c); ckSet(c) }
+  const setQty=(id,q)=>save(items.map(x=>x.id===id?{...x,qty:Math.max(1,q)}:x))
+  const remove=id=>save(items.filter(x=>x.id!==id))
+  const clear=()=>save([])
+
+  // group by shop
+  const shops={}
+  items.forEach(it=>{ const k=it.shop_code||'_'; (shops[k]=shops[k]||{info:it,list:[]}).list.push(it) })
+
+  if(items.length===0) return (<><Header/><div className="container" style={{maxWidth:520}}>
+    <h2 className="brand">🛒 Cart</h2>
+    <div className="card" style={{textAlign:'center'}}>
+      <p className="muted">Cart காலியா இருக்கு.</p>
+      <a href="#/products"><button className="btn" style={{marginTop:8}}>Products பாக்க</button></a>
+    </div></div></>)
+
+  return (<><Header/><div className="container" style={{maxWidth:560}}>
+    {toast&&<div className="toast">{toast}</div>}
+    <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
+      <h2 className="brand">🛒 Cart</h2>
+      <button className="btn ghost sm" onClick={clear}>Clear</button>
+    </div>
+
+    {Object.values(shops).map((g,gi)=>{
+      const total=g.list.reduce((s,x)=>s+(+x.price||0)*(x.qty||1),0)
+      const upi=g.info.shop_upi; const wa=(g.info.shop_whatsapp||'').replace(/\D/g,'')
+      const wanum=wa.length===10?'91'+wa:wa
+      const waText=`Hi ${g.info.shop_name||''}! Order via NammaOor:\n`+
+        g.list.map(x=>`• ${x.title} x${x.qty||1} = Rs.${(+x.price||0)*(x.qty||1)}`).join('\n')+
+        `\n\nTotal: Rs.${total}`
+      return (<div key={gi} className="card">
+        <b>{g.info.shop_name||'Shop'}</b>
+        {g.list.map(it=><div key={it.id} className="row" style={{alignItems:'center',gap:10,borderBottom:'1px solid var(--line)',padding:'8px 0'}}>
+          <img src={it.thumb||PLACEHOLDER} onError={onImgErr} style={{width:48,height:48,borderRadius:8,objectFit:'cover'}}/>
+          <div style={{flex:1}}><div style={{fontWeight:600,fontSize:14}}>{it.title}</div>
+            <div className="muted" style={{fontSize:13}}>Rs.{it.price}</div></div>
+          <div className="row" style={{gap:4,alignItems:'center'}}>
+            <button className="btn ghost sm" onClick={()=>setQty(it.id,(it.qty||1)-1)}>−</button>
+            <span style={{minWidth:20,textAlign:'center'}}>{it.qty||1}</span>
+            <button className="btn ghost sm" onClick={()=>setQty(it.id,(it.qty||1)+1)}>+</button>
+          </div>
+          <button className="btn ghost sm" onClick={()=>remove(it.id)}>✕</button>
+        </div>)}
+        <div className="row" style={{justifyContent:'space-between',marginTop:10}}>
+          <b>Total</b><b style={{color:'var(--teal)'}}>Rs.{total}</b></div>
+
+        {CK_SHOW_PAY && ckVpa(upi) && <div style={{marginTop:12,textAlign:'center',background:'#fff',border:'1px solid var(--line)',borderRadius:14,padding:14}}>
+          <img src={qrImg(ckUpi(upi,g.info.shop_name,total))} alt="Pay QR" style={{width:190,height:190,maxWidth:'100%'}}/>
+          <p style={{fontWeight:800,color:'var(--teal)',margin:'8px 0 0'}}>Scan to Pay Rs.{total}</p>
+        </div>}
+
+        {wanum && <a href={`https://wa.me/${wanum}?text=${encodeURIComponent(waText)}`} target="_blank">
+          <button className="btn wa" style={{width:'100%',marginTop:10}}>💬 Order on WhatsApp</button></a>}
+      </div>)
+    })}
+    <p className="muted" style={{textAlign:'center',fontSize:12}}>
+      Order WhatsApp-la pogum — kadaila neradiya pay pannalam.</p>
+  </div></>)
+}
+
+
+function Terms(){
+  return (<><Header/><div className="container" style={{maxWidth:760}}>
+    <h2 className="brand">Terms of Service</h2>
+    <div className="card" style={{lineHeight:1.7}}>
+      <p className="muted">Last updated: July 2026 · Operated by AppCore</p>
+
+      <h3>1. About NammaOor</h3>
+      <p>NammaOor is a hyperlocal marketplace and shop-directory platform operated by AppCore ("we", "us"). We connect customers with verified local shops and sellers ("Sellers"). NammaOor is a technology platform; the goods and services are provided directly by the Sellers.</p>
+
+      <h3>2. Accounts</h3>
+      <p>Shop owners register using a mobile number and OTP. Employees and administrators use assigned credentials. You are responsible for keeping your login secure and for the accuracy of information you provide.</p>
+
+      <h3>3. Seller responsibilities</h3>
+      <p>Sellers are solely responsible for their product listings, prices, stock, order fulfilment, quality, and any applicable taxes. Sellers must provide accurate business, identity and bank details for verification and payouts.</p>
+
+      <h3>4. Orders & payments</h3>
+      <p>Customers may contact Sellers and pay directly via UPI, or (where enabled) through our payment partner. Payments made via UPI go directly to the Seller's account. AppCore is not a party to the sale contract between customer and Seller.</p>
+
+      <h3>5. Fees</h3>
+      <p>Registration or subscription fees, if any, are shown at the time of purchase. Payment-gateway charges may apply on gateway transactions.</p>
+
+      <h3>6. Prohibited use</h3>
+      <p>You may not use NammaOor for unlawful, fraudulent, or harmful activity, or to list prohibited goods/services. We may suspend or remove any listing or account that violates these terms.</p>
+
+      <h3>7. Limitation of liability</h3>
+      <p>NammaOor is provided "as is". To the extent permitted by law, AppCore is not liable for disputes, losses, or damages arising from transactions between customers and Sellers. Disputes about goods/services should be resolved directly with the Seller.</p>
+
+      <h3>8. Changes</h3>
+      <p>We may update these terms from time to time. Continued use of NammaOor means you accept the updated terms.</p>
+
+      <h3>9. Contact</h3>
+      <p>AppCore · Email: rajesh.ai.python@gmail.com · Phone: +91 9791923458</p>
+    </div>
+    <p className="muted" style={{textAlign:'center'}}><a href="#/privacy">Privacy Policy</a> · <a href="#/">Home</a></p>
+  </div></>)
+}
+
+
+function Privacy(){
+  return (<><Header/><div className="container" style={{maxWidth:760}}>
+    <h2 className="brand">Privacy Policy</h2>
+    <div className="card" style={{lineHeight:1.7}}>
+      <p className="muted">Last updated: July 2026 · Operated by AppCore</p>
+
+      <h3>1. Information we collect</h3>
+      <p>We collect information you provide: shop and owner details, mobile number, address, product listings and images, and (for payouts) bank and PAN details of Sellers. Customers may provide name and mobile when placing an order or review. We also collect basic usage events (shop views, calls, clicks) to improve the service.</p>
+
+      <h3>2. How we use it</h3>
+      <p>To operate the directory and marketplace, verify Sellers, enable orders and payouts, send OTP and order notifications by SMS, show analytics to shop owners, and improve NammaOor.</p>
+
+      <h3>3. Sharing</h3>
+      <p>We share information only as needed to run the service — for example, with our SMS provider (to send OTP/alerts) and our payment partner (to process payments and settlements). We do not sell your personal data.</p>
+
+      <h3>4. Payment & bank data</h3>
+      <p>Bank and PAN details provided for payouts are used only for verification and settlement through our payment partner. Card/UPI payment details are handled by the payment gateway and are not stored by us.</p>
+
+      <h3>5. Data retention</h3>
+      <p>We keep information for as long as your account is active or as required for legal, audit, and accounting purposes.</p>
+
+      <h3>6. Your choices</h3>
+      <p>You may request correction or deletion of your data by contacting us. Some data may be retained where required by law.</p>
+
+      <h3>7. Security</h3>
+      <p>We use reasonable technical measures to protect your data. No method of transmission is 100% secure, but we work to keep your information safe.</p>
+
+      <h3>8. Contact</h3>
+      <p>AppCore · Email: rajesh.ai.python@gmail.com · Phone: +91 9791923458</p>
+    </div>
+    <p className="muted" style={{textAlign:'center'}}><a href="#/terms">Terms of Service</a> · <a href="#/">Home</a></p>
+  </div></>)
+}
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <Router>
+    <Routes>
+      <Route path="/" element={<Landing/>} />
+      <Route path="/register" element={<Register/>} />
+      <Route path="/search" element={<Search/>} />
+      <Route path="/products" element={<Products/>} />
+      <Route path="/shop/:code" element={<ShopPage/>} />
+      <Route path="/s/:code" element={<ShopPage token/>} />
+      <Route path="/p/:id" element={<ProductPage/>} />
+      <Route path="/order/:token" element={<OrderTrack/>} />
+      <Route path="/privacy" element={<Privacy/>} />
+      <Route path="/terms" element={<Terms/>} />
+      <Route path="/cart" element={<Cart/>} />
+      <Route path="/login" element={<Login/>} />
+      <Route path="/app/owner" element={<OwnerDashboard/>} />
+      <Route path="/app/ai" element={<AIListing/>} />
+      <Route path="/app/employee" element={<EmployeeDashboard/>} />
+      <Route path="/app/admin" element={<AdminDashboard/>} />
+    </Routes>
+  </Router>
+)
+
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}</script>
+</body></html>
