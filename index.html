@@ -1,4 +1,4 @@
-<!doctype html><html lang="ta"><head><!-- build:geo-20260723054852 --><meta charset="UTF-8">
+<!doctype html><html lang="ta"><head><!-- build:geo-20260723062208 --><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>நம்மூர் · NammaOor</title>
 <meta name="description" content="Tamil Nadu local shops directory — scan QR, view products & offers, call or WhatsApp your local shop.">
@@ -252,6 +252,11 @@ table.spec td{padding:7px 9px;font-size:14px}
 .socbtn-tx{ display:flex; flex-direction:column; line-height:1.25; flex:1; min-width:0; }
 .socbtn-tx small{ font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .socbtn-ed{ font-size:12px; font-weight:700; color:var(--brand,#6d28d9); opacity:.9; }
+
+/* Cold-start "server waking" banner */
+.wakebanner{ background:linear-gradient(90deg,#fff4e0,#ffe9cc); border:1px solid #ffd28a;
+  color:#8a5a00; padding:10px 12px; border-radius:10px; font-size:13px; margin-bottom:10px;
+  line-height:1.4; }
 </style>
 </head><body><div id="root"></div>
 <script type="text/babel" data-presets="react">
@@ -323,9 +328,9 @@ const qrImg = (data) =>
 const PLACEHOLDER="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f4f0fb'/%3E%3Cstop offset='1' stop-color='%23e6ddf5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='500' height='500' fill='url(%23g)'/%3E%3Cg fill='none' stroke='%23b6a8d6' stroke-width='11' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M172 210h156l-16 120H188z'/%3E%3Cpath d='M214 210a36 36 0 0172 0'/%3E%3C/g%3E%3Ctext x='250' y='392' font-family='sans-serif' font-size='26' fill='%23a597c6' text-anchor='middle'%3ENammaOor%3C/text%3E%3C/svg%3E"
 const onImgErr=e=>{e.target.onerror=null;e.target.src=PLACEHOLDER}
 
-// GET with retry — recovers automatically from a cold (sleeping) free-tier server
-// instead of failing with "failed to fetch". Keeps trying for up to ~tries*gap ms.
-async function getRetry(path, tries=10, gap=1500){
+// GET with retry — recovers automatically from a cold (sleeping) free-tier server.
+// Render free tier returns 503 for ~50s while waking, so we retry for ~2 min.
+async function getRetry(path, tries=40, gap=3000){
   let last
   for(let i=0;i<tries;i++){
     try{ return await api.get(path) }
@@ -343,8 +348,8 @@ const NM_DISTRICTS=[[1,"Ariyalur","ARI"],[2,"Chengalpattu","CGL"],[3,"Chennai","
 try{ if(typeof window!=='undefined'){
   const _base=BASE.replace(/\/v1$/,''); let _n=0;
   const _ping=()=>{ fetch(_base+'/health',{cache:'no-store'})
-    .then(r=>{ if(!r.ok && _n++<8) setTimeout(_ping,2500) })
-    .catch(()=>{ if(_n++<8) setTimeout(_ping,2500) }) };
+    .then(r=>{ if(!r.ok && _n++<30) setTimeout(_ping,3000) })
+    .catch(()=>{ if(_n++<30) setTimeout(_ping,3000) }) };
   _ping(); window.nm_warmup=1;
 } }catch(_){}
 
@@ -559,6 +564,7 @@ function Register(){
       <p className="muted">Employee: {emp}</p>
 
       {step==='form' && <div className="card">
+        {loadingCat && <div className="wakebanner">⏳ Server ready aaguthu (first open-la ~30-60 sec aagum)... District ippove select pannalaam. Category konjam neram-la varum.</div>}
         <label>Shop Name</label><input className="input" onChange={set('shop_name')}/>
         <div className="grid2">
           <div><label>Owner Name</label><input className="input" onChange={set('owner_name')}/></div>
