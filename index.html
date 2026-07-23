@@ -1,4 +1,4 @@
-<!doctype html><html lang="ta"><head><!-- build:qradmin-20260723110920 --><meta charset="UTF-8">
+<!doctype html><html lang="ta"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>நம்மூர் · NammaOor</title>
 <meta name="description" content="Tamil Nadu local shops directory — scan QR, view products & offers, call or WhatsApp your local shop.">
@@ -10,7 +10,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#FF2E7E">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+Thambi+2:wght@400..800&family=Poppins:wght@400;600;700;800&family=Mukta+Malar:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
@@ -458,7 +458,7 @@ function Landing(){
 
       <div className="row" style={{justifyContent:'center',marginTop:16}}>
         <Link to="/search"><button className="btn">🔍 கடைகளை தேடு</button></Link>
-        <Link to="/register?emp=EMP0001"><button className="btn ghost">🏪 கடை பதிவு</button></Link>
+        <Link to="/login?tab=employee"><button className="btn ghost">🏪 கடை பதிவு</button></Link>
       </div>
 
       <div className="grid2" style={{marginTop:18}}>
@@ -481,7 +481,7 @@ function Register(){
   const emp = new URLSearchParams(_q).get('emp') || 'EMP0001'
   const [districts,setD]=useState(NM_DISTRICTS); const [assemblies,setA]=useState([]); const [cats,setC]=useState([])
   const [loadingCat,setLoadingCat]=useState(true); const [loadingAsm,setLoadingAsm]=useState(false)
-  const [f,setF]=useState({emp_code:emp,shop_name:'',owner_name:'',mobile:'',whatsapp:'',
+  const [f,setF]=useState({emp_code:emp,own_shop:false,shop_name:'',owner_name:'',mobile:'',whatsapp:'',
     district_id:'',assembly_id:'',town:'',area:'',category_id:'',address:'',google_maps:'',
     lat:null,lng:null,description:'',bio:'',open_time:'',close_time:'',leave_days:'',upi_id:'',facebook:'',instagram:'',website:'',logo_url:'',cover_url:'',photos:[]})
   const [products,setProducts]=useState([]); const [pf,setPf]=useState({name:'',price:''})
@@ -648,6 +648,19 @@ function Register(){
 
       {step==='form' && <div className="card">
         {loadingCat && <div className="wakebanner">⏳ Server ready aaguthu (first open-la ~30-60 sec aagum)... District ippove select pannalaam. Category konjam neram-la varum.</div>}
+        <div style={{background:'#f6f3ff',border:'1px solid #e0d6ff',borderRadius:12,padding:12,marginBottom:12}}>
+          <label style={{fontWeight:700}}>யாருடைய கடை? / Whose shop is this?</label>
+          <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:6}}>
+            <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontWeight:f.own_shop?400:700}}>
+              <input type="radio" name="own" checked={!f.own_shop} onChange={()=>setF({...f,own_shop:false})}/>
+              <span>வேற ஒருவரோட கடை (I'm registering for someone) — commission ₹100 எனக்கு</span>
+            </label>
+            <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontWeight:f.own_shop?700:400}}>
+              <input type="radio" name="own" checked={f.own_shop} onChange={()=>setF({...f,own_shop:true})}/>
+              <span>என்னோட சொந்த கடை (My own shop) — ₹100 company-க்கு</span>
+            </label>
+          </div>
+        </div>
         <label>Shop Name</label><input className="input" onChange={set('shop_name')}/>
         <div className="grid2">
           <div><label>Owner Name</label><input className="input" onChange={set('owner_name')}/></div>
@@ -1112,7 +1125,12 @@ function Search(){
 
 
 function Login(){
-  const nav=useNavigate(); const [tab,setTab]=useState('owner'); const [msg,setMsg]=useState('')
+  const nav=useNavigate()
+  // preselect tab from ?tab=employee (e.g. "கடை பதிவு" button routes here)
+  const _lh=(typeof window!=='undefined' && window.location.hash)||''
+  const _lq=_lh.includes('?')?_lh.split('?')[1]:(typeof window!=='undefined'?window.location.search.slice(1):'')
+  const _tabQ=new URLSearchParams(_lq).get('tab')
+  const [tab,setTab]=useState(_tabQ==='employee'?'employee':'owner'); const [msg,setMsg]=useState('')
   // owner OTP
   const [mobile,setMobile]=useState(''); const [code,setCode]=useState(''); const [sent,setSent]=useState(false)
   const [otpUntil,setOtpUntil]=useState(0)
@@ -1124,9 +1142,11 @@ function Login(){
   const [showForgot,setShowForgot]=useState(false)
   const [fMobile,setFMobile]=useState(''); const [fCode,setFCode]=useState(''); const [fNew,setFNew]=useState('')
   const [fSent,setFSent]=useState(false); const [fUntil,setFUntil]=useState(0); const [fDone,setFDone]=useState(null)
-  // employee self sign-up
+  // employee self sign-up (username + mobile + email(optional) + password + confirm + OTP)
   const [showSignup,setShowSignup]=useState(false)
-  const [sName,setSName]=useState(''); const [sMobile,setSMobile]=useState(''); const [sPass,setSPass]=useState(''); const [sDone,setSDone]=useState(null)
+  const [sUser,setSUser]=useState(''); const [sMobile,setSMobile]=useState(''); const [sEmail,setSEmail]=useState('')
+  const [sPass,setSPass]=useState(''); const [sPass2,setSPass2]=useState('')
+  const [sOtp,setSOtp]=useState(''); const [sSent,setSSent]=useState(false); const [sUntil,setSUntil]=useState(0)
   // 1-second ticker for countdowns
   const [,setTick]=useState(0)
   useEffect(()=>{ const t=setInterval(()=>setTick(x=>x+1),1000); return ()=>clearInterval(t) },[])
@@ -1151,11 +1171,18 @@ function Login(){
     setFDone(r.username); setMsg('') } catch(e){ setMsg('❌ '+e.message) } }
 
   const backToLogin=()=>{ setShowForgot(false); setFSent(false); setFDone(null); setFMobile(''); setFCode(''); setFNew(''); setMsg('') }
-  // employee sign-up
-  async function signup(){ try{ const r=await api.post('/auth/employee/signup',{full_name:sName,mobile:sMobile,password:sPass})
-    setSDone(r.username); setMsg('') } catch(e){ setMsg('❌ '+e.message) } }
-  const goLoginAfterSignup=()=>{ setTab('employee'); setU(sDone||''); setShowSignup(false); setSName(''); setSMobile(''); setSPass(''); setSDone(null); setMsg('') }
-  const backFromSignup=()=>{ setShowSignup(false); setSName(''); setSMobile(''); setSPass(''); setSDone(null); setMsg('') }
+  // employee sign-up — step 1: send OTP; step 2: verify + create + auto-login to dashboard
+  const _signupPayload=()=>({username:sUser,mobile:sMobile,email:sEmail||null,password:sPass})
+  async function signupStart(){
+    if(sPass!==sPass2){ setMsg('❌ Password rendum match aagala'); return }
+    try{ await api.post('/auth/employee/signup/start',_signupPayload())
+      setSSent(true); setSUntil(Date.now()+60000); setMsg('✅ OTP sent to '+sMobile+'. Valid 5 min.') }
+    catch(e){ setMsg('❌ '+e.message) } }
+  async function signupVerify(){
+    try{ const r=await api.post('/auth/employee/signup/verify',{..._signupPayload(),code:(sOtp||'').trim()})
+      setToken(r.access_token); go('employee') }
+    catch(e){ setMsg('❌ '+e.message) } }
+  const backFromSignup=()=>{ setShowSignup(false); setSUser(''); setSMobile(''); setSEmail(''); setSPass(''); setSPass2(''); setSOtp(''); setSSent(false); setMsg('') }
 
   return (<><Header/><div className="container" style={{maxWidth:440}}>
     <h2 className="brand">Login</h2>
@@ -1196,25 +1223,36 @@ function Login(){
     {/* ---------- EMPLOYEE SIGN-UP ---------- */}
     {showSignup && <div className="card">
       <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
-        <b>🧑‍💼 Employee Sign Up</b>
+        <b>🧑‍💼 New Account — Sign Up</b>
         <a className="muted" style={{cursor:'pointer'}} onClick={backFromSignup}>← Back</a>
       </div>
-      {sDone ? <>
-        <div style={{padding:12,background:'#eafaf4',borderRadius:10,marginTop:8}}>
-          <p>✅ Account create aayiduchu!</p>
-          <p>Ungaloda Employee ID (username): <b style={{fontSize:18}}>{sDone}</b></p>
-          <p className="muted">Idha note pannikonga. Ithuvum ungaloda password vechu login pannunga.</p>
-        </div>
-        <button className="btn" style={{marginTop:10}} onClick={goLoginAfterSignup}>Go to Login →</button>
-      </> : <>
-        <label style={{marginTop:8}}>Your Name</label>
-        <input className="input" value={sName} onChange={e=>setSName(e.target.value)} placeholder="Full name"/>
+      {!sSent ? <>
+        <label style={{marginTop:8}}>Username</label>
+        <input className="input" value={sUser} onChange={e=>setSUser(e.target.value)} placeholder="Any username (min 3, no spaces)"/>
         <label>Mobile Number</label>
         <input className="input" value={sMobile} onChange={e=>setSMobile(e.target.value)} placeholder="10-digit mobile"/>
+        <label>Email <span className="muted">(optional)</span></label>
+        <input className="input" value={sEmail} onChange={e=>setSEmail(e.target.value)} placeholder="you@email.com"/>
         <label>Set Password</label>
         <PwInput value={sPass} onChange={e=>setSPass(e.target.value)} placeholder="Password (min 6)"/>
-        <button className="btn" style={{marginTop:10}} onClick={signup} disabled={!sName||!sMobile||sPass.length<6}>Sign Up</button>
-        <p className="muted" style={{marginTop:8,fontSize:12}}>Sign up panna udaney ungaluku oru Employee ID kidaikum — atha vechu login pannunga. Password marandha "Forgot password" use pannunga.</p>
+        <label>Confirm Password</label>
+        <PwInput value={sPass2} onChange={e=>setSPass2(e.target.value)} placeholder="Re-enter password"/>
+        <button className="btn" style={{marginTop:10}} onClick={signupStart}
+          disabled={sUser.length<3||!sMobile||sPass.length<6||sPass!==sPass2}>Send OTP</button>
+        {sPass2 && sPass!==sPass2 && <p style={{color:'#e74c3c',marginTop:6,fontSize:13}}>Password match aagala</p>}
+        <p className="muted" style={{marginTop:8,fontSize:12}}>Sign up panna ungaloda mobile-ku OTP varum. Verify pannina udaney dashboard open aagum.</p>
+      </> : <>
+        <div style={{padding:10,background:'#eafaf4',borderRadius:10,marginTop:8}}>
+          <p style={{margin:0}}>📲 OTP sent to <b>{sMobile}</b></p>
+        </div>
+        <label style={{marginTop:8}}>Enter OTP</label>
+        <input className="input" value={sOtp} onChange={e=>setSOtp(e.target.value)} placeholder="6-digit OTP"/>
+        <button className="btn" style={{marginTop:8}} onClick={signupVerify} disabled={!sOtp}>Verify &amp; Create Account</button>
+        <div style={{marginTop:8}}>
+          {left(sUntil)>0
+            ? <span className="muted">Resend OTP in {left(sUntil)}s</span>
+            : <a style={{cursor:'pointer',color:'var(--purple)'}} onClick={signupStart}>Resend OTP</a>}
+        </div>
       </>}
       <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
     </div>}
@@ -1243,8 +1281,8 @@ function Login(){
               </>}
         </>}
         {tab==='employee' && <>
-          <label>Employee ID (EMP-0001)</label>
-          <input className="input" value={u} onChange={e=>setU(e.target.value)}/>
+          <label>Username or Employee ID</label>
+          <input className="input" value={u} onChange={e=>setU(e.target.value)} placeholder="your username / EMP-0001"/>
           <label>Password</label>
           <PwInput value={p} onChange={e=>setP(e.target.value)}/>
           <button className="btn" style={{marginTop:8}} onClick={empLogin}>Login</button>
@@ -1252,8 +1290,9 @@ function Login(){
             <a className="muted" style={{cursor:'pointer',color:'var(--purple)'}}
                onClick={()=>{setShowForgot(true);setMsg('')}}>Forgot password?</a>
             <a style={{cursor:'pointer',color:'var(--purple)',fontWeight:700}}
-               onClick={()=>{setShowSignup(true);setMsg('')}}>New employee? Sign up →</a>
+               onClick={()=>{setShowSignup(true);setMsg('')}}>New? Sign up →</a>
           </div>
+          <p className="muted" style={{marginTop:10,fontSize:12}}>Kadai register panna sign up pannunga → OTP verify → dashboard-la irundhu kadai add pannalaam.</p>
         </>}
         <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
       </div>
@@ -1461,8 +1500,10 @@ function EmployeeDashboard(){
   const verify=async()=>{ await api.patch('/me/employee/verification',ver); setMsg('✅ Verified'); load() }
   const withdraw=async()=>{ try{await api.post('/me/employee/withdrawals',{amount:+amt}); setMsg('✅ Requested'); load()}catch(e){setMsg('❌ '+e.message)} }
   const regUrl=`${SITE}/#/register?emp=${(d.emp_code||'').replace('-','')}`
+  const regHref=`#/register?emp=${(d.emp_code||'').replace('-','')}`
   return (<><Header/><div className="container">
     <h2 className="brand">Employee — {d.emp_code}</h2>
+    <a href={regHref}><button className="btn" style={{marginTop:10,fontSize:18,padding:'14px'}}>➕ புது கடை பதிவு / Register New Shop</button></a>
     <div className="row" style={{marginTop:10}}>
       <div className="kpi"><b>₹{d.wallet_balance}</b><span>Wallet</span></div>
       <div className="kpi"><b>{d.total_registrations}</b><span>Total Shops</span></div>
