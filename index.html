@@ -1,4 +1,4 @@
-<!doctype html><html lang="ta"><head><!-- build:qrlogo-20260723101953 --><meta charset="UTF-8">
+<!doctype html><html lang="ta"><head><!-- build:qradmin-20260723110920 --><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>நம்மூர் · NammaOor</title>
 <meta name="description" content="Tamil Nadu local shops directory — scan QR, view products & offers, call or WhatsApp your local shop.">
@@ -1508,7 +1508,7 @@ function EmployeeDashboard(){
 function AdminDashboard(){
   const [rev,setRev]=useState({}); const [an,setAn]=useState({}); const [shops,setShops]=useState([])
   const [wd,setWd]=useState([]); const [emps,setEmps]=useState([]); const [qr,setQr]=useState({})
-  const [genN,setGenN]=useState(50); const [asg,setAsg]=useState({emp_code:'',count:10})
+  const [genN,setGenN]=useState(50); const [asg,setAsg]=useState({emp_code:'',count:10}); const [dlN,setDlN]=useState(10)
   const [newEmp,setNewEmp]=useState({full_name:'',mobile:'',password:'',district_id:''})
   const [cred,setCred]=useState(null); const [empSearch,setEmpSearch]=useState(''); const [empDet,setEmpDet]=useState(null)
   const [shopSearch,setShopSearch]=useState(''); const [ov,setOv]=useState({}); const [msg,setMsg]=useState('')
@@ -1523,6 +1523,8 @@ function AdminDashboard(){
   const genQr=async()=>{ const r=await api.post('/admin/qr/generate',{count:+genN}); setMsg(`${r.generated} QR generated`); load() }
   const assignQr=async()=>{ try{const r=await api.post('/admin/qr/assign',{emp_code:asg.emp_code,count:+asg.count}); setMsg(`${r.assigned} assigned to ${r.emp_code}`); load()}catch(e){setMsg(e.message)} }
   const dlPdf=(status)=>downloadFile(`/admin/qr/pdf?status=${status}&limit=60`,`nammaoor_qr_${status}.pdf`)
+  // Download only NEW (not-yet-downloaded) QRs — exact count, old ones never repeat.
+  const dlNew=async()=>{ const n=+dlN||1; try{ await downloadFile(`/admin/qr/pdf?status=unassigned&count=${n}&new_only=true&mark=true`,`nammaoor_qr_new_${n}.pdf`); setMsg(`${n} new QR downloaded`); load() }catch(e){ setMsg('❌ '+(e.message||'No new QR — generate first')) } }
   const createEmp=async()=>{ try{const r=await api.post('/admin/employees',{...newEmp,district_id:newEmp.district_id?+newEmp.district_id:null}); setCred(r); setMsg(''); load()}catch(e){setMsg(e.message)} }
   const searchEmp=async()=>{ setEmps(await api.get('/admin/employees'+(empSearch?('?search='+encodeURIComponent(empSearch)):''))) }
   const openEmp=async(code)=>{ try{ setEmpDet(await api.get(`/admin/employees/${code}/details`)) }catch(e){setMsg(e.message)} }
@@ -1566,10 +1568,15 @@ function AdminDashboard(){
         <div className="kpi"><b>{qr.used||0}</b><span>Used</span></div>
       </div>
       <div className="row" style={{marginTop:10}}>
-        <input className="input" style={{flex:1}} type="number" value={genN} onChange={e=>setGenN(e.target.value)}/>
+        <input className="input" style={{flex:1}} type="number" placeholder="Generate count" value={genN} onChange={e=>setGenN(e.target.value)}/>
         <button className="btn" onClick={genQr}>Generate</button>
-        <button className="btn ghost" onClick={()=>dlPdf('unassigned')}>PDF (unassigned)</button>
-        <button className="btn ghost" onClick={()=>dlPdf('assigned')}>PDF (assigned)</button>
+      </div>
+      <div style={{marginTop:10,background:'#f6f2ff',border:'1px solid #e3d9fb',borderRadius:12,padding:10}}>
+        <p className="muted" style={{margin:'0 0 8px',fontSize:13}}>Ethana QR venum-nu podu → pudhusa (download aagatha) QR mattum varum. Pazhaya QR marupadi download aagaadhu.</p>
+        <div className="row">
+          <input className="input" style={{flex:1}} type="number" min="1" placeholder="How many?" value={dlN} onChange={e=>setDlN(e.target.value)}/>
+          <button className="btn" onClick={dlNew}>⬇️ Download New QR</button>
+        </div>
       </div>
       <div className="row" style={{marginTop:10}}>
         <input className="input" style={{flex:2}} placeholder="Employee (EMP-0001)" value={asg.emp_code} onChange={e=>setAsg({...asg,emp_code:e.target.value})}/>
