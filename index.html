@@ -2409,6 +2409,15 @@ function AdminDashboard(){
       setCatMsg(`✅ ${r.added} added · ${r.skipped_duplicates} duplicate skipped · ${r.error_count} errors`); setCsvText(''); load() }
     catch(e){ setCatMsg('❌ '+e.message) } }
   const exportCsv=()=>downloadFile('/admin/catalog/export','nammaoor_master_catalog.csv')
+  const ensureXLSX=()=>window.XLSX?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})
+  const onCatFile=async(e)=>{ const f=e.target.files&&e.target.files[0]; if(!f)return
+    try{ setCatMsg('File padikkuthu…')
+      if(/\.csv$/i.test(f.name)){ setCsvText(await f.text()) }
+      else { await ensureXLSX(); const buf=await f.arrayBuffer(); const wb=window.XLSX.read(buf,{type:'array'})
+        const ws=wb.Sheets[wb.SheetNames[0]]; setCsvText(window.XLSX.utils.sheet_to_csv(ws)) }
+      setCatMsg('✅ File load aayiduchu — keezha paathu "Import CSV" click pannunga') }
+    catch(err){ setCatMsg('❌ File padikka mudiyala: '+err.message) }
+    e.target.value='' }
   const delShop=async(code)=>{ if(!confirm('Delete shop '+code+'? QR will be permanently disabled.'))return; await api.del(`/admin/shops/${code}`); setMsg(`${code} deleted, QR disabled`); load() }
   const wStatus=async(id,st)=>{ if(st==='approve'){await api.post(`/admin/withdrawals/${id}/approve`)} else if(st==='reject'){await api.post(`/admin/withdrawals/${id}/reject`)} else {await api.post(`/admin/withdrawals/${id}/status`,{status:st})} load() }
   const platWithdraw=async()=>{ const a=prompt('Platform withdrawal amount'); if(!a)return; const u=prompt('Your UPI ID'); await api.post('/admin/platform-withdraw',{amount:+a,upi_id:u||''}); setMsg('Platform withdrawal requested') }
@@ -2475,8 +2484,11 @@ function AdminDashboard(){
       <button className="btn sm" style={{marginTop:6}} onClick={addMaster}
         disabled={!mcForm.name||!mcForm.category||!mcForm.sub_category}>Add to catalog</button>
 
-      <h4 style={{margin:'14px 0 4px'}}>📥 CSV Bulk Import</h4>
+      <h4 style={{margin:'14px 0 4px'}}>📥 Excel / CSV Bulk Import</h4>
       <p className="muted" style={{fontSize:12}}>Columns: <code>product_name, category, sub_category, unit, product_type, keywords</code> — first row = header. Duplicates auto-skip.</p>
+      <label className="btn ghost sm" style={{display:'inline-block',marginBottom:6}}>📎 Excel / CSV file thernthedu
+        <input type="file" accept=".csv,.xlsx,.xls" onChange={onCatFile} style={{display:'none'}}/></label>
+      <p className="muted" style={{fontSize:11,margin:'0 0 4px'}}>…allathu keezha neeramе paste pannunga:</p>
       <textarea rows="5" placeholder={"product_name,category,sub_category,unit\nBasmati Rice,Grocery,Rice,Kg\nIdli Rice,Grocery,Rice,Kg"}
         value={csvText} onChange={e=>setCsvText(e.target.value)} style={{fontFamily:'monospace',fontSize:12}}/>
       <div className="row" style={{gap:8}}>
