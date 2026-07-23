@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "shop.nammaoor.twa",
+        "sha256_cert_fingerprints": ["44:D6:F4:6D:B0:43:DA:23:51:E0:14:8F:5A:B1:3F:16:66:41:C5:9E:CC:FC:C6:20:ED:47:03:21:B7:E4:D3:94"]
+      }
+    }]
