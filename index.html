@@ -722,11 +722,11 @@ function Register(){
         <div style={{display:'grid',gap:12}}>
           <button className="btn" style={{padding:'18px',fontSize:16}}
             onClick={()=>{ setF(v=>({...v,own_shop:true,emp_code:''})); setMode('form') }}>
-            🏪 என்னோட சொந்த கடை<br/><span style={{fontWeight:400,fontSize:12}}>Own Shop — நீங்களே பதிவு பண்ணுங்க (₹299 மட்டும்)</span>
+            🏪 என்னோட சொந்த கடை<br/><span style={{fontWeight:400,fontSize:12}}>Own Shop — நீங்களே பதிவு பண்ணுங்க</span>
           </button>
           <button className="btn ghost" style={{padding:'18px',fontSize:16}}
             onClick={()=>{ window.location.hash='#/login?tab=employee' }}>
-            👷 வேற ஒருவரோட கடை<br/><span style={{fontWeight:400,fontSize:12}}>Other Shop — Employee login pannunga (₹100 commission)</span>
+            👷 வேற ஒருவரோட கடை<br/><span style={{fontWeight:400,fontSize:12}}>Other Shop — Employee login pannunga</span>
           </button>
         </div>
         <p className="muted" style={{marginTop:14,fontSize:12}}>Sontha kadai-a? Direct-a form fill pannunga. Vera oruvaroda kadai register panna employee-a login pannunga.</p>
