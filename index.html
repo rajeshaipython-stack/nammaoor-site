@@ -387,6 +387,41 @@ const qrImg = (data) =>
 const PLACEHOLDER="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f4f0fb'/%3E%3Cstop offset='1' stop-color='%23e6ddf5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='500' height='500' fill='url(%23g)'/%3E%3Cg fill='none' stroke='%23b6a8d6' stroke-width='11' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M172 210h156l-16 120H188z'/%3E%3Cpath d='M214 210a36 36 0 0172 0'/%3E%3C/g%3E%3Ctext x='250' y='392' font-family='sans-serif' font-size='26' fill='%23a597c6' text-anchor='middle'%3ENammaOor%3C/text%3E%3C/svg%3E"
 const onImgErr=e=>{e.target.onerror=null;e.target.src=PLACEHOLDER}
 
+// Emoji thumbnail for a product from its category / sub-category (no real photo needed)
+const _ICONMAP=[
+ ["rice","🍚"],["oil|ghee","🛢️"],["dhal|pulse|gram|rajma","🫘"],["atta|flour|rava|maida","🌾"],
+ ["masala|spice|chilli|turmeric","🌶️"],["sugar|salt|jaggery","🧂"],["tea shop|coffee|tea|health drink","☕"],
+ ["milk|dairy|curd|paneer|butter","🥛"],["biscuit|cookie|bakery|bread|cake|rusk","🍪"],["noodle|pasta","🍜"],
+ ["chocolate|sweet|candy|confection","🍫"],["chip|snack|namkeen|mixture|murukku","🍿"],
+ ["beverage|drink|juice|soda|water|cola","🥤"],["dry fruit|nut|cashew|almond","🥜"],["pickle|papad|vathal","🥒"],
+ ["frozen|instant","🧊"],["egg","🥚"],["meat|chicken|mutton|nonveg|non-veg","🍗"],["fish|seafood|prawn","🐟"],
+ ["vegetable","🥦"],["fruit","🍎"],["restaurant|tiffin|meal|hotel|mess|cafe|food","🍽️"],["chaat|street","🌮"],
+ ["medicine|pharma|tablet|medical|antibiotic|gastro|fever|allergy","💊"],["vitamin|supplement|protein|fitness","💪"],
+ ["ayurved","🌿"],["device|thermometer|glucometer|oximeter|bp monitor|nebul","🩺"],["first aid|bandage|antiseptic","🩹"],
+ ["baby|diaper|infant|feeding","🍼"],["toy|game|carrom|chess","🧸"],["writing|pen|pencil|notebook|paper|stationery|school","✏️"],
+ ["book|media","📚"],["gift","🎁"],["mobile|smartphone|phone","📱"],["laptop|computer|pen drive|ssd","💻"],
+ ["tv|television|soundbar|speaker|entertainment","📺"],["appliance|fridge|refriger|washing|fan|mixer|kettle|microwave|iron","🔌"],
+ ["accessor.*mobile|earbud|charger|cable|power bank","🎧"],["electronic","🔌"],
+ ["footwear|shoe|sandal|slipper|floater","👟"],["women","👗"],["fashion|wear|shirt|clothing|saree|dress|kurta|jean|t-shirt","👕"],
+ ["watch","⌚"],["bag|wallet|belt|accessor","👜"],["beauty|skin|cosmetic|makeup|lipstick|kajal|cream|serum","💄"],
+ ["hair|shampoo|conditioner","🧴"],["grooming|shaving|razor|perfume|deo|trimmer","🪒"],["soap|bath|handwash|body","🧼"],
+ ["clean|detergent|dishwash|floor|toilet|phenyl","🧽"],["pooja|agarbatti|camphor|lamp","🪔"],
+ ["furniture|bed|sofa|chair|table|almirah|wardrobe|cot","🛋️"],["kitchen|utensil|cooker|plate|tawa|kadai|tumbler","🍳"],
+ ["decor|clock|frame|vase|painting|lamp","🖼️"],["bed & bath|pillow|blanket|towel|mattress|bedsheet","🛏️"],
+ ["automobile|bike|car|spare|tyre|lubricant|engine oil","🚗"],["helmet","🪖"],["tool|hammer|screwdriver|spanner|drill","🔧"],
+ ["electrical|bulb|wire|switch|mcb|led","💡"],["plumb|pipe|tap|valve|basin","🚰"],["paint|primer|putty|brush","🎨"],
+ ["fastener|screw|nail|bolt","🔩"],["cricket","🏏"],["sport|football|volleyball|badminton|outdoor|camping|gym","⚽"],
+ ["pet|dog|cat|bird|aquarium","🐾"],["agri|farm|seed|fertiliz|dairy farm","🌱"],["hardware","🔩"],
+ ["jewel|gold|silver","💍"],["travel|tour|holiday","✈️"],["real estate|property","🏠"],["financ|insurance|loan","💰"],
+ ["education|training|tuition|coaching","🎓"],["hospitality|hotel|room|lodge","🏨"],["logistic|courier|delivery","📦"],
+ ["print|publish","🖨️"],["repair|maintenance|service","🛠️"],["construction|cement|building","🏗️"],
+]
+function catIcon(cat,sub){
+  const t=((sub||'')+' '+(cat||'')).toLowerCase()
+  for(const [pat,ic] of _ICONMAP){ try{ if(new RegExp(pat).test(t)) return ic }catch(e){} }
+  return "🛍️"
+}
+
 // GET with retry — recovers automatically from a cold (sleeping) free-tier server.
 // Render free tier returns 503 for ~50s while waking, so we retry for ~2 min.
 async function getRetry(path, tries=40, gap=3000){
@@ -1028,7 +1063,9 @@ function ProdCards({items}){
         return (
           <a key={p.id} href={'#/p/'+p.id} className="pcard">
             <div className="pcimg-wrap">
-              <img className="pcimg" loading="lazy" src={p.thumbnail||(p.images&&p.images[0])||PLACEHOLDER} onError={onImgErr} alt={p.title||p.name}/>
+              {(p.thumbnail||(p.images&&p.images[0]))
+                ? <img className="pcimg" loading="lazy" src={p.thumbnail||p.images[0]} onError={onImgErr} alt={p.title||p.name}/>
+                : <div className="pcimg" style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:52,background:'linear-gradient(135deg,#f6f3ff,#fdeef6)'}}>{catIcon(p.category,p.subcategory)}</div>}
               {off>0 && <span className="off-tag">{off}% OFF</span>}
             </div>
             <div className="pcbody">
@@ -1914,6 +1951,7 @@ function OwnerDashboard(){
             <div key={it.product_id} style={{borderBottom:'1px solid var(--line)',padding:'8px 0'}}>
               <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontWeight:600}}>
                 <input type="checkbox" checked={!!sel.on} onChange={e=>mcTog(it,e.target.checked)}/>
+                <span style={{width:34,height:34,borderRadius:8,background:'#f4f0ff',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:20,flex:'0 0 auto'}}>{catIcon(it.category||mcCat,it.sub_category||mcSub)}</span>
                 <span>{it.name} <span className="muted" style={{fontWeight:400,fontSize:12}}>/ {it.unit}</span></span>
               </label>
               {sel.on && <div className="row" style={{gap:6,marginTop:6,flexWrap:'wrap'}}>
