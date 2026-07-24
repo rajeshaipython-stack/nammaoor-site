@@ -526,7 +526,7 @@ function Landing(){
 
       <div className="row" style={{justifyContent:'center',marginTop:16}}>
         <Link to="/search"><button className="btn">🔍 கடைகளை தேடு</button></Link>
-        <Link to="/login?tab=employee"><button className="btn ghost">🏪 கடை பதிவு</button></Link>
+        <Link to="/register"><button className="btn ghost">🏪 கடை பதிவு</button></Link>
       </div>
 
       <div className="grid2" style={{marginTop:18}}>
@@ -547,10 +547,13 @@ function Landing(){
 function Register(){
   const _h = (typeof window!=='undefined' && window.location.hash) || ''
   const _q = _h.includes('?') ? _h.split('?')[1] : (typeof window!=='undefined' ? window.location.search.slice(1) : '')
-  const emp = new URLSearchParams(_q).get('emp') || 'EMP0001'
+  const empParam = new URLSearchParams(_q).get('emp')          // present => an employee is registering
+  const emp = empParam || ''
+  // Entry chooser: no ?emp => came from "Kadai Pathivu" => ask Own / Other first.
+  const [mode,setMode]=useState(empParam ? 'form' : 'choose')
   const [districts,setD]=useState(NM_DISTRICTS); const [assemblies,setA]=useState([]); const [cats,setC]=useState([])
   const [loadingCat,setLoadingCat]=useState(true); const [loadingAsm,setLoadingAsm]=useState(false)
-  const [f,setF]=useState({emp_code:emp,own_shop:false,shop_name:'',owner_name:'',mobile:'',whatsapp:'',
+  const [f,setF]=useState({emp_code:emp,own_shop:!empParam,shop_name:'',owner_name:'',mobile:'',whatsapp:'',
     district_id:'',assembly_id:'',town:'',area:'',category_id:'',address:'',google_maps:'',
     lat:null,lng:null,description:'',bio:'',open_time:'',close_time:'',leave_days:'',upi_id:'',facebook:'',instagram:'',website:'',logo_url:'',cover_url:'',photos:[]})
   const [products,setProducts]=useState([]); const [pf,setPf]=useState({name:'',price:''})
@@ -709,27 +712,35 @@ function Register(){
       <a href={`#/s/${result.qr_token}`}><button className="btn tl" style={{marginTop:10,width:'100%'}}>👁 View Shop Page</button></a>
     </div></div></>)
 
+  // ---- Entry chooser: Own shop vs Other shop ----
+  if(mode==='choose') return (<>
+    <Header/>
+    <div className="container" style={{maxWidth:460}}>
+      <h2 className="brand">Kadai Pathivu / Shop Registration</h2>
+      <div className="card" style={{textAlign:'center'}}>
+        <p className="muted" style={{marginBottom:14}}>யாருடைய கடை பதிவு செய்யறீங்க?</p>
+        <div style={{display:'grid',gap:12}}>
+          <button className="btn" style={{padding:'18px',fontSize:16}}
+            onClick={()=>{ setF(v=>({...v,own_shop:true,emp_code:''})); setMode('form') }}>
+            🏪 என்னோட சொந்த கடை<br/><span style={{fontWeight:400,fontSize:12}}>Own Shop — நீங்களே பதிவு பண்ணுங்க (₹299 மட்டும்)</span>
+          </button>
+          <button className="btn ghost" style={{padding:'18px',fontSize:16}}
+            onClick={()=>{ window.location.hash='#/login?tab=employee' }}>
+            👷 வேற ஒருவரோட கடை<br/><span style={{fontWeight:400,fontSize:12}}>Other Shop — Employee login pannunga (₹100 commission)</span>
+          </button>
+        </div>
+        <p className="muted" style={{marginTop:14,fontSize:12}}>Sontha kadai-a? Direct-a form fill pannunga. Vera oruvaroda kadai register panna employee-a login pannunga.</p>
+      </div>
+    </div></>)
+
   return (<>
     <Header/>
     <div className="container">
       <h2 className="brand">Kadai Pathivu / Shop Registration</h2>
-      <p className="muted">Employee: {emp}</p>
+      <p className="muted">{f.own_shop ? '🏪 சொந்த கடை பதிவு' : ('👷 Employee: '+emp)}</p>
 
       {step==='form' && <div className="card">
         {loadingCat && <div className="wakebanner">⏳ Server ready aaguthu (first open-la ~30-60 sec aagum)... District ippove select pannalaam. Category konjam neram-la varum.</div>}
-        <div style={{background:'#f6f3ff',border:'1px solid #e0d6ff',borderRadius:12,padding:12,marginBottom:12}}>
-          <label style={{fontWeight:700}}>யாருடைய கடை? / Whose shop is this?</label>
-          <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:6}}>
-            <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontWeight:f.own_shop?400:700}}>
-              <input type="radio" name="own" checked={!f.own_shop} onChange={()=>setF({...f,own_shop:false})}/>
-              <span>வேற ஒருவரோட கடை (I'm registering for someone) — commission ₹100 எனக்கு</span>
-            </label>
-            <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontWeight:f.own_shop?700:400}}>
-              <input type="radio" name="own" checked={f.own_shop} onChange={()=>setF({...f,own_shop:true})}/>
-              <span>என்னோட சொந்த கடை (My own shop) — ₹100 company-க்கு</span>
-            </label>
-          </div>
-        </div>
         <label>Shop Name</label><input className="input" onChange={set('shop_name')}/>
         <div className="grid2">
           <div><label>Owner Name</label><input className="input" onChange={set('owner_name')}/></div>
