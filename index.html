@@ -324,6 +324,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -856,9 +858,8 @@ function Landing(){
         <img src="/logo.png" style={{height:70,display:'block',margin:'0 auto'}}/>
       </div>
 
-      <Link to="/scan"><button className="btn" style={{width:'100%',marginTop:16,padding:'16px',fontSize:18}}>📷 Scan &amp; Pay</button></Link>
-      <div className="row" style={{justifyContent:'center',marginTop:12}}>
-        <Link to="/search"><button className="btn ghost">🔍 கடைகளை தேடு</button></Link>
+      <div className="row" style={{justifyContent:'center',marginTop:16}}>
+        <Link to="/search"><button className="btn">🔍 கடைகளை தேடு</button></Link>
         <Link to="/register"><button className="btn ghost">🏪 கடை பதிவு</button></Link>
       </div>
 
@@ -1166,154 +1167,6 @@ function Register(){
       </div>}
     </div>
   </>)
-}
-
-
-/* ===== pages/ScanPay.jsx ===== */
-
-// ---- UPI helpers (self-contained) ----
-function parseUpi(text){
-  const t=(text||'').trim()
-  if(!/^upi:\/\//i.test(t)) return null
-  try{ const p=new URLSearchParams(t.split('?')[1]||'')
-    return { pa:p.get('pa')||'', pn:p.get('pn')||'', am:p.get('am')||'', tn:p.get('tn')||'' } }
-  catch(e){ return null }
-}
-function buildUpi(pa,pn,am,tn){
-  let u='upi://pay?pa='+encodeURIComponent(pa)+'&pn='+encodeURIComponent(pn||'Merchant')
-  if(am && +am>0) u+='&am='+encodeURIComponent((+am).toFixed(2))
-  if(tn) u+='&tn='+encodeURIComponent(tn)
-  return u+'&cu=INR'
-}
-const validVpa=(v)=> !!v && /^[\w.\-]{2,256}@[a-zA-Z]{2,64}$/.test((v||'').trim())
-const HKEY='nm_pay_history'
-const getHist=()=>{ try{ return JSON.parse(localStorage.getItem(HKEY)||'[]') }catch(e){ return [] } }
-const addHist=(r)=>{ const h=getHist(); h.unshift(r); localStorage.setItem(HKEY, JSON.stringify(h.slice(0,50))) }
-
-function ScanPay(){
-  const nav=useNavigate()
-  const [stage,setStage]=useState('scan')          // scan | confirm | status
-  const [scanning,setScanning]=useState(false)
-  const [err,setErr]=useState('')
-  const [pay,setPay]=useState({pa:'',pn:'',am:'',tn:''})
-  const [result,setResult]=useState('')            // completed | cancelled
-  const [manual,setManual]=useState({pa:'',am:''})
-  const [showHist,setShowHist]=useState(false)
-  const [hist,setHist]=useState(getHist())
-  const videoRef=useRef(null); const streamRef=useRef(null)
-
-  const stopCam=()=>{ try{ if(streamRef.current){ streamRef.current.getTracks().forEach(t=>t.stop()); streamRef.current=null } }catch(e){}
-    if(videoRef.current) videoRef.current.srcObject=null; setScanning(false) }
-  useEffect(()=>()=>stopCam(),[])
-
-  async function startScan(){
-    setErr('')
-    if(!('BarcodeDetector' in window)){ setErr('Intha browser camera-scan support pannala. Keezha UPI ID type pannunga.'); return }
-    try{
-      setScanning(true)
-      const det=new window.BarcodeDetector({formats:['qr_code']})
-      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
-      streamRef.current=stream
-      const vd=videoRef.current; vd.srcObject=stream; await vd.play()
-      const loop=async()=>{
-        if(!streamRef.current) return
-        try{ const codes=await det.detect(vd)
-          if(codes.length){ const raw=codes[0].rawValue||''
-            // NammaOor shop QR -> open shop page
-            if(raw.includes('/s/')){ const code=raw.split('/s/')[1].replace(/[/#?].*$/,''); if(code){ stopCam(); nav('/s/'+code); return } }
-            const u=parseUpi(raw)
-            if(u && u.pa){ stopCam(); setErr(''); setPay({pa:u.pa,pn:u.pn,am:u.am,tn:u.tn}); setStage('confirm'); return }
-            setErr('Idhu UPI QR illa — innoru QR-a scan pannunga')
-          } }catch(e){}
-        requestAnimationFrame(loop)
-      }; loop()
-    }catch(e){ setErr('Camera access illa. Permission kudunga, allathu manual-a UPI ID podunga.'); setScanning(false) }
-  }
-
-  const goManual=()=>{ if(!validVpa(manual.pa)){ setErr('Sariyana UPI ID podunga (eg: name@upi)'); return }
-    setErr(''); setPay({pa:manual.pa.trim(),pn:'',am:manual.am,tn:''}); setStage('confirm') }
-
-  const doPay=()=>{
-    if(!validVpa(pay.pa)){ setErr('Invalid UPI ID'); return }
-    const uri=buildUpi(pay.pa,pay.pn,pay.am,pay.tn)
-    try{ window.location.href=uri }catch(e){}
-    setTimeout(()=>setStage('status'), 900)
-  }
-  const finish=(ok)=>{
-    addHist({ pa:pay.pa, pn:pay.pn||'Merchant', am:pay.am||'', status:ok?'completed':'cancelled',
-              at:new Date().toISOString(), src:'user_confirmed' })
-    setHist(getHist()); setResult(ok?'completed':'cancelled')
-  }
-  const reset=()=>{ setPay({pa:'',pn:'',am:'',tn:''}); setResult(''); setErr(''); setManual({pa:'',am:''}); setStage('scan') }
-
-  return (<><Header/><div className="container" style={{maxWidth:460}}>
-    <h2 className="brand">📷 Scan &amp; Pay</h2>
-    <p className="muted" style={{marginTop:2}}>Endha UPI QR-um scan panni, ungaloda UPI app-la pay pannunga.</p>
-
-    {/* ---------- SCAN ---------- */}
-    {stage==='scan' && <div className="card">
-      {!scanning
-        ? <button className="btn" style={{padding:'16px',fontSize:17,width:'100%'}} onClick={startScan}>📷 Open Camera &amp; Scan QR</button>
-        : <>
-            <video ref={videoRef} style={{width:'100%',borderRadius:14,background:'#000'}} muted playsInline></video>
-            <p className="muted" style={{textAlign:'center',marginTop:8}}>QR-a frame-la kaatunga…</p>
-            <button className="btn ghost" style={{width:'100%'}} onClick={stopCam}>Stop</button>
-          </>}
-      <div style={{borderTop:'1px solid var(--line)',margin:'14px 0'}}></div>
-      <p className="muted" style={{fontSize:13,marginBottom:6}}>QR scan aagala? UPI ID-a nera type pannunga:</p>
-      <input className="input" placeholder="UPI ID (eg: shop@okhdfcbank)" value={manual.pa} onChange={e=>setManual({...manual,pa:e.target.value})}/>
-      <input className="input" type="number" inputMode="decimal" placeholder="Amount ₹ (optional)" value={manual.am} onChange={e=>setManual({...manual,am:e.target.value})}/>
-      <button className="btn ghost" style={{width:'100%',marginTop:6}} onClick={goManual}>Continue →</button>
-      {err && <p style={{color:'#c0392b',marginTop:10}}>{err}</p>}
-      <div style={{textAlign:'center',marginTop:12}}>
-        <a style={{cursor:'pointer',color:'var(--purple)',fontWeight:600}} onClick={()=>setShowHist(v=>!v)}>🕘 My Payment History</a>
-      </div>
-      {showHist && <div style={{marginTop:10}}>
-        {hist.length===0 && <p className="muted">Innum payments illa.</p>}
-        {hist.map((h,i)=><div key={i} style={{borderBottom:'1px solid var(--line)',padding:'8px 0',display:'flex',justifyContent:'space-between',gap:8}}>
-          <span><b>{h.pn}</b><br/><span className="muted" style={{fontSize:12}}>{h.pa} · {new Date(h.at).toLocaleString()}</span></span>
-          <span style={{textAlign:'right',whiteSpace:'nowrap'}}>{h.am?('₹'+h.am):''}<br/>
-            <span className={'tag '+(h.status==='completed'?'a':'e')}>{h.status}</span></span>
-        </div>)}
-      </div>}
-    </div>}
-
-    {/* ---------- CONFIRM ---------- */}
-    {stage==='confirm' && <div className="card">
-      <h3>Confirm Payment</h3>
-      <div style={{background:'#f6f3ff',borderRadius:12,padding:14,marginTop:8}}>
-        <p style={{margin:'2px 0'}}><span className="muted">Merchant:</span> <b>{pay.pn||'—'}</b></p>
-        <p style={{margin:'2px 0'}}><span className="muted">UPI ID:</span> <b>{pay.pa}</b></p>
-        {pay.tn && <p style={{margin:'2px 0'}}><span className="muted">Note:</span> {pay.tn}</p>}
-      </div>
-      <label style={{marginTop:10}}>Amount ₹</label>
-      <input className="input" type="number" inputMode="decimal" placeholder="Amount podunga" value={pay.am} onChange={e=>setPay({...pay,am:e.target.value})} style={{fontSize:18,textAlign:'center'}}/>
-      <button className="btn" style={{width:'100%',marginTop:12,padding:'15px',fontSize:17}} onClick={doPay}>💳 Pay {pay.am?('₹'+pay.am):''}</button>
-      <button className="btn ghost" style={{width:'100%',marginTop:8}} onClick={reset}>← Back</button>
-      <p className="muted" style={{fontSize:12,marginTop:10}}>Pay-a thattina ungaloda UPI app (GPay / PhonePe / Paytm / BHIM…) open aagum. Payment angathaan, ungaloda UPI PIN vachu nadakkum. Naanga bank details / PIN edhuvum kekkala.</p>
-      {err && <p style={{color:'#c0392b',marginTop:8}}>{err}</p>}
-    </div>}
-
-    {/* ---------- STATUS ---------- */}
-    {stage==='status' && <div className="card" style={{textAlign:'center'}}>
-      {!result ? <>
-        <div style={{fontSize:44}}>❓</div>
-        <h3>Payment mudinjidatha?</h3>
-        <p className="muted" style={{marginTop:4}}>{pay.pn||pay.pa} {pay.am?('· ₹'+pay.am):''}</p>
-        <button className="btn" style={{width:'100%',marginTop:14,padding:'14px'}} onClick={()=>finish(true)}>✅ Aamaa, Payment aachu</button>
-        <button className="btn ghost" style={{width:'100%',marginTop:8}} onClick={()=>finish(false)}>❌ Illa / Cancel aachu</button>
-      </> : <>
-        <div style={{fontSize:56}}>{result==='completed'?'✅':'❌'}</div>
-        <h3 style={{color:result==='completed'?'#008C78':'#c0392b'}}>{result==='completed'?'Payment Completed':'Payment Cancelled'}</h3>
-        <p className="muted" style={{marginTop:4}}>{pay.pn||pay.pa} {pay.am?('· ₹'+pay.am):''}</p>
-        {result==='completed' && <p className="muted" style={{fontSize:12,marginTop:8}}>*Idhu neenga confirm panna status. Bank verification illa.</p>}
-        <button className="btn" style={{width:'100%',marginTop:14}} onClick={reset}>📷 Scan Another</button>
-        <a style={{display:'inline-block',marginTop:12,cursor:'pointer',color:'var(--purple)',fontWeight:600}} onClick={()=>{reset();setShowHist(true)}}>🕘 View History</a>
-      </>}
-    </div>}
-
-    <p className="muted" style={{textAlign:'center',marginTop:8,fontSize:12}}>Powered by NammaOor · UPI payments are secure &amp; direct</p>
-  </div></>)
 }
 
 
@@ -3145,7 +2998,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <Routes>
       <Route path="/" element={<Landing/>} />
       <Route path="/register" element={<Register/>} />
-      <Route path="/scan" element={<ScanPay/>} />
       <Route path="/search" element={<Search/>} />
       <Route path="/products" element={<Products/>} />
       <Route path="/shop/:code" element={<ShopPage/>} />
