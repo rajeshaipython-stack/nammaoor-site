@@ -1210,8 +1210,8 @@ function ShopPage(){
           {!rateOpen
             ? <button type="button" onClick={()=>{setRateOpen(true);ev('review_open')}} className="reviewbtn">
                 <span className="reviewbtn-stars">★★★★★</span>
-                <span className="reviewbtn-tx">Engaluku 5 Star Review Kodunga!</span>
-                <span className="reviewbtn-sub">NammaOor-la ungaloda rating podunga 🙏</span>
+                <span className="reviewbtn-tx">Give Your Ratings</span>
+                <span className="reviewbtn-sub">Ungaloda rating star-a thattunga 🙏</span>
               </button>
             : <div className="ratepick">
                 <p className="ratepick-tx">Star-a thattunga 👇</p>
@@ -1852,7 +1852,7 @@ function OwnerDashboard(){
   const saveEdit=async(id)=>{ await api.patch('/me/shop/products/'+id,{name:ef.name,price:ef.price?+ef.price:null}); setEdit(null); load() }
   const addOffer=async()=>{ await api.post('/me/shop/offers',offer); setOffer({title:'',detail:''}); load() }
   const delOffer=async(id)=>{ await api.del('/me/shop/offers/'+id); load() }
-  const renew=async()=>{ const r=await api.post('/me/shop/renew'); if(r.gateway==='razorpay'&&window.Razorpay){ new window.Razorpay({key:r.key_id,amount:r.amount*100,currency:'INR',name:'NammaOor',description:'Renewal Rs.299',order_id:r.order_id,theme:{color:'#FF2E7E'},handler:async(x)=>{await api.post('/payments/verify',{razorpay_order_id:x.razorpay_order_id,razorpay_payment_id:x.razorpay_payment_id,razorpay_signature:x.razorpay_signature});setMsg('Renewed!');load()}}).open() } else { await api.post(`/payments/dev/mark-paid/${r.txn_id}`); setMsg('Renewed 6 months'); load() } }
+  const renew=async()=>{ const r=await api.post('/me/shop/renew'); if(r.gateway==='razorpay'&&window.Razorpay){ new window.Razorpay({key:r.key_id,amount:r.amount*100,currency:'INR',name:'NammaOor',description:'Renewal Rs.299',order_id:r.order_id,theme:{color:'#FF2E7E'},handler:async(x)=>{await api.post('/payments/verify',{razorpay_order_id:x.razorpay_order_id,razorpay_payment_id:x.razorpay_payment_id,razorpay_signature:x.razorpay_signature});setMsg('Renewed!');load()}}).open() } else { await api.post(`/payments/dev/mark-paid/${r.txn_id}`); setMsg('Renewed 3 months'); load() } }
   const daysLeft = s.expires_at ? Math.max(0, Math.ceil((new Date(s.expires_at)-new Date())/86400000)) : 0
   const pub=`${SITE}/#/shop/${(s.shop_code||'').replace('-','')}`
   const fp = pays.filter(p=>!psearch || (p.gateway_payment_id||'').includes(psearch) || (''+p.amount).includes(psearch) || (p.status||'').includes(psearch))
@@ -1874,10 +1874,10 @@ function OwnerDashboard(){
           onClick={()=>downloadFile('/me/shop/poster','nammaoor_poster.pdf')}>
           🖨 Download Poster (print & stick)</button></div>
       <div className="card"><h3>Membership</h3>
-        <p className="muted">Plan: <b>NammaOor Basic (6 months)</b></p>
+        <p className="muted">Plan: <b>NammaOor Basic (3 months)</b></p>
         <p className="muted">Renewal date: <b>{s.expires_at?new Date(s.expires_at).toDateString():'-'}</b></p>
         <p style={{fontWeight:800,fontSize:18,color:daysLeft<15?'#c0392b':'#008C78'}}>{daysLeft} days remaining</p>
-        <button className="btn" onClick={renew}>Renew Rs.299 / 6 months</button>
+        <button className="btn" onClick={renew}>Renew Rs.299 / 3 months</button>
         <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p>
       </div>
     </div>
