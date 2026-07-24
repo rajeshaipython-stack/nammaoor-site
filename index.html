@@ -499,6 +499,15 @@ const SLIDES=[
 
 function Landing(){
   const [i,setI]=useState(0)
+  // Logged-in employee / shop owner / admin -> straight to their dashboard.
+  // Normal (not logged-in) users -> stay on this home page.
+  useEffect(()=>{
+    const r=getRole(); const t=(typeof localStorage!=='undefined')?localStorage.getItem('token'):''
+    if(t && r){
+      const p = r==='super_admin'?'admin' : r==='shop_owner'?'owner' : r==='employee'?'employee' : ''
+      if(p) window.location.hash='#/app/'+p
+    }
+  },[])
   useEffect(()=>{ const t=setInterval(()=>setI(p=>(p+1)%SLIDES.length),3000); return ()=>clearInterval(t) },[])
   const s=SLIDES[i]
   return (<>
