@@ -336,6 +336,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -633,6 +635,38 @@ table.spec td{padding:7px 9px;font-size:14px}
   100%{ transform:translateY(105vh) rotate(720deg); opacity:.9 } }
 @media (prefers-reduced-motion: reduce){
   .celebrate-star,.confetti,.celebrate-burst,.ratepick-star{ animation:none } }
+
+/* ===== Smart Billing: invoice paper (orange + dark grey, print-ready A4) ===== */
+.invpaper{background:#fff;border:1px solid #e5e0f0;border-radius:14px;padding:0;overflow:hidden;
+  box-shadow:0 10px 28px rgba(30,20,70,.10);margin-bottom:24px}
+.invhead{display:flex;justify-content:space-between;align-items:center;
+  background:#2b2f3a;color:#fff;padding:18px 22px;position:relative}
+.invhead:after{content:'';position:absolute;right:0;top:0;bottom:0;width:34%;
+  background:linear-gradient(100deg,transparent 18%,#FF9800 18%);}
+.invhead-l{display:flex;align-items:center;gap:12px;z-index:1}
+.invlogo{height:46px;border-radius:8px;background:#fff;padding:3px}
+.invshop{font-size:20px;font-weight:800}
+.invsub{font-size:12px;opacity:.85}
+.invtag{z-index:1;font-size:30px;font-weight:900;color:#2b2f3a;letter-spacing:2px}
+.invmeta{display:flex;justify-content:space-between;gap:14px;padding:16px 22px;flex-wrap:wrap;font-size:13.5px}
+.invlabel{display:inline-block;background:#FF9800;color:#fff;font-weight:800;font-size:12px;
+  padding:3px 10px;border-radius:4px;margin-bottom:5px}
+.invcust{font-size:17px;font-weight:800;color:#e8712a}
+.invtable{width:calc(100% - 44px);margin:0 22px;border-collapse:collapse;font-size:13.5px}
+.invtable th{background:#2b2f3a;color:#fff;padding:9px 8px;font-size:12.5px}
+.invtable td{border-bottom:1px solid #eee;padding:9px 8px;text-align:center}
+.invtotals{margin:10px 22px 0 auto;width:270px;padding-right:22px;font-size:14px}
+.invtotals>div{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #eee}
+.invgrand{font-size:17px;font-weight:900;color:#e8712a;border-bottom:none !important;
+  border-top:2px solid #2b2f3a;margin-top:4px;padding-top:8px !important}
+.invfoot{display:flex;justify-content:space-between;gap:14px;padding:18px 22px;flex-wrap:wrap;align-items:flex-start}
+.invbrand{text-align:center;background:#2b2f3a;color:#cfd3dd;font-size:11.5px;padding:8px}
+@media print{
+  .noprint,.header{display:none !important}
+  body{background:#fff}
+  .container{max-width:100% !important;padding:0 !important}
+  .invpaper{border:none;box-shadow:none;border-radius:0}
+}
 
 /* Home page shop cards (product-style framed boxes) */
 .shopgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
@@ -2032,6 +2066,272 @@ function Cart(){
 }
 
 
+/* ===== pages/Billing.jsx ===== */
+
+// ---------- helpers ----------
+const R=(n)=>Math.round((+n||0)*100)/100
+const money=(n)=>'₹'+R(n).toFixed(2)
+function calcRow(r){ const q=+r.qty||0, p=+r.price||0, d=+r.discount||0, g=+r.gst||0
+  const base=q*p-d; const gstAmt=base*g/100; return {base:R(base), gst:R(gstAmt), total:R(base+gstAmt)} }
+function calcAll(rows, delivery){
+  let sub=0, disc=0, gst=0
+  rows.forEach(r=>{ const c=calcRow(r); sub+=(+r.qty||0)*(+r.price||0); disc+=(+r.discount||0); gst+=c.gst })
+  const before=sub-disc+gst+(+delivery||0)
+  const grand=Math.round(before); const roundOff=R(grand-before)
+  return {subtotal:R(sub), discount:R(disc), gst_amount:R(gst), delivery:R(+delivery||0), round_off:roundOff, grand_total:R(grand)}
+}
+
+function Billing(){
+  const [shop,setShop]=useState(null)
+  const [view,setView]=useState('dash')            // dash | new | history | print
+  const [stats,setStats]=useState({})
+  const [list,setList]=useState([]); const [qy,setQy]=useState(''); const [period,setPeriod]=useState('')
+  const [msg,setMsg]=useState('')
+  const emptyRow={name:'',qty:1,price:'',discount:0,gst:0}
+  const [cust,setCust]=useState({customer_name:'',customer_mobile:'',customer_whatsapp:'',customer_address:'',customer_email:''})
+  const [rows,setRows]=useState([{...emptyRow}])
+  const [meta,setMeta]=useState({payment_method:'cash',payment_status:'paid',sales_person:'',delivery:0,notes:''})
+  const [saved,setSaved]=useState(null)            // saved invoice for print view
+  const [custInfo,setCustInfo]=useState(null)
+
+  const load=()=>{ api.get('/me/shop').then(setShop).catch(e=>setMsg(e.message))
+    api.get('/me/shop/billing/stats').then(setStats).catch(()=>{}) }
+  useEffect(load,[])
+  const loadHistory=(p,qq)=>{ const u=new URLSearchParams(); if(qq)u.set('q',qq); if(p)u.set('period',p)
+    api.get('/me/shop/invoices?'+u.toString()).then(setList).catch(()=>{}) }
+  useEffect(()=>{ if(view==='history') loadHistory(period,qy) },[view,period])
+
+  // customer auto-load on mobile entry
+  const onMobile=async(v)=>{ setCust(c=>({...c,customer_mobile:v}))
+    const d=v.replace(/\D/g,''); if(d.length>=10){
+      try{ const r=await api.get('/me/shop/invoices/customer?mobile='+d)
+        if(r.found){ setCust(c=>({...c,customer_name:r.customer_name||c.customer_name,
+          customer_whatsapp:r.customer_whatsapp||c.customer_whatsapp,
+          customer_address:r.customer_address||c.customer_address,
+          customer_email:r.customer_email||c.customer_email}))
+          setCustInfo(r); setMsg('✅ Pazhaya customer! Details auto-fill aachu.') }
+        else setCustInfo(null) }catch(e){} } }
+
+  const upd=(i,k,v)=>setRows(rs=>rs.map((r,ix)=>ix===i?{...r,[k]:v}:r))
+  const addRow=()=>setRows(rs=>[...rs,{...emptyRow}])
+  const delRow=(i)=>setRows(rs=>rs.filter((_,ix)=>ix!==i))
+  const totals=calcAll(rows, meta.delivery)
+
+  const saveInvoice=async()=>{
+    const items=rows.filter(r=>(r.name||'').trim()).map(r=>({...r, ...calcRow(r), qty:+r.qty||0, price:+r.price||0, discount:+r.discount||0, gstp:+r.gst||0}))
+    if(!items.length){ setMsg('Product add pannunga'); return }
+    try{
+      const body={...cust, items, ...totals, payment_method:meta.payment_method,
+        payment_status:meta.payment_status, sales_person:meta.sales_person||null, notes:meta.notes||null}
+      const r=await api.post('/me/shop/invoices', body)
+      setSaved(r); setView('print'); setMsg(''); load()
+    }catch(e){ setMsg('❌ '+e.message) } }
+
+  const resetNew=()=>{ setCust({customer_name:'',customer_mobile:'',customer_whatsapp:'',customer_address:'',customer_email:''})
+    setRows([{...emptyRow}]); setMeta({payment_method:'cash',payment_status:'paid',sales_person:'',delivery:0,notes:''}); setCustInfo(null); setMsg('') }
+
+  const waShare=(inv)=>{
+    const n=(inv.customer_whatsapp||inv.customer_mobile||'').replace(/\D/g,'').slice(-10)
+    const txt=`Hi ${inv.customer_name||''},%0AThank you for shopping with ${shop.shop_name}!%0A%0AInvoice No: ${inv.invoice_no}%0AAmount: Rs.${R(inv.grand_total).toFixed(2)}%0A%0AUnga invoice-a print/PDF-la kudukkirom.%0AVisit: ${SITE}/shop/${(shop.shop_code||'').replace('-','')}%0A%0AThank you for your business! 🙏`
+    window.open(n?`https://wa.me/91${n}?text=${txt}`:`https://wa.me/?text=${txt}`,'_blank') }
+
+  const delInv=async(id)=>{ if(!confirm('Invoice delete pannalaama?'))return
+    await api.del('/me/shop/invoices/'+id); loadHistory(period,qy); load() }
+  const markPaid=async(id)=>{ await api.patch('/me/shop/invoices/'+id,{payment_status:'paid'}); loadHistory(period,qy); load() }
+
+  if(!shop) return <><Header/><div className="container"><div className="card">{msg||'Loading…'}<p className="muted">Shop owner-aa login pannirukanum.</p></div></div></>
+  const shopUrl=`${SITE}/shop/${(shop.shop_code||'').replace('-','')}`
+
+  // ================= PRINT / VIEW INVOICE =================
+  if(view==='print' && saved) return (<>
+    <div className="noprint"><Header/></div>
+    <div className="container" style={{maxWidth:760}}>
+      <div className="row noprint" style={{margin:'8px 0',gap:8,flexWrap:'wrap'}}>
+        <button className="btn" onClick={()=>window.print()}>🖨️ Print / Save PDF</button>
+        <button className="btn tl" onClick={()=>waShare(saved)}>💬 WhatsApp</button>
+        <button className="btn ghost" onClick={()=>{resetNew();setView('new')}}>+ New Invoice</button>
+        <button className="btn ghost" onClick={()=>setView('dash')}>← Billing Home</button>
+      </div>
+      <div className="invpaper">
+        <div className="invhead">
+          <div className="invhead-l">
+            {shop.logo_url && <img src={shop.logo_url} className="invlogo"/>}
+            <div>
+              <div className="invshop">{shop.shop_name}</div>
+              <div className="invsub">{shop.address||''}</div>
+              <div className="invsub">📞 {shop.mobile} {shop.owner_name?(' · '+shop.owner_name):''}</div>
+            </div>
+          </div>
+          <div className="invtag">INVOICE</div>
+        </div>
+        <div className="invmeta">
+          <div>
+            <div className="invlabel">Invoice To</div>
+            <div className="invcust">{saved.customer_name||'Customer'}</div>
+            {saved.customer_mobile && <div className="invsub">📞 {saved.customer_mobile}</div>}
+            {saved.customer_address && <div className="invsub">{saved.customer_address}</div>}
+          </div>
+          <div style={{textAlign:'right'}}>
+            <div><b>Invoice No:</b> {saved.invoice_no}</div>
+            <div><b>Date:</b> {new Date(saved.created_at||Date.now()).toLocaleDateString('en-IN')} {new Date(saved.created_at||Date.now()).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</div>
+            <div><b>Payment:</b> {saved.payment_method?.toUpperCase()} · <span style={{color:saved.payment_status==='paid'?'#0a7a4a':'#c0392b',fontWeight:700}}>{saved.payment_status?.toUpperCase()}</span></div>
+            {saved.sales_person && <div><b>Sales:</b> {saved.sales_person}</div>}
+          </div>
+        </div>
+        <table className="invtable">
+          <thead><tr><th style={{textAlign:'left'}}>Product</th><th>Qty</th><th>Price</th><th>Disc</th><th>GST%</th><th style={{textAlign:'right'}}>Total</th></tr></thead>
+          <tbody>
+            {(saved.items||[]).map((r,i)=>(<tr key={i}>
+              <td style={{textAlign:'left'}}>{r.name}</td><td>{r.qty}</td><td>{money(r.price)}</td>
+              <td>{r.discount?money(r.discount):'-'}</td><td>{r.gstp||r.gst||0}%</td>
+              <td style={{textAlign:'right'}}>{money(r.total)}</td></tr>))}
+          </tbody>
+        </table>
+        <div className="invtotals">
+          <div><span>Sub Total</span><span>{money(saved.subtotal)}</span></div>
+          {saved.discount>0 && <div><span>Discount</span><span>-{money(saved.discount)}</span></div>}
+          {saved.gst_amount>0 && <div><span>GST</span><span>{money(saved.gst_amount)}</span></div>}
+          {saved.delivery>0 && <div><span>Delivery</span><span>{money(saved.delivery)}</span></div>}
+          {saved.round_off!==0 && <div><span>Round Off</span><span>{money(saved.round_off)}</span></div>}
+          <div className="invgrand"><span>Grand Total</span><span>{money(saved.grand_total)}</span></div>
+        </div>
+        <div className="invfoot">
+          <div>
+            {saved.notes && <><div className="invlabel">Terms &amp; Conditions</div>
+            <div className="invsub" style={{maxWidth:300}}>{saved.notes}</div></>}
+            <div style={{marginTop:14,fontWeight:800}}>Thanks For Your Business! 🙏</div>
+          </div>
+          <div style={{textAlign:'center'}}>
+            <img src={qrImg(shopUrl)} style={{width:96,height:96}}/>
+            <div className="invsub">Scan · Visit · Review</div>
+          </div>
+          <div style={{textAlign:'center',alignSelf:'flex-end'}}>
+            <div style={{borderTop:'1.5px solid #444',paddingTop:4,minWidth:140}} className="invsub">Authorized Signature</div>
+          </div>
+        </div>
+        <div className="invbrand">Powered by NammaOor · nammaoor.shop</div>
+      </div>
+    </div></>)
+
+  return (<><Header/><div className="container" style={{maxWidth:860}}>
+    <h2 className="brand">🧾 Billing &amp; Invoices</h2>
+
+    {/* ---------------- DASH ---------------- */}
+    {view==='dash' && <>
+      <div className="row" style={{marginTop:10}}>
+        <div className="kpi"><b>{money(stats.todays_sales)}</b><span>Today's Sales</span></div>
+        <div className="kpi"><b>{stats.total_invoices||0}</b><span>Total Invoices</span></div>
+        <div className="kpi"><b>{money(stats.pending_payments)}</b><span>Pending</span></div>
+        <div className="kpi"><b>{money(stats.monthly_revenue)}</b><span>This Month</span></div>
+        <div className="kpi"><b>{money(stats.total_revenue)}</b><span>Total Revenue</span></div>
+      </div>
+      <div style={{display:'grid',gap:12,marginTop:14}}>
+        <button className="btn" style={{padding:'16px',fontSize:17}} onClick={()=>{resetNew();setView('new')}}>➕ New Invoice</button>
+        <button className="btn ghost" style={{padding:'14px'}} onClick={()=>setView('history')}>📋 Invoice History</button>
+      </div>
+    </>}
+
+    {/* ---------------- NEW INVOICE ---------------- */}
+    {view==='new' && <>
+      <button className="btn ghost sm" onClick={()=>setView('dash')}>← Back</button>
+      <div className="card" style={{marginTop:8}}>
+        <h3>👤 Customer</h3>
+        <div className="grid2">
+          <input className="input" placeholder="Mobile number *" value={cust.customer_mobile} onChange={e=>onMobile(e.target.value)}/>
+          <input className="input" placeholder="Customer name" value={cust.customer_name} onChange={e=>setCust({...cust,customer_name:e.target.value})}/>
+          <input className="input" placeholder="WhatsApp (same-a vittudalam)" value={cust.customer_whatsapp} onChange={e=>setCust({...cust,customer_whatsapp:e.target.value})}/>
+          <input className="input" placeholder="Address (optional)" value={cust.customer_address} onChange={e=>setCust({...cust,customer_address:e.target.value})}/>
+        </div>
+        {custInfo && <p className="muted" style={{fontSize:12,marginTop:6}}>🕘 Indha customer: {custInfo.purchase_count} bills · Total {money(custInfo.total_purchase)}{custInfo.pending_amount>0?(' · Pending '+money(custInfo.pending_amount)):''}</p>}
+      </div>
+
+      <div className="card">
+        <h3>🛒 Products</h3>
+        {rows.map((r,i)=>{ const c=calcRow(r); return (
+          <div key={i} style={{borderBottom:'1px solid var(--line)',padding:'8px 0'}}>
+            <input className="input" placeholder={'Product '+(i+1)+' name'} value={r.name} onChange={e=>upd(i,'name',e.target.value)}/>
+            <div className="row" style={{gap:6,flexWrap:'wrap',alignItems:'center'}}>
+              <input className="input" style={{width:70}} type="number" placeholder="Qty" value={r.qty} onChange={e=>upd(i,'qty',e.target.value)}/>
+              <input className="input" style={{width:100}} type="number" placeholder="Price ₹" value={r.price} onChange={e=>upd(i,'price',e.target.value)}/>
+              <input className="input" style={{width:90}} type="number" placeholder="Disc ₹" value={r.discount} onChange={e=>upd(i,'discount',e.target.value)}/>
+              <select style={{width:110}} value={r.gst} onChange={e=>upd(i,'gst',e.target.value)}>
+                {[0,5,12,18,28].map(g=><option key={g} value={g}>GST {g}%</option>)}
+              </select>
+              <b style={{marginLeft:'auto'}}>{money(c.total)}</b>
+              {rows.length>1 && <button className="btn sm ghost" onClick={()=>delRow(i)}>✕</button>}
+            </div>
+          </div>)})}
+        <button className="btn ghost sm" style={{marginTop:8}} onClick={addRow}>+ Add Product</button>
+      </div>
+
+      <div className="card">
+        <h3>💳 Payment</h3>
+        <div className="grid2">
+          <div><label className="lbl">Method</label>
+            <select value={meta.payment_method} onChange={e=>setMeta({...meta,payment_method:e.target.value})}>
+              <option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option>
+              <option value="bank">Bank Transfer</option><option value="credit">Credit (Khata)</option>
+            </select></div>
+          <div><label className="lbl">Status</label>
+            <select value={meta.payment_status} onChange={e=>setMeta({...meta,payment_status:e.target.value})}>
+              <option value="paid">Paid</option><option value="pending">Pending</option><option value="partial">Partially Paid</option>
+            </select></div>
+          <input className="input" placeholder="Sales person (optional)" value={meta.sales_person} onChange={e=>setMeta({...meta,sales_person:e.target.value})}/>
+          <input className="input" type="number" placeholder="Delivery charge ₹" value={meta.delivery||''} onChange={e=>setMeta({...meta,delivery:e.target.value})}/>
+        </div>
+        <textarea rows="2" placeholder="Terms & Conditions / Note (invoice-la varum)" value={meta.notes} onChange={e=>setMeta({...meta,notes:e.target.value})}></textarea>
+        <div style={{background:'#f6f3ff',borderRadius:12,padding:12,marginTop:8}}>
+          <div className="row" style={{justifyContent:'space-between'}}><span>Sub Total</span><b>{money(totals.subtotal)}</b></div>
+          {totals.discount>0 && <div className="row" style={{justifyContent:'space-between'}}><span>Discount</span><b>-{money(totals.discount)}</b></div>}
+          {totals.gst_amount>0 && <div className="row" style={{justifyContent:'space-between'}}><span>GST</span><b>{money(totals.gst_amount)}</b></div>}
+          {totals.delivery>0 && <div className="row" style={{justifyContent:'space-between'}}><span>Delivery</span><b>{money(totals.delivery)}</b></div>}
+          {totals.round_off!==0 && <div className="row" style={{justifyContent:'space-between'}}><span>Round Off</span><b>{money(totals.round_off)}</b></div>}
+          <div className="row" style={{justifyContent:'space-between',fontSize:19,marginTop:4,color:'var(--magenta)'}}><b>Grand Total</b><b>{money(totals.grand_total)}</b></div>
+        </div>
+        <button className="btn" style={{width:'100%',marginTop:12,padding:'15px',fontSize:17}} onClick={saveInvoice}>💾 Save Invoice</button>
+        {msg && <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p>}
+      </div>
+    </>}
+
+    {/* ---------------- HISTORY ---------------- */}
+    {view==='history' && <>
+      <button className="btn ghost sm" onClick={()=>setView('dash')}>← Back</button>
+      <div className="card" style={{marginTop:8}}>
+        <div className="row" style={{gap:8,flexWrap:'wrap'}}>
+          <input className="input" style={{flex:1,minWidth:180}} placeholder="Search invoice no / customer / mobile"
+            value={qy} onChange={e=>setQy(e.target.value)} onKeyDown={e=>e.key==='Enter'&&loadHistory(period,qy)}/>
+          <button className="btn sm" onClick={()=>loadHistory(period,qy)}>Search</button>
+        </div>
+        <div className="row" style={{gap:6,marginTop:8,flexWrap:'wrap'}}>
+          {[['','All'],['today','Today'],['week','7 Days'],['month','30 Days'],['year','Year']].map(([v,l])=>(
+            <button key={v} className={'btn sm '+(period===v?'':'ghost')} onClick={()=>setPeriod(v)}>{l}</button>))}
+        </div>
+      </div>
+      {list.map(inv=>(
+        <div key={inv.id} className="card" style={{padding:'12px 14px'}}>
+          <div className="row" style={{justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:6}}>
+            <div>
+              <b>{inv.invoice_no}</b> · {inv.customer_name||inv.customer_mobile||'Customer'}
+              <div className="muted" style={{fontSize:12}}>{new Date(inv.created_at).toLocaleString('en-IN')} · {inv.payment_method?.toUpperCase()}</div>
+            </div>
+            <div style={{textAlign:'right'}}>
+              <b>{money(inv.grand_total)}</b><br/>
+              <span className={'tag '+(inv.payment_status==='paid'?'a':'e')}>{inv.payment_status}</span>
+            </div>
+          </div>
+          <div className="row" style={{gap:6,marginTop:8,flexWrap:'wrap'}}>
+            <button className="btn sm" onClick={()=>{setSaved(inv);setView('print')}}>👁 View / Print</button>
+            <button className="btn sm tl" onClick={()=>waShare(inv)}>💬 WhatsApp</button>
+            {inv.payment_status!=='paid' && <button className="btn sm ghost" onClick={()=>markPaid(inv.id)}>✓ Mark Paid</button>}
+            <button className="btn sm ghost" style={{color:'#c0392b'}} onClick={()=>delInv(inv.id)}>🗑</button>
+          </div>
+        </div>))}
+      {list.length===0 && <p className="muted">Invoices illa.</p>}
+    </>}
+  </div></>)
+}
+
+
 /* ===== pages/Login.jsx ===== */
 
 function Login(){
@@ -2416,6 +2716,14 @@ function OwnerDashboard(){
           💾 Save {Object.values(mcSel).filter(x=>x.on).length||''} products to my shop</button>
       </>}
       {mcMsg && <p style={{color:'var(--teal)',marginTop:8}}>{mcMsg}</p>}
+    </div>
+
+    <div className="card" style={{background:'linear-gradient(135deg,#fff8f0,#fff)',border:'1px solid #ffd9b0'}}>
+      <div className="row" style={{justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10}}>
+        <div><h3 style={{margin:0}}>🧾 Billing &amp; Invoices</h3>
+          <p className="muted" style={{margin:'4px 0 0'}}>Customer bill podunga — GST, WhatsApp share, print-ready invoice, sales reports.</p></div>
+        <a className="btn" href="#/app/billing">Open Billing →</a>
+      </div>
     </div>
 
     <div className="card ai-banner">
@@ -3092,6 +3400,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Route path="/cart" element={<Cart/>} />
       <Route path="/login" element={<Login/>} />
       <Route path="/app/owner" element={<OwnerDashboard/>} />
+      <Route path="/app/billing" element={<Billing/>} />
       <Route path="/app/ai" element={<AIListing/>} />
       <Route path="/app/employee" element={<EmployeeDashboard/>} />
       <Route path="/app/admin" element={<AdminDashboard/>} />
