@@ -358,6 +358,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -701,6 +703,10 @@ table.spec td{padding:7px 9px;font-size:14px}
 .mbgrip{position:absolute;right:2px;bottom:2px;width:30px;height:30px;display:flex;align-items:flex-end;
   justify-content:flex-end;color:#b6a8d6;font-size:16px;cursor:nwse-resize;touch-action:none;user-select:none;
   padding:0 4px 2px 0;z-index:5}
+.mbgrip-tl{position:absolute;left:2px;top:2px;width:30px;height:30px;display:flex;align-items:flex-start;
+  justify-content:flex-start;color:rgba(255,255,255,.85);font-size:15px;cursor:nwse-resize;touch-action:none;
+  user-select:none;padding:3px 0 0 5px;z-index:6}
+.mbcontacts{flex:1;display:flex;flex-direction:column;padding:10px;overflow:hidden}
 .mbfab{touch-action:none}
 @media(max-width:640px){ .mbwin{width:96vw;height:78vh;right:2vw !important;bottom:6px} }
 @media print{ .mbfab,.mbwin{display:none !important} }
@@ -1021,6 +1027,35 @@ function MiniBrowser(){
     window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up)
     window.addEventListener('touchmove',mv,{passive:false}); window.addEventListener('touchend',up)
   }
+  // top-left resize (bottom-right anchored)
+  const rszDownTL=(e)=>{ e.stopPropagation(); const t=e.touches?e.touches[0]:e
+    const el=e.currentTarget.parentElement.getBoundingClientRect()
+    rsz.current={sx:t.clientX,sy:t.clientY,w:el.width,h:el.height,r:el.right,b:el.bottom}
+    const mv=(ev)=>{ if(ev.cancelable)ev.preventDefault(); const p=ev.touches?ev.touches[0]:ev
+      const w=Math.max(260,rsz.current.w-(p.clientX-rsz.current.sx))
+      const h=Math.max(300,rsz.current.h-(p.clientY-rsz.current.sy))
+      setSize({w,h}); setPos({x:Math.max(0,rsz.current.r-w), y:Math.max(0,rsz.current.b-h)}) }
+    const up=()=>{ window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up)
+      window.removeEventListener('touchmove',mv); window.removeEventListener('touchend',up) }
+    window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up)
+    window.addEventListener('touchmove',mv,{passive:false}); window.addEventListener('touchend',up)
+  }
+  // ---- Contacts tool (saved numbers + one-tap call) ----
+  const [contacts,setContacts]=useState(()=>{ try{return JSON.parse(localStorage.getItem('nm_mini_contacts')||'[]')}catch(e){return[]} })
+  const [cName,setCName]=useState(''); const [cNum,setCNum]=useState('')
+  const saveContacts=(list)=>{ setContacts(list); try{localStorage.setItem('nm_mini_contacts',JSON.stringify(list))}catch(e){} }
+  const addContact=()=>{ const n=cName.trim(), d=cNum.replace(/\D/g,'')
+    if(!n||d.length<10) return
+    saveContacts([{name:n,num:d},...contacts.filter(c=>c.num!==d)]); setCName(''); setCNum('') }
+  const delContact=(i)=>saveContacts(contacts.filter((_,ix)=>ix!==i))
+  const importContacts=async()=>{
+    try{
+      if(!('contacts' in navigator && navigator.contacts.select)){ alert('Intha phone browser contact import support pannala. Manual-a add pannunga.'); return }
+      const picked=await navigator.contacts.select(['name','tel'],{multiple:true})
+      const add=picked.map(c=>({name:(c.name&&c.name[0])||'Contact', num:((c.tel&&c.tel[0])||'').replace(/\D/g,'')})).filter(c=>c.num.length>=10)
+      if(add.length) saveContacts([...add,...contacts.filter(c=>!add.some(a=>a.num===c.num))])
+    }catch(e){}
+  }
   const go=(label,raw)=>{
     setTool(null)
     const emb=mbEmbedUrl(raw)
@@ -1093,6 +1128,7 @@ function MiniBrowser(){
       <div className="mbquick">
         <button style={{background:'#fff4e0',borderColor:'#ffd9a0'}} onClick={()=>openTool('calc')}>🧮 Calculator</button>
         <button style={{background:'#eafaf4',borderColor:'#b8ecd7'}} onClick={()=>openTool('notes')}>📝 Notes</button>
+        <button style={{background:'#ffeef4',borderColor:'#ffc4da'}} onClick={()=>openTool('contacts')}>📞 Contacts</button>
         {links.map(([l,u])=><button key={l} onClick={()=>go(l,u)}>{l}</button>)}
         {apps.map(([l,s,f])=><button key={l} style={{background:'#eef7ff',borderColor:'#cfe6ff'}}
           onClick={()=>openApp(s,f)}>{l}</button>)}
@@ -1105,7 +1141,7 @@ function MiniBrowser(){
     </>}
     {tool && <div className="mbtoolbar">
       <button onClick={()=>setTool(null)}>← Back</button>
-      <b>{tool==='calc'?'🧮 Calculator':'📝 Notes'}</b>
+      <b>{tool==='calc'?'🧮 Calculator':tool==='notes'?'📝 Notes':'📞 Contacts'}</b>
       <span style={{width:60}}></span>
     </div>}
     {tool==='calc'
@@ -1118,6 +1154,24 @@ function MiniBrowser(){
             {['C','⌫','%','÷','7','8','9','×','4','5','6','-','1','2','3','+','00','0','.','='].map(k=>(
               <button key={k} className={'mbcalc-k'+(k==='='?' eq':'')+(['C','⌫','%','÷','×','-','+'].includes(k)?' op':'')}
                 onClick={()=>calcPress(k)}>{k}</button>))}
+          </div>
+        </div>
+      : tool==='contacts'
+      ? <div className="mbcontacts">
+          <div className="row" style={{gap:6}}>
+            <input className="input" style={{flex:1,margin:0}} placeholder="Name" value={cName} onChange={e=>setCName(e.target.value)}/>
+            <input className="input" style={{flex:1,margin:0}} placeholder="Number" inputMode="tel" value={cNum} onChange={e=>setCNum(e.target.value)}/>
+            <button className="btn sm" onClick={addContact}>+ Add</button>
+          </div>
+          <button className="btn ghost sm" style={{marginTop:8}} onClick={importContacts}>📲 Phone contacts-la irundhu import</button>
+          <div style={{flex:1,overflowY:'auto',marginTop:8}}>
+            {contacts.length===0 && <p className="muted" style={{fontSize:13}}>Innum contacts illa. Name + number add pannunga — appuram one-tap-la call pannalaam.</p>}
+            {contacts.map((c,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:8,borderBottom:'1px solid var(--line)',padding:'8px 0'}}>
+                <div style={{flex:1,minWidth:0}}><b style={{fontSize:14}}>{c.name}</b><br/><span className="muted" style={{fontSize:12}}>{c.num}</span></div>
+                <a href={'tel:'+c.num} className="btn sm tl" style={{textDecoration:'none'}}>📞 Call</a>
+                <button className="btn sm ghost" onClick={()=>delContact(i)}>✕</button>
+              </div>))}
           </div>
         </div>
       : tool==='notes'
@@ -1139,6 +1193,7 @@ function MiniBrowser(){
           </>}
         </div>}
     {!full && <div className="mbgrip" onMouseDown={rszDown} onTouchStart={rszDown} title="Resize">◢</div>}
+    {!full && <div className="mbgrip-tl" onMouseDown={rszDownTL} onTouchStart={rszDownTL} title="Resize">◤</div>}
   </div>)
 }
 
