@@ -350,6 +350,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -942,7 +944,11 @@ const mbSave=(label,url)=>{ const r=mbRecents().filter(x=>x.url!==url); r.unshif
 const MB_BLOCKED=/instagram\.com|facebook\.com|fb\.com|wa\.me|whatsapp\.com|twitter\.com|x\.com|linkedin\.com|(www\.)?google\.[a-z.]+|youtube\.com\/(?!embed)|youtu\.be/i
 function mbEmbedUrl(u){
   let url=(u||'').trim(); if(!url) return null
+  // NammaOor pages: '#/...' or '/...' or full nammaoor.shop link -> open inside
+  if(url.startsWith('#')) return location.origin+'/'+url
+  if(url.startsWith('/')) return location.origin+url
   if(!/^https?:\/\//i.test(url)) url='https://'+url
+  if(/nammaoor\.shop|nammaoor-site\.pages\.dev/i.test(url)) return url
   // YouTube watch/short link -> embeddable player
   let m=url.match(/youtube\.com\/watch\?.*v=([\w-]{6,})/i)||url.match(/youtu\.be\/([\w-]{6,})/i)
   if(m) return 'https://www.youtube.com/embed/'+m[1]
@@ -1002,6 +1008,7 @@ function MiniBrowser(){
   const fwd =()=>{ if(hi<hist.length-1){ setHi(hi+1); setCur(hist[hi+1]) } }
   const refresh=()=>{ if(frameRef.current) frameRef.current.src=cur }
   const links=[
+    ['🏪 NammaOor','#/'],
     ['🔍 Search','https://lite.duckduckgo.com/lite/'],
     ['▶️ YouTube','https://www.youtube.com'],
     ['📷 Instagram','https://www.instagram.com'],
@@ -1045,7 +1052,9 @@ function MiniBrowser(){
       <button onClick={()=>{if(url.trim()){go(null,url.trim());setUrl('')}}}>Go</button>
     </div>
     {cur
-      ? <iframe ref={frameRef} src={cur} className="mbframe" allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen></iframe>
+      ? <iframe ref={frameRef} src={cur} className="mbframe"
+          allow="autoplay; encrypted-media; picture-in-picture; payment *; geolocation *; camera *"
+          allowFullScreen></iframe>
       : <div className="mbhome">
           <p className="muted" style={{fontSize:12.5}}>Mela irukura link-a thattunga, allathu oru link paste pannunga.</p>
           {rec.length>0 && <>
