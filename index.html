@@ -340,6 +340,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -638,6 +640,34 @@ table.spec td{padding:7px 9px;font-size:14px}
 @media (prefers-reduced-motion: reduce){
   .celebrate-star,.confetti,.celebrate-burst,.ratepick-star{ animation:none } }
 
+/* ===== Mini Browser (floating popup) ===== */
+.mbfab{position:fixed;right:14px;bottom:76px;z-index:9000;display:flex;flex-direction:column;align-items:center;gap:1px;
+  background:linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7);color:#fff;border:0;border-radius:16px;
+  padding:10px 13px;font-size:19px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(122,47,247,.4)}
+.mbfab span{font-size:10px;letter-spacing:.4px}
+.mbwin{position:fixed;z-index:9500;width:360px;height:540px;max-width:96vw;max-height:82vh;
+  background:#fff;border:1px solid #ddd6ee;border-radius:16px;box-shadow:0 18px 48px rgba(20,10,50,.35);
+  display:flex;flex-direction:column;overflow:hidden;resize:both}
+.mbwin.full{width:auto;height:auto;max-width:none;max-height:none;resize:none}
+.mbbar{display:flex;justify-content:space-between;align-items:center;gap:6px;
+  background:linear-gradient(135deg,#FF2E7E,#7A2FF7);color:#fff;padding:8px 10px;cursor:move;user-select:none;touch-action:none}
+.mbtitle{font-weight:800;font-size:13.5px;white-space:nowrap}
+.mbbtns{display:flex;gap:4px}
+.mbbtns button{background:rgba(255,255,255,.18);border:0;color:#fff;border-radius:7px;
+  width:30px;height:28px;font-size:13px;cursor:pointer}
+.mbbtns button:disabled{opacity:.4;cursor:default}
+.mbquick{display:flex;gap:6px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--line);background:#faf8ff}
+.mbquick button{background:#fff;border:1px solid var(--line);border-radius:20px;padding:5px 10px;
+  font-size:12px;font-weight:600;cursor:pointer;color:#3d3d63}
+.mburl{display:flex;gap:6px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.mburl input{flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font-size:13px;margin:0}
+.mburl button{background:var(--purple);color:#fff;border:0;border-radius:9px;padding:0 14px;font-weight:700;cursor:pointer}
+.mbframe{flex:1;border:0;width:100%;background:#fff}
+.mbhome{flex:1;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.mbhome a{color:var(--purple);cursor:pointer;font-size:13px;border-bottom:1px dashed var(--line);padding:5px 0}
+@media(max-width:640px){ .mbwin{width:94vw;height:70vh;right:3vw !important;bottom:8px} }
+@media print{ .mbfab,.mbwin{display:none !important} }
+
 /* ===== Smart Billing: invoice paper (orange + dark grey, print-ready A4) ===== */
 .invpaper{background:#fff;border:1px solid #e5e0f0;border-radius:14px;padding:0;overflow:hidden;
   box-shadow:0 10px 28px rgba(30,20,70,.10);margin-bottom:24px;position:relative}
@@ -867,7 +897,7 @@ function Header(){
   const role = getRole(); const nav = useNavigate()
   const h = (typeof location!=='undefined' && location.hash) || ''
   const atHome = (h==='' || h==='#' || h==='#/')
-  return (
+  return (<>
     <div className="header">
       <div style={{display:'flex',alignItems:'center',gap:10}}>
         {!atHome && <a onClick={()=>window.history.back()} title="Back"
@@ -885,7 +915,96 @@ function Header(){
           : <Link to="/login">Login</Link>}
       </div>
     </div>
-  )
+    <MiniBrowser/>
+  </>)
+}
+
+// ================= Mini Browser (optional, lightweight) =================
+// Floating button -> draggable/resizable popup. Embeddable links (YouTube video,
+// Google Maps) open INSIDE; blocked sites (Instagram/FB/WhatsApp/YouTube home/
+// Google Reviews) auto-open in a NEW TAB (no error shown).
+const MB_KEY='nm_mini_recents'
+const mbRecents=()=>{ try{return JSON.parse(localStorage.getItem(MB_KEY)||'[]')}catch(e){return[]} }
+const mbSave=(label,url)=>{ const r=mbRecents().filter(x=>x.url!==url); r.unshift({label,url,at:Date.now()})
+  localStorage.setItem(MB_KEY,JSON.stringify(r.slice(0,10))) }
+const MB_BLOCKED=/instagram\.com|facebook\.com|fb\.com|wa\.me|whatsapp\.com|twitter\.com|x\.com|linkedin\.com|(^|\.)google\.[a-z.]+\/(search|local)|youtube\.com\/(?!embed)|youtu\.be/i
+function mbEmbedUrl(u){
+  let url=(u||'').trim(); if(!url) return null
+  if(!/^https?:\/\//i.test(url)) url='https://'+url
+  // YouTube watch/short link -> embeddable player
+  let m=url.match(/youtube\.com\/watch\?.*v=([\w-]{6,})/i)||url.match(/youtu\.be\/([\w-]{6,})/i)
+  if(m) return 'https://www.youtube.com/embed/'+m[1]
+  // Google Maps -> embed output
+  if(/google\.[a-z.]+\/maps|maps\.google/i.test(url)){
+    const q=url.match(/[?&]q=([^&]+)/); return 'https://maps.google.com/maps?q='+(q?q[1]:'')+'&output=embed' }
+  if(MB_BLOCKED.test(url)) return null      // known blockers -> new tab
+  return url
+}
+function MiniBrowser(){
+  const [open,setOpen]=useState(false)
+  const [url,setUrl]=useState(''); const [cur,setCur]=useState('')
+  const [hist,setHist]=useState([]); const [hi,setHi]=useState(-1)
+  const [full,setFull]=useState(false); const [rec,setRec]=useState(mbRecents())
+  const [pos,setPos]=useState({x:null,y:null}); const drag=useRef(null)
+  const frameRef=useRef(null)
+  const go=(label,raw)=>{
+    const emb=mbEmbedUrl(raw)
+    mbSave(label||raw, raw); setRec(mbRecents())
+    if(!emb){ window.open(/^https?:/i.test(raw)?raw:'https://'+raw,'_blank','noopener'); return }
+    const h=hist.slice(0,hi+1); h.push(emb); setHist(h); setHi(h.length-1); setCur(emb)
+  }
+  const back=()=>{ if(hi>0){ setHi(hi-1); setCur(hist[hi-1]) } }
+  const fwd =()=>{ if(hi<hist.length-1){ setHi(hi+1); setCur(hist[hi+1]) } }
+  const refresh=()=>{ if(frameRef.current) frameRef.current.src=cur }
+  const links=[
+    ['▶️ YouTube','https://www.youtube.com'],
+    ['📷 Instagram','https://www.instagram.com'],
+    ['📘 Facebook','https://www.facebook.com'],
+    ['💬 WhatsApp','https://web.whatsapp.com'],
+    ['🗺️ Maps','https://maps.google.com/maps?q=tamil+nadu&output=embed'],
+    ['⭐ Reviews','https://www.google.com/search?q=my+business+reviews'],
+  ]
+  const onDown=(e)=>{ const t=e.touches?e.touches[0]:e
+    drag.current={sx:t.clientX,sy:t.clientY,px:pos.x??(window.innerWidth-380),py:pos.y??(window.innerHeight-560)}
+    const mv=(ev)=>{ const p=ev.touches?ev.touches[0]:ev
+      setPos({x:Math.max(0,drag.current.px+p.clientX-drag.current.sx), y:Math.max(0,drag.current.py+p.clientY-drag.current.sy)}) }
+    const up=()=>{ window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up)
+      window.removeEventListener('touchmove',mv); window.removeEventListener('touchend',up) }
+    window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up)
+    window.addEventListener('touchmove',mv); window.addEventListener('touchend',up)
+  }
+  if(!open) return <button className="mbfab" title="Mini Screen" onClick={()=>setOpen(true)}>🗔<span>Mini</span></button>
+  const style=full?{inset:0,width:'auto',height:'auto',borderRadius:0}
+    :{left:pos.x??undefined,top:pos.y??undefined,right:pos.x==null?12:undefined,bottom:pos.y==null?12:undefined}
+  return (<div className={'mbwin'+(full?' full':'')} style={style}>
+    <div className="mbbar" onMouseDown={onDown} onTouchStart={onDown}>
+      <span className="mbtitle">🗔 NammaOor Mini</span>
+      <span className="mbbtns">
+        <button onClick={back} disabled={hi<=0}>◀</button>
+        <button onClick={fwd} disabled={hi>=hist.length-1}>▶</button>
+        <button onClick={refresh} disabled={!cur}>⟳</button>
+        <button onClick={()=>setFull(f=>!f)}>{full?'🗗':'⛶'}</button>
+        <button onClick={()=>{setOpen(false);setFull(false)}}>✕</button>
+      </span>
+    </div>
+    <div className="mbquick">
+      {links.map(([l,u])=><button key={l} onClick={()=>go(l,u)}>{l}</button>)}
+    </div>
+    <div className="mburl">
+      <input placeholder="Link paste pannunga (YouTube video / Maps...)" value={url}
+        onChange={e=>setUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&url.trim()){go(null,url.trim());setUrl('')}}}/>
+      <button onClick={()=>{if(url.trim()){go(null,url.trim());setUrl('')}}}>Go</button>
+    </div>
+    {cur
+      ? <iframe ref={frameRef} src={cur} className="mbframe" allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen></iframe>
+      : <div className="mbhome">
+          <p className="muted" style={{fontSize:12.5}}>YouTube video / Maps inga open aagum. Instagram, Facebook, WhatsApp — pudhu tab-la open aagum (avanga embedding block panranga).</p>
+          {rec.length>0 && <>
+            <b style={{fontSize:13}}>🕘 Recent</b>
+            {rec.map((r,i)=><a key={i} onClick={()=>go(r.label,r.url)}>{r.label||r.url}</a>)}
+          </>}
+        </div>}
+  </div>)
 }
 
 
