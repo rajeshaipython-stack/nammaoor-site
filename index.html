@@ -332,6 +332,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -630,6 +632,28 @@ table.spec td{padding:7px 9px;font-size:14px}
 @media (prefers-reduced-motion: reduce){
   .celebrate-star,.confetti,.celebrate-burst,.ratepick-star{ animation:none } }
 
+/* Home page shop cards (product-style framed boxes) */
+.shopgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+@media(min-width:720px){.shopgrid{grid-template-columns:1fr 1fr 1fr}}
+.shopcard{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;
+  box-shadow:0 4px 16px rgba(30,20,70,.07);transition:transform .12s ease,box-shadow .12s ease;display:flex;flex-direction:column}
+.shopcard:active{transform:scale(.98)}
+.shopcard:hover{box-shadow:0 8px 22px rgba(30,20,70,.13)}
+.shopcard-img{position:relative;height:118px;background:linear-gradient(135deg,#f6f3ff,#fdeef6);
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+.shopcard-img img{width:100%;height:100%;object-fit:cover}
+.shopcard-rate{position:absolute;top:8px;right:8px;background:rgba(20,10,40,.62);color:#fff;
+  font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:20px}
+.shopcard-dist{position:absolute;bottom:8px;left:8px;background:rgba(255,255,255,.9);color:#5a5578;
+  font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.shopcard-body{padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.shopcard-name{font-size:14.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* compact role cards (bottom) */
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px}
+.rolecard{text-align:center;padding:12px 6px !important;display:flex;flex-direction:column;align-items:center;gap:2px}
+.rolecard b{font-size:13px}
+.rolecard .muted{font-size:10.5px;line-height:1.2}
+
 /* Search result card with contact icons */
 .scard{ padding:12px !important; }
 .scard-main{ display:flex; align-items:center; gap:12px; cursor:pointer; }
@@ -883,28 +907,28 @@ function Landing(){
           <h3 style={{margin:0}}>🏪 {nearOn?'Pakkathula Kadaigal':'NammaOor Kadaigal'}</h3>
           <a style={{cursor:'pointer',color:'var(--purple)',fontWeight:700}} onClick={nearMe}>📍 Near me</a>
         </div>
-        <div style={{display:'grid',gap:10,marginTop:10}}>
+        <div className="shopgrid">
           {shops.map(s=>(
-            <div key={s.shop_code} className="card scard" style={{cursor:'pointer'}}
-                 onClick={()=>nav('/shop/'+(s.shop_code||'').replace('-',''))}>
-              <div className="scard-main">
-                <div style={{width:50,height:50,borderRadius:12,background:'#f4f0ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,overflow:'hidden',flex:'0 0 auto'}}>
-                  {s.logo_url?<img src={s.logo_url} onError={onImgErr} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:catIcon(s.category,s.category)}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <b>{s.shop_name}</b>
-                  <div className="muted" style={{fontSize:13}}>{s.category||''} {s.town?('· '+s.town):''}{s.distance_km!=null?(' · 📍 '+s.distance_km+' km'):''}</div>
-                  {s.reviews>0 && <div style={{fontSize:12}} className="muted">⭐ {s.rating} ({s.reviews})</div>}
-                </div>
-                <span style={{color:'var(--purple)',fontSize:20}}>›</span>
+            <div key={s.shop_code} className="shopcard" onClick={()=>nav('/shop/'+(s.shop_code||'').replace('-',''))}>
+              <div className="shopcard-img">
+                {s.logo_url?<img src={s.logo_url} onError={onImgErr}/>:<span style={{fontSize:56}}>{catIcon(s.category,s.category)}</span>}
+                {s.reviews>0 && <span className="shopcard-rate">⭐ {s.rating}</span>}
+                {s.distance_km!=null && <span className="shopcard-dist">📍 {s.distance_km} km</span>}
+              </div>
+              <div className="shopcard-body">
+                <b className="shopcard-name">{s.shop_name}</b>
+                <span className="muted" style={{fontSize:12}}>{s.category||'Shop'}{s.town?(' · '+s.town):''}</span>
               </div>
             </div>))}
         </div>
       </div>}
 
-      <div className="grid2" style={{marginTop:18}}>
-        <Link to="/search"><div className="card"><h3>🙋 Customer</h3><p className="muted">Login venaam — scan QR → pay, call, WhatsApp, maps, offers, reviews</p></div></Link>
-        <Link to="/login"><div className="card"><h3>🧑‍💼 Shop Owner</h3><p className="muted">Mobile OTP login → AI listing, products, offers, QR, payments</p></div></Link>
-        <Link to="/login"><div className="card"><h3>👷 Employee</h3><p className="muted">Kadai register, wallet, ₹100 commission, withdrawals</p></div></Link>
+      {/* role cards at the BOTTOM (secondary) */}
+      <p className="muted" style={{textAlign:'center',marginTop:24,marginBottom:2,fontWeight:600}}>Neenga yaaru?</p>
+      <div className="grid3">
+        <Link to="/search"><div className="card rolecard"><div style={{fontSize:26}}>🙋</div><b>Customer</b><span className="muted">Scan · Pay · Reviews</span></div></Link>
+        <Link to="/login"><div className="card rolecard"><div style={{fontSize:26}}>🧑‍💼</div><b>Shop Owner</b><span className="muted">Products · Offers · QR</span></div></Link>
+        <Link to="/login"><div className="card rolecard"><div style={{fontSize:26}}>👷</div><b>Employee</b><span className="muted">Register · ₹100</span></div></Link>
       </div>
       <p className="muted" style={{textAlign:'center',marginTop:18}}>Powered by NammaOor</p>
       <p className="muted" style={{textAlign:'center',fontSize:12,marginTop:2}}>
