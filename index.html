@@ -354,6 +354,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -677,6 +679,19 @@ table.spec td{padding:7px 9px;font-size:14px}
 .mbframe{flex:1;border:0;width:100%;background:#fff}
 .mbhome{flex:1;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .mbhome a{color:var(--purple);cursor:pointer;font-size:13px;border-bottom:1px dashed var(--line);padding:5px 0}
+/* mini tools: calculator + notes */
+.mbcalc{flex:1;display:flex;flex-direction:column;padding:10px;gap:8px;overflow:hidden}
+.mbcalc-display{background:#f6f3ff;border:1px solid #e0d6ff;border-radius:12px;padding:10px 14px;text-align:right;min-height:64px}
+.mbcalc-expr{font-size:22px;font-weight:700;color:#141225;word-break:break-all}
+.mbcalc-res{font-size:18px;font-weight:800;color:var(--magenta)}
+.mbcalc-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.mbcalc-k{border:1px solid var(--line);border-radius:10px;background:#fff;font-size:19px;font-weight:700;
+  color:#141225;cursor:pointer;min-height:44px}
+.mbcalc-k.op{background:#f6f3ff;color:var(--purple)}
+.mbcalc-k.eq{background:linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7);color:#fff;border:0}
+.mbnotes{flex:1;display:flex;flex-direction:column;padding:10px;overflow:hidden}
+.mbnotes textarea{flex:1;width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;
+  font-size:15px;line-height:1.5;resize:none;box-sizing:border-box;font-family:inherit}
 .mbgrip{position:absolute;right:2px;bottom:2px;width:30px;height:30px;display:flex;align-items:flex-end;
   justify-content:flex-end;color:#b6a8d6;font-size:16px;cursor:nwse-resize;touch-action:none;user-select:none;
   padding:0 4px 2px 0;z-index:5}
@@ -1001,6 +1016,7 @@ function MiniBrowser(){
     window.addEventListener('touchmove',mv,{passive:false}); window.addEventListener('touchend',up)
   }
   const go=(label,raw)=>{
+    setTool(null)
     const emb=mbEmbedUrl(raw)
     mbSave(label||raw, raw); setRec(mbRecents())
     if(!emb){ window.open(/^https?:/i.test(raw)?raw:'https://'+raw,'_blank','noopener'); return }
@@ -1010,7 +1026,6 @@ function MiniBrowser(){
   const fwd =()=>{ if(hi<hist.length-1){ setHi(hi+1); setCur(hist[hi+1]) } }
   const refresh=()=>{ if(frameRef.current) frameRef.current.src=cur }
   const links=[
-    ['🏪 NammaOor','#/'],
     ['🔍 Search','https://lite.duckduckgo.com/lite/'],
     ['▶️ YouTube','https://www.youtube.com'],
     ['📷 Instagram','https://www.instagram.com'],
@@ -1019,17 +1034,29 @@ function MiniBrowser(){
     ['🗺️ Maps','https://maps.google.com/maps?q=tamil+nadu&output=embed'],
     ['🌐 Google','https://www.google.com'],
   ]
-  // Native UPI apps — tapping launches the installed app on the phone
-  const apps=[
-    ['💳 GPay','tez://upi/','https://gpay.app.goo.gl'],
-    ['🟣 PhonePe','phonepe://','https://www.phonepe.com/app'],
-    ['🔵 Paytm','paytmmp://','https://paytm.com'],
-  ]
+  const apps=[['💳 GPay','tez://upi/','https://gpay.app.goo.gl']]
   const openApp=(scheme,fallback)=>{
     const t=Date.now()
     try{ window.location.href=scheme }catch(e){}
     setTimeout(()=>{ if(Date.now()-t<1600 && !document.hidden) window.open(fallback,'_blank','noopener') },1200)
   }
+  // ---- built-in tools: Calculator + Notes (auto-saved) ----
+  const [tool,setTool]=useState(null)                 // null | 'calc' | 'notes'
+  const [expr,setExpr]=useState(''); const [calcRes,setCalcRes]=useState('')
+  const [notes,setNotes]=useState(()=>{ try{return localStorage.getItem('nm_mini_notes')||''}catch(e){return ''} })
+  const saveNotes=(v)=>{ setNotes(v); try{localStorage.setItem('nm_mini_notes',v)}catch(e){} }
+  const calcPress=(k)=>{
+    if(k==='C'){ setExpr(''); setCalcRes(''); return }
+    if(k==='⌫'){ setExpr(e=>e.slice(0,-1)); return }
+    if(k==='='){
+      try{ const safe=expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/%/g,'/100')
+        if(!/^[0-9+\-*/(). ]+$/.test(safe)){ setCalcRes('Err'); return }
+        const v=Function('"use strict";return ('+safe+')')()
+        setCalcRes(Number.isFinite(v)?String(Math.round(v*10000)/10000):'Err') }catch(e){ setCalcRes('Err') }
+      return }
+    setExpr(e=>e+k)
+  }
+  const openTool=(t)=>{ setTool(t); setCur(''); }
   const onDown=(e)=>{ const t=e.touches?e.touches[0]:e
     drag.current={sx:t.clientX,sy:t.clientY,px:pos.x??(window.innerWidth-380),py:pos.y??(window.innerHeight-560)}
     const mv=(ev)=>{ const p=ev.touches?ev.touches[0]:ev
@@ -1057,6 +1084,8 @@ function MiniBrowser(){
       </span>
     </div>
     <div className="mbquick">
+      <button style={{background:'#fff4e0',borderColor:'#ffd9a0'}} onClick={()=>openTool('calc')}>🧮 Calculator</button>
+      <button style={{background:'#eafaf4',borderColor:'#b8ecd7'}} onClick={()=>openTool('notes')}>📝 Notes</button>
       {links.map(([l,u])=><button key={l} onClick={()=>go(l,u)}>{l}</button>)}
       {apps.map(([l,s,f])=><button key={l} style={{background:'#eef7ff',borderColor:'#cfe6ff'}}
         onClick={()=>openApp(s,f)}>{l}</button>)}
@@ -1066,7 +1095,26 @@ function MiniBrowser(){
         onChange={e=>setUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&url.trim()){go(null,url.trim());setUrl('')}}}/>
       <button onClick={()=>{if(url.trim()){go(null,url.trim());setUrl('')}}}>Go</button>
     </div>
-    {cur
+    {tool==='calc'
+      ? <div className="mbcalc">
+          <div className="mbcalc-display">
+            <div className="mbcalc-expr">{expr||'0'}</div>
+            <div className="mbcalc-res">{calcRes!==''?('= '+calcRes):''}</div>
+          </div>
+          <div className="mbcalc-grid">
+            {['C','⌫','%','÷','7','8','9','×','4','5','6','-','1','2','3','+','00','0','.','='].map(k=>(
+              <button key={k} className={'mbcalc-k'+(k==='='?' eq':'')+(['C','⌫','%','÷','×','-','+'].includes(k)?' op':'')}
+                onClick={()=>calcPress(k)}>{k}</button>))}
+          </div>
+        </div>
+      : tool==='notes'
+      ? <div className="mbnotes">
+          <p className="muted" style={{fontSize:12,margin:'0 0 6px'}}>📝 Notes — auto save aagum (indha phone-la mattum)</p>
+          <textarea value={notes} onChange={e=>saveNotes(e.target.value)}
+            placeholder="Ethavadhu note pannunga... (kadai list, amounts, ninaivugal)"></textarea>
+          <p className="muted" style={{fontSize:11,margin:'4px 0 0',textAlign:'right'}}>{notes.length} chars · ✅ saved</p>
+        </div>
+      : cur
       ? <iframe ref={frameRef} src={cur} className="mbframe"
           allow="autoplay; encrypted-media; picture-in-picture; payment *; geolocation *; camera *"
           allowFullScreen></iframe>
