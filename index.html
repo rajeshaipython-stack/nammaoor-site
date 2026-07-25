@@ -338,6 +338,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -638,25 +640,33 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 /* ===== Smart Billing: invoice paper (orange + dark grey, print-ready A4) ===== */
 .invpaper{background:#fff;border:1px solid #e5e0f0;border-radius:14px;padding:0;overflow:hidden;
-  box-shadow:0 10px 28px rgba(30,20,70,.10);margin-bottom:24px}
+  box-shadow:0 10px 28px rgba(30,20,70,.10);margin-bottom:24px;position:relative}
+/* faded shop-logo watermark in the white background — text stays bold & clear */
+.invwatermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:62%;max-height:55%;object-fit:contain;opacity:.05;pointer-events:none;z-index:0}
+.invpaper>*:not(.invwatermark){position:relative;z-index:1}
 .invhead{display:flex;justify-content:space-between;align-items:center;
   background:#2b2f3a;color:#fff;padding:18px 22px;position:relative}
 .invhead:after{content:'';position:absolute;right:0;top:0;bottom:0;width:34%;
   background:linear-gradient(100deg,transparent 18%,#FF9800 18%);}
-.invhead-l{display:flex;align-items:center;gap:12px;z-index:1}
-.invlogo{height:46px;border-radius:8px;background:#fff;padding:3px}
-.invshop{font-size:20px;font-weight:800}
-.invsub{font-size:12px;opacity:.85}
+.invhead-l{display:flex;flex-direction:column;align-items:flex-start;gap:2px;z-index:1}
+.invlogo{height:54px;border-radius:10px;background:#fff;padding:4px;margin-bottom:6px}
+.invshop{font-size:21px;font-weight:800;letter-spacing:.2px}
+.invsub{font-size:12.5px;opacity:.9;letter-spacing:.2px}
 .invtag{z-index:1;font-size:30px;font-weight:900;color:#2b2f3a;letter-spacing:2px}
 .invmeta{display:flex;justify-content:space-between;gap:14px;padding:16px 22px;flex-wrap:wrap;font-size:13.5px}
 .invlabel{display:inline-block;background:#FF9800;color:#fff;font-weight:800;font-size:12px;
   padding:3px 10px;border-radius:4px;margin-bottom:5px}
 .invcust{font-size:17px;font-weight:800;color:#e8712a}
-.invtable{width:calc(100% - 44px);margin:0 22px;border-collapse:collapse;font-size:13.5px}
-.invtable th{background:#2b2f3a;color:#fff;padding:9px 8px;font-size:12.5px}
-.invtable td{border-bottom:1px solid #eee;padding:9px 8px;text-align:center}
-.invtotals{margin:10px 22px 0 auto;width:270px;padding-right:22px;font-size:14px}
-.invtotals>div{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #eee}
+.invtable{width:calc(100% - 44px);margin:0 22px;border-collapse:collapse;font-size:13.5px;table-layout:auto}
+.invtable th{background:#2b2f3a;color:#fff;padding:9px 12px;font-size:12.5px;white-space:nowrap}
+.invtable td{border-bottom:1px solid #eee;padding:10px 12px;text-align:center;white-space:nowrap;
+  font-variant-numeric:tabular-nums;font-weight:600;color:#23262f}
+.invtable td:first-child{white-space:normal;font-weight:700}
+.invtotals{margin:10px 22px 0 auto;width:290px;padding-right:22px;font-size:14px;
+  font-variant-numeric:tabular-nums}
+.invtotals>div{display:flex;justify-content:space-between;gap:18px;padding:5px 0;border-bottom:1px dashed #eee}
+.invtotals span:last-child{font-weight:700;color:#23262f}
 .invgrand{font-size:17px;font-weight:900;color:#e8712a;border-bottom:none !important;
   border-top:2px solid #2b2f3a;margin-top:4px;padding-top:8px !important}
 .invfoot{display:flex;justify-content:space-between;gap:14px;padding:18px 22px;flex-wrap:wrap;align-items:flex-start}
@@ -2153,14 +2163,13 @@ function Billing(){
         <button className="btn ghost" onClick={()=>setView('dash')}>← Billing Home</button>
       </div>
       <div className="invpaper">
+        {shop.logo_url && <img src={shop.logo_url} className="invwatermark" alt=""/>}
         <div className="invhead">
           <div className="invhead-l">
             {shop.logo_url && <img src={shop.logo_url} className="invlogo"/>}
-            <div>
-              <div className="invshop">{shop.shop_name}</div>
-              <div className="invsub">{shop.address||''}</div>
-              <div className="invsub">📞 {shop.mobile} {shop.owner_name?(' · '+shop.owner_name):''}</div>
-            </div>
+            <div className="invshop">{shop.shop_name}</div>
+            <div className="invsub">{shop.address||''}</div>
+            <div className="invsub">📞 {shop.mobile} {shop.owner_name?(' · '+shop.owner_name):''}</div>
           </div>
           <div className="invtag">INVOICE</div>
         </div>
