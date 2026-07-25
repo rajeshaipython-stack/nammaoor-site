@@ -330,6 +330,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -838,6 +840,15 @@ function Landing(){
     }
   },[])
   useEffect(()=>{ const t=setInterval(()=>setI(p=>(p+1)%SLIDES.length),3000); return ()=>clearInterval(t) },[])
+  const nav=useNavigate()
+  const [shops,setShops]=useState([]); const [nearOn,setNearOn]=useState(false)
+  // recent/random shops on home (no forced GPS prompt)
+  useEffect(()=>{ api.get('/search').then(r=>{ if(r&&r.length){ const a=[...r].sort(()=>Math.random()-0.5); setShops(a.slice(0,8)) } }).catch(()=>{}) },[])
+  const nearMe=()=>{ if(!navigator.geolocation){ return }
+    navigator.geolocation.getCurrentPosition(
+      p=>api.get(`/search/near?lat=${p.coords.latitude}&lng=${p.coords.longitude}&radius_km=30`)
+           .then(r=>{ if(r){ setShops(r.slice(0,12)); setNearOn(true) } }).catch(()=>{}),
+      ()=>{}, {enableHighAccuracy:false,timeout:12000,maximumAge:60000}) }
   const s=SLIDES[i]
   return (<>
     <Header/>
@@ -866,6 +877,29 @@ function Landing(){
         <Link to="/search"><button className="btn">🔍 கடைகளை தேடு</button></Link>
         <Link to="/register"><button className="btn ghost">🏪 கடை பதிவு</button></Link>
       </div>
+
+      {shops.length>0 && <div style={{marginTop:22}}>
+        <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
+          <h3 style={{margin:0}}>🏪 {nearOn?'Pakkathula Kadaigal':'NammaOor Kadaigal'}</h3>
+          <a style={{cursor:'pointer',color:'var(--purple)',fontWeight:700}} onClick={nearMe}>📍 Near me</a>
+        </div>
+        <div style={{display:'grid',gap:10,marginTop:10}}>
+          {shops.map(s=>(
+            <div key={s.shop_code} className="card scard" style={{cursor:'pointer'}}
+                 onClick={()=>nav('/shop/'+(s.shop_code||'').replace('-',''))}>
+              <div className="scard-main">
+                <div style={{width:50,height:50,borderRadius:12,background:'#f4f0ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,overflow:'hidden',flex:'0 0 auto'}}>
+                  {s.logo_url?<img src={s.logo_url} onError={onImgErr} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:catIcon(s.category,s.category)}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <b>{s.shop_name}</b>
+                  <div className="muted" style={{fontSize:13}}>{s.category||''} {s.town?('· '+s.town):''}{s.distance_km!=null?(' · 📍 '+s.distance_km+' km'):''}</div>
+                  {s.reviews>0 && <div style={{fontSize:12}} className="muted">⭐ {s.rating} ({s.reviews})</div>}
+                </div>
+                <span style={{color:'var(--purple)',fontSize:20}}>›</span>
+              </div>
+            </div>))}
+        </div>
+      </div>}
 
       <div className="grid2" style={{marginTop:18}}>
         <Link to="/search"><div className="card"><h3>🙋 Customer</h3><p className="muted">Login venaam — scan QR → pay, call, WhatsApp, maps, offers, reviews</p></div></Link>
@@ -902,6 +936,19 @@ function Register(){
   const [scanning,setScanning]=useState(false); const videoRef=useRef(null)
   const set=(k)=>(e)=>setF({...f,[k]:e.target.value})
 
+  // ---- Resume registration after interruption (call / app switch / iPhone tab kill) ----
+  useEffect(()=>{
+    try{
+      const sf=JSON.parse(localStorage.getItem('reg_form')||'null')
+      if(sf && sf.shop_name){ setF(v=>({...v,...sf,owner_password:''})); setMode('form') }
+      const sp=JSON.parse(localStorage.getItem('reg_products')||'null')
+      if(sp && sp.length) setProducts(sp)
+    }catch(e){}
+  },[])
+  // Auto-save form (except password) so nothing is lost if the page closes
+  useEffect(()=>{ try{ localStorage.setItem('reg_form', JSON.stringify({...f,owner_password:''})) }catch(e){} },[f])
+  useEffect(()=>{ try{ localStorage.setItem('reg_products', JSON.stringify(products)) }catch(e){} },[products])
+
   useEffect(()=>{
     // Districts already shown from embedded data; refresh from server (authoritative) when awake.
     getRetry('/geo/districts').then(d=>{ if(d&&d.length) setD(d) }).catch(()=>{})
@@ -914,12 +961,18 @@ function Register(){
   },[f.district_id])
 
   function grabLocation(){
-    setMsg('Location edukkirathu...')
-    navigator.geolocation.getCurrentPosition(
-      p=>{ const {latitude:lat,longitude:lng}=p.coords
-        setF(v=>({...v,lat,lng,google_maps:`https://maps.google.com/?q=${lat},${lng}`}))
-        setMsg(`Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}`) },
-      ()=>setMsg('GPS denied. Address manual-aa podunga.'),{enableHighAccuracy:true})
+    if(!navigator.geolocation){ setMsg('Location support illa. Address manual-aa podunga.'); return }
+    setMsg('📍 Location edukkirathu… (konjam neram)')
+    const ok=p=>{ const {latitude:lat,longitude:lng}=p.coords
+      setF(v=>({...v,lat,lng,google_maps:`https://maps.google.com/?q=${lat},${lng}`}))
+      setMsg(`✅ Location saved: ${lat.toFixed(4)}, ${lng.toFixed(4)}`) }
+    const fail=(e)=>{
+      // low-accuracy retry before giving up
+      navigator.geolocation.getCurrentPosition(ok,
+        ()=>setMsg('❌ Location edukka mudiyala. Phone-la location ON pannunga, allathu address manual-aa podunga.'),
+        {enableHighAccuracy:false,timeout:20000,maximumAge:120000})
+    }
+    navigator.geolocation.getCurrentPosition(ok, fail, {enableHighAccuracy:true,timeout:12000,maximumAge:30000})
   }
   const addProduct=()=>{ if(pf.name){ setProducts([...products,pf]); setPf({name:'',price:''}) } }
   async function saveDraft(){
@@ -959,13 +1012,13 @@ function Register(){
   async function linkQr(){
     try{ const r=await api.post(`/shops/${shopId}/link-qr`,{token:token.trim(),emp_code:emp})
       setResult({...result,qr_token:r.qr_token,public_url:r.public_url}); setStep('done')
-      localStorage.removeItem('draft_id') }
+      localStorage.removeItem('draft_id'); localStorage.removeItem('reg_form'); localStorage.removeItem('reg_products') }
     catch(e){ setMsg('Error: '+e.message) }
   }
   async function genQr(){
     try{ setMsg('QR generate aaguthu...'); const r=await api.post(`/shops/${shopId}/generate-qr`)
       setResult({...result,qr_token:r.qr_token,public_url:r.public_url}); setStep('done')
-      localStorage.removeItem('draft_id') }
+      localStorage.removeItem('draft_id'); localStorage.removeItem('reg_form'); localStorage.removeItem('reg_products') }
     catch(e){ setMsg('Error: '+e.message) }
   }
   async function startScan(){
@@ -1204,12 +1257,13 @@ function Search(){
     if(!navigator.geolocation){ setGeoMsg('Location support illa'); return }
     setGeoMsg('📍 Location edukkiraen...')
     navigator.geolocation.getCurrentPosition(async pos=>{
-      const p=new URLSearchParams({lat:pos.coords.latitude,lng:pos.coords.longitude,radius_km:'8'})
+      const p=new URLSearchParams({lat:pos.coords.latitude,lng:pos.coords.longitude,radius_km:'30'})
       if(q.text)p.set('q',q.text); if(q.category)p.set('category',q.category)
       try{ const r=await api.get('/search/near?'+p.toString()); setRes(r); setNear(true); setDone(true)
-        setGeoMsg(r.length?'':'Pakkathula kadai illa (8km)') }
+        setGeoMsg(r.length?'':'Pakkathula (30km) kadai illa.') }
       catch(e){ setGeoMsg('Search fail: '+e.message) }
-    }, err=>setGeoMsg('Location deny aachu. Allow pannunga.'), {enableHighAccuracy:true,timeout:10000})
+    }, err=>setGeoMsg('Location deny aachu. Phone settings-la location allow pannunga.'),
+       {enableHighAccuracy:false,timeout:15000,maximumAge:60000})
   }
   const set=k=>e=>setQ({...q,[k]:e.target.value})
   return (<><Header/><div className="container">
@@ -1229,8 +1283,8 @@ function Search(){
     {res.map(s=>(
       <div key={s.shop_code} className="card scard">
         <div className="scard-main" onClick={()=>nav(`/shop/${(s.shop_code||'').replace('-','')}`)}>
-          <div style={{width:44,height:44,borderRadius:12,background:'#f1ecff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,overflow:'hidden',flex:'0 0 auto'}}>
-            {s.logo_url?<img src={s.logo_url} style={{width:'100%'}}/>:'S'}</div>
+          <div style={{width:48,height:48,borderRadius:12,background:'#f4f0ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,overflow:'hidden',flex:'0 0 auto'}}>
+            {s.logo_url?<img src={s.logo_url} onError={onImgErr} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:catIcon(s.category,s.category)}</div>
           <div style={{flex:1,minWidth:0}}><b>{s.shop_name}</b>
             <div className="muted">{s.category||''} {s.town?('- '+s.town):''}{s.distance_km!=null?(' · 📍 '+s.distance_km+' km'):''}</div>
             {s.reviews>0 && <div style={{fontSize:13}}><StarsRow v={s.rating}/> {s.rating} ({s.reviews})</div>}
