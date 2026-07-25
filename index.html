@@ -334,6 +334,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -865,14 +867,20 @@ function Landing(){
   },[])
   useEffect(()=>{ const t=setInterval(()=>setI(p=>(p+1)%SLIDES.length),3000); return ()=>clearInterval(t) },[])
   const nav=useNavigate()
-  const [shops,setShops]=useState([]); const [nearOn,setNearOn]=useState(false)
+  const [shops,setShops]=useState([]); const [nearOn,setNearOn]=useState(false); const [geoMsg,setGeoMsg]=useState('')
   // recent/random shops on home (no forced GPS prompt)
   useEffect(()=>{ api.get('/search').then(r=>{ if(r&&r.length){ const a=[...r].sort(()=>Math.random()-0.5); setShops(a.slice(0,8)) } }).catch(()=>{}) },[])
-  const nearMe=()=>{ if(!navigator.geolocation){ return }
+  const nearMe=()=>{
+    setGeoMsg('📍 Location edukkuthu…')
+    if(!navigator.geolocation){ setGeoMsg('❌ Intha browser location support pannala. Chrome/Safari-la open pannunga.'); return }
     navigator.geolocation.getCurrentPosition(
-      p=>api.get(`/search/near?lat=${p.coords.latitude}&lng=${p.coords.longitude}&radius_km=30`)
-           .then(r=>{ if(r){ setShops(r.slice(0,12)); setNearOn(true) } }).catch(()=>{}),
-      ()=>{}, {enableHighAccuracy:false,timeout:12000,maximumAge:60000}) }
+      p=>{ api.get(`/search/near?lat=${p.coords.latitude}&lng=${p.coords.longitude}&radius_km=30`)
+            .then(r=>{ if(r){ setShops(r.slice(0,12)); setNearOn(true); setGeoMsg(r.length?'':'30km-la kadai illa.') } })
+            .catch(()=>setGeoMsg('Search fail. Marupadi try pannunga.')) },
+      err=>{ setGeoMsg(err && err.code===1
+        ? '❌ Location block aayirukku. Address bar-la 🔒 (lock) → Location → "Allow" → marupadi 📍 Near me thattunga. (Phone-la: Settings → Site → Location Allow)'
+        : '❌ Location edukka mudiyala. Phone-la GPS/Location ON pannunga, appuram try pannunga.') },
+      {enableHighAccuracy:true,timeout:15000,maximumAge:0}) }
   const s=SLIDES[i]
   return (<>
     <Header/>
@@ -907,6 +915,7 @@ function Landing(){
           <h3 style={{margin:0}}>🏪 {nearOn?'Pakkathula Kadaigal':'NammaOor Kadaigal'}</h3>
           <a style={{cursor:'pointer',color:'var(--purple)',fontWeight:700}} onClick={nearMe}>📍 Near me</a>
         </div>
+        {geoMsg && <p className="muted" style={{marginTop:6,fontSize:13,lineHeight:1.4}}>{geoMsg}</p>}
         <div className="shopgrid">
           {shops.map(s=>(
             <div key={s.shop_code} className="shopcard" onClick={()=>nav('/shop/'+(s.shop_code||'').replace('-',''))}>
