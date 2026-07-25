@@ -344,6 +344,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -976,12 +978,12 @@ function MiniBrowser(){
     window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up)
     window.addEventListener('touchmove',mv); window.addEventListener('touchend',up)
   }
-  if(!open) return <button className="mbfab" title="Mini Screen" onClick={()=>setOpen(true)}>🗔<span>Mini</span></button>
+  if(!open) return <button className="mbfab" title="Mini Screen" onClick={()=>setOpen(true)}>📺<span>Mini</span></button>
   const style=full?{inset:0,width:'auto',height:'auto',borderRadius:0}
     :{left:pos.x??undefined,top:pos.y??undefined,right:pos.x==null?12:undefined,bottom:pos.y==null?12:undefined}
   return (<div className={'mbwin'+(full?' full':'')} style={style}>
     <div className="mbbar" onMouseDown={onDown} onTouchStart={onDown}>
-      <span className="mbtitle">🗔 NammaOor Mini</span>
+      <span className="mbtitle">📺 NammaOor Mini</span>
       <span className="mbbtns">
         <button onClick={back} disabled={hi<=0}>◀</button>
         <button onClick={fwd} disabled={hi>=hist.length-1}>▶</button>
