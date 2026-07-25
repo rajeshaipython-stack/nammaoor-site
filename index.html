@@ -326,6 +326,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -640,8 +642,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 <script type="text/babel" data-presets="react">
 
 const { useState, useEffect, useRef } = React;
-function useHashPath(){ const [p,setP]=React.useState(location.hash.slice(1)||'/');
-  React.useEffect(()=>{const h=()=>setP(location.hash.slice(1)||'/');window.addEventListener('hashchange',h);return()=>window.removeEventListener('hashchange',h);},[]); return p; }
+function useHashPath(){ const [p,setP]=React.useState((location.hash.slice(1)||(location.pathname&&location.pathname.length>1?location.pathname:'/')));
+  React.useEffect(()=>{const h=()=>setP((location.hash.slice(1)||(location.pathname&&location.pathname.length>1?location.pathname:'/')));window.addEventListener('hashchange',h);return()=>window.removeEventListener('hashchange',h);},[]); return p; }
 function Router({children}){ return children; }
 function useLocation(){ const p=useHashPath(); const i=p.indexOf('?'); return {pathname:i<0?p:p.slice(0,i), search:i<0?'':p.slice(i)}; }
 function useNavigate(){ return (to)=>{ location.hash='#'+to; }; }
