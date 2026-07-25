@@ -346,6 +346,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -669,6 +671,10 @@ table.spec td{padding:7px 9px;font-size:14px}
 .mbframe{flex:1;border:0;width:100%;background:#fff}
 .mbhome{flex:1;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .mbhome a{color:var(--purple);cursor:pointer;font-size:13px;border-bottom:1px dashed var(--line);padding:5px 0}
+.mbgrip{position:absolute;right:2px;bottom:2px;width:30px;height:30px;display:flex;align-items:flex-end;
+  justify-content:flex-end;color:#b6a8d6;font-size:16px;cursor:nwse-resize;touch-action:none;user-select:none;
+  padding:0 4px 2px 0;z-index:5}
+.mbfab{touch-action:none}
 @media(max-width:640px){ .mbwin{width:96vw;height:78vh;right:2vw !important;bottom:6px} }
 @media print{ .mbfab,.mbwin{display:none !important} }
 
@@ -951,6 +957,39 @@ function MiniBrowser(){
   const [full,setFull]=useState(false); const [rec,setRec]=useState(mbRecents())
   const [pos,setPos]=useState({x:null,y:null}); const drag=useRef(null)
   const frameRef=useRef(null)
+  // draggable FAB (remembers position) + resizable window (touch-friendly)
+  const [fabPos,setFabPos]=useState(()=>{ try{return JSON.parse(localStorage.getItem('nm_mini_fabpos')||'null')}catch(e){return null} })
+  const fabDrag=useRef(null)
+  const [size,setSize]=useState({w:null,h:null}); const rsz=useRef(null)
+  const fabDown=(e)=>{ const t=e.touches?e.touches[0]:e
+    const r=e.currentTarget.getBoundingClientRect()
+    fabDrag.current={sx:t.clientX,sy:t.clientY,px:r.left,py:r.top,moved:false}
+    const mv=(ev)=>{ const p=ev.touches?ev.touches[0]:ev
+      const dx=p.clientX-fabDrag.current.sx, dy=p.clientY-fabDrag.current.sy
+      if(Math.abs(dx)>6||Math.abs(dy)>6) fabDrag.current.moved=true
+      if(fabDrag.current.moved){ if(ev.cancelable)ev.preventDefault()
+        const nx=Math.min(window.innerWidth-64,Math.max(4,fabDrag.current.px+dx))
+        const ny=Math.min(window.innerHeight-64,Math.max(4,fabDrag.current.py+dy))
+        setFabPos({x:nx,y:ny}) } }
+    const up=()=>{ window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up)
+      window.removeEventListener('touchmove',mv); window.removeEventListener('touchend',up)
+      if(fabDrag.current.moved){ try{localStorage.setItem('nm_mini_fabpos',JSON.stringify({x:fabDrag.current.px,y:fabDrag.current.py}))}catch(e){}
+        setFabPos(f=>{ try{localStorage.setItem('nm_mini_fabpos',JSON.stringify(f))}catch(e){}; return f }) }
+      else setOpen(true) }
+    window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up)
+    window.addEventListener('touchmove',mv,{passive:false}); window.addEventListener('touchend',up)
+  }
+  const rszDown=(e)=>{ e.stopPropagation(); const t=e.touches?e.touches[0]:e
+    const el=e.currentTarget.parentElement.getBoundingClientRect()
+    rsz.current={sx:t.clientX,sy:t.clientY,w:el.width,h:el.height}
+    const mv=(ev)=>{ if(ev.cancelable)ev.preventDefault(); const p=ev.touches?ev.touches[0]:ev
+      setSize({w:Math.max(260,rsz.current.w+p.clientX-rsz.current.sx),
+               h:Math.max(300,rsz.current.h+p.clientY-rsz.current.sy)}) }
+    const up=()=>{ window.removeEventListener('mousemove',mv); window.removeEventListener('mouseup',up)
+      window.removeEventListener('touchmove',mv); window.removeEventListener('touchend',up) }
+    window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up)
+    window.addEventListener('touchmove',mv,{passive:false}); window.addEventListener('touchend',up)
+  }
   const go=(label,raw)=>{
     const emb=mbEmbedUrl(raw)
     mbSave(label||raw, raw); setRec(mbRecents())
@@ -978,9 +1017,12 @@ function MiniBrowser(){
     window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up)
     window.addEventListener('touchmove',mv); window.addEventListener('touchend',up)
   }
-  if(!open) return <button className="mbfab" title="Mini Screen" onClick={()=>setOpen(true)}>📺<span>Mini</span></button>
+  if(!open) return <button className="mbfab" title="Mini Screen"
+    style={fabPos?{left:fabPos.x,top:fabPos.y,right:'auto',bottom:'auto'}:undefined}
+    onMouseDown={fabDown} onTouchStart={fabDown}>📺<span>Mini</span></button>
   const style=full?{inset:0,width:'auto',height:'auto',borderRadius:0}
-    :{left:pos.x??undefined,top:pos.y??undefined,right:pos.x==null?12:undefined,bottom:pos.y==null?12:undefined}
+    :{left:pos.x??undefined,top:pos.y??undefined,right:pos.x==null?12:undefined,bottom:pos.y==null?12:undefined,
+      width:size.w||undefined,height:size.h||undefined,maxWidth:size.w?'none':undefined,maxHeight:size.h?'none':undefined}
   return (<div className={'mbwin'+(full?' full':'')} style={style}>
     <div className="mbbar" onMouseDown={onDown} onTouchStart={onDown}>
       <span className="mbtitle">📺 NammaOor Mini</span>
@@ -1009,6 +1051,7 @@ function MiniBrowser(){
             {rec.map((r,i)=><a key={i} onClick={()=>go(r.label,r.url)}>{r.label||r.url}</a>)}
           </>}
         </div>}
+    {!full && <div className="mbgrip" onMouseDown={rszDown} onTouchStart={rszDown} title="Resize">◢</div>}
   </div>)
 }
 
