@@ -356,6 +356,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -680,7 +682,11 @@ table.spec td{padding:7px 9px;font-size:14px}
 .mbhome{flex:1;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .mbhome a{color:var(--purple);cursor:pointer;font-size:13px;border-bottom:1px dashed var(--line);padding:5px 0}
 /* mini tools: calculator + notes */
-.mbcalc{flex:1;display:flex;flex-direction:column;padding:10px;gap:8px;overflow:hidden}
+.mbtoolbar{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;
+  border-bottom:1px solid var(--line);background:#faf8ff}
+.mbtoolbar button{background:#fff;border:1px solid var(--line);border-radius:9px;padding:6px 12px;
+  font-weight:700;font-size:13px;cursor:pointer;color:var(--purple)}
+.mbcalc{flex:1;display:flex;flex-direction:column;padding:10px;gap:8px;overflow:hidden;min-height:0}
 .mbcalc-display{background:#f6f3ff;border:1px solid #e0d6ff;border-radius:12px;padding:10px 14px;text-align:right;min-height:64px}
 .mbcalc-expr{font-size:22px;font-weight:700;color:#141225;word-break:break-all}
 .mbcalc-res{font-size:18px;font-weight:800;color:var(--magenta)}
@@ -1083,18 +1089,25 @@ function MiniBrowser(){
         <button onClick={()=>{setOpen(false);setFull(false)}}>✕</button>
       </span>
     </div>
-    <div className="mbquick">
-      <button style={{background:'#fff4e0',borderColor:'#ffd9a0'}} onClick={()=>openTool('calc')}>🧮 Calculator</button>
-      <button style={{background:'#eafaf4',borderColor:'#b8ecd7'}} onClick={()=>openTool('notes')}>📝 Notes</button>
-      {links.map(([l,u])=><button key={l} onClick={()=>go(l,u)}>{l}</button>)}
-      {apps.map(([l,s,f])=><button key={l} style={{background:'#eef7ff',borderColor:'#cfe6ff'}}
-        onClick={()=>openApp(s,f)}>{l}</button>)}
-    </div>
-    <div className="mburl">
-      <input placeholder="Link paste pannunga (YouTube video / Maps...)" value={url}
-        onChange={e=>setUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&url.trim()){go(null,url.trim());setUrl('')}}}/>
-      <button onClick={()=>{if(url.trim()){go(null,url.trim());setUrl('')}}}>Go</button>
-    </div>
+    {!tool && <>
+      <div className="mbquick">
+        <button style={{background:'#fff4e0',borderColor:'#ffd9a0'}} onClick={()=>openTool('calc')}>🧮 Calculator</button>
+        <button style={{background:'#eafaf4',borderColor:'#b8ecd7'}} onClick={()=>openTool('notes')}>📝 Notes</button>
+        {links.map(([l,u])=><button key={l} onClick={()=>go(l,u)}>{l}</button>)}
+        {apps.map(([l,s,f])=><button key={l} style={{background:'#eef7ff',borderColor:'#cfe6ff'}}
+          onClick={()=>openApp(s,f)}>{l}</button>)}
+      </div>
+      <div className="mburl">
+        <input placeholder="Link paste pannunga (YouTube video / Maps...)" value={url}
+          onChange={e=>setUrl(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&url.trim()){go(null,url.trim());setUrl('')}}}/>
+        <button onClick={()=>{if(url.trim()){go(null,url.trim());setUrl('')}}}>Go</button>
+      </div>
+    </>}
+    {tool && <div className="mbtoolbar">
+      <button onClick={()=>setTool(null)}>← Back</button>
+      <b>{tool==='calc'?'🧮 Calculator':'📝 Notes'}</b>
+      <span style={{width:60}}></span>
+    </div>}
     {tool==='calc'
       ? <div className="mbcalc">
           <div className="mbcalc-display">
