@@ -342,6 +342,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -665,7 +667,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 .mbframe{flex:1;border:0;width:100%;background:#fff}
 .mbhome{flex:1;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .mbhome a{color:var(--purple);cursor:pointer;font-size:13px;border-bottom:1px dashed var(--line);padding:5px 0}
-@media(max-width:640px){ .mbwin{width:94vw;height:70vh;right:3vw !important;bottom:8px} }
+@media(max-width:640px){ .mbwin{width:96vw;height:78vh;right:2vw !important;bottom:6px} }
 @media print{ .mbfab,.mbwin{display:none !important} }
 
 /* ===== Smart Billing: invoice paper (orange + dark grey, print-ready A4) ===== */
@@ -927,7 +929,7 @@ const MB_KEY='nm_mini_recents'
 const mbRecents=()=>{ try{return JSON.parse(localStorage.getItem(MB_KEY)||'[]')}catch(e){return[]} }
 const mbSave=(label,url)=>{ const r=mbRecents().filter(x=>x.url!==url); r.unshift({label,url,at:Date.now()})
   localStorage.setItem(MB_KEY,JSON.stringify(r.slice(0,10))) }
-const MB_BLOCKED=/instagram\.com|facebook\.com|fb\.com|wa\.me|whatsapp\.com|twitter\.com|x\.com|linkedin\.com|(^|\.)google\.[a-z.]+\/(search|local)|youtube\.com\/(?!embed)|youtu\.be/i
+const MB_BLOCKED=/instagram\.com|facebook\.com|fb\.com|wa\.me|whatsapp\.com|twitter\.com|x\.com|linkedin\.com|(www\.)?google\.[a-z.]+|youtube\.com\/(?!embed)|youtu\.be/i
 function mbEmbedUrl(u){
   let url=(u||'').trim(); if(!url) return null
   if(!/^https?:\/\//i.test(url)) url='https://'+url
@@ -957,12 +959,13 @@ function MiniBrowser(){
   const fwd =()=>{ if(hi<hist.length-1){ setHi(hi+1); setCur(hist[hi+1]) } }
   const refresh=()=>{ if(frameRef.current) frameRef.current.src=cur }
   const links=[
+    ['🔍 Search','https://lite.duckduckgo.com/lite/'],
     ['▶️ YouTube','https://www.youtube.com'],
     ['📷 Instagram','https://www.instagram.com'],
     ['📘 Facebook','https://www.facebook.com'],
     ['💬 WhatsApp','https://web.whatsapp.com'],
     ['🗺️ Maps','https://maps.google.com/maps?q=tamil+nadu&output=embed'],
-    ['⭐ Reviews','https://www.google.com/search?q=my+business+reviews'],
+    ['🌐 Google','https://www.google.com'],
   ]
   const onDown=(e)=>{ const t=e.touches?e.touches[0]:e
     drag.current={sx:t.clientX,sy:t.clientY,px:pos.x??(window.innerWidth-380),py:pos.y??(window.innerHeight-560)}
