@@ -328,6 +328,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -889,7 +891,8 @@ function Register(){
   const [mode,setMode]=useState(empParam ? 'form' : 'choose')
   const [districts,setD]=useState(NM_DISTRICTS); const [assemblies,setA]=useState([]); const [cats,setC]=useState([])
   const [loadingCat,setLoadingCat]=useState(true); const [loadingAsm,setLoadingAsm]=useState(false)
-  const [f,setF]=useState({emp_code:emp,own_shop:!empParam,shop_name:'',owner_name:'',mobile:'',whatsapp:'',
+  const [pw2,setPw2]=useState('')
+  const [f,setF]=useState({emp_code:emp,own_shop:!empParam,owner_password:'',shop_name:'',owner_name:'',mobile:'',whatsapp:'',
     district_id:'',assembly_id:'',town:'',area:'',category_id:'',address:'',google_maps:'',
     lat:null,lng:null,description:'',bio:'',open_time:'',close_time:'',leave_days:'',upi_id:'',facebook:'',instagram:'',website:'',logo_url:'',cover_url:'',photos:[]})
   const [products,setProducts]=useState([]); const [pf,setPf]=useState({name:'',price:''})
@@ -927,16 +930,12 @@ function Register(){
       else { const r=await api.post('/shops/draft',b); id=r.id; setShopId(id); localStorage.setItem('draft_id',id) }
       setMsg('Draft saved'); return id }catch(e){ setMsg('Error: '+e.message); return null }
   }
-  async function reqOtp(){
+  async function payNow(){
+    if((f.owner_password||'').length<6){ setMsg('Password podunga (min 6 characters)'); return }
+    if(f.owner_password!==pw2){ setMsg('Password rendum match aagala'); return }
     const id=await saveDraft(); if(!id) return
     for(const p of products){ try{ await api.post(`/shops/${id}/product`,{name:p.name,price:p.price?+p.price:null}) }catch{} }
-    await api.post('/auth/otp/request',{mobile:f.mobile})
-    setOtp(''); setStep('otp'); setMsg('✅ OTP sent to '+f.mobile+'. Valid 5 min.')
-  }
-  async function verifyPay(){
-    const v=await api.post('/auth/otp/verify',{mobile:f.mobile,code:(otp||'').trim()}).catch(()=>null)
-    if(!v){ setMsg('Wrong OTP'); return }
-    const pay=await api.post('/payments/create',{shop_id:shopId,type:'registration'})
+    const pay=await api.post('/payments/create',{shop_id:id,type:'registration'})
     if(pay.gateway==='razorpay' && window.Razorpay){
       const rzp=new window.Razorpay({
         key:pay.key_id, amount:pay.amount*100, currency:'INR',
@@ -1132,20 +1131,17 @@ function Register(){
           <input className="input" placeholder="Facebook" onChange={set('facebook')}/>
           <input className="input" placeholder="Instagram" onChange={set('instagram')}/>
         </div>
+        <div style={{background:'#eafaf4',border:'1px solid #b8ecd7',borderRadius:12,padding:12,marginTop:12}}>
+          <label style={{fontWeight:700}}>🔒 Shop Owner Login Password</label>
+          <p className="muted" style={{fontSize:12,margin:'2px 0 6px'}}>Ithu vachu shop owner login pannuvinga (mobile + password). Note pannikonga.</p>
+          <PwInput value={f.owner_password} onChange={e=>setF({...f,owner_password:e.target.value})} placeholder="Password (min 6)"/>
+          <PwInput value={pw2} onChange={e=>setPw2(e.target.value)} placeholder="Confirm password"/>
+        </div>
         <div className="row" style={{marginTop:10}}>
           <button className="btn ghost" onClick={saveDraft}>Save Draft</button>
-          <button className="btn" onClick={reqOtp} disabled={!f.mobile||!f.shop_name}>Continue - OTP + Rs.299</button>
+          <button className="btn" onClick={payNow}
+            disabled={!f.mobile||!f.shop_name||(f.owner_password||'').length<6}>Register &amp; Pay Rs.299</button>
         </div>
-        <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
-      </div>}
-
-      {step==='otp' && <div className="card">
-        <h3>Mobile OTP Verification</h3>
-        <p className="muted">OTP sent to <b>{f.mobile}</b> — SMS check pannunga.</p>
-        <input className="input" placeholder="Enter OTP" value={otp} onChange={e=>setOtp(e.target.value)}/>
-        <button className="btn" onClick={verifyPay}>Verify & Pay Rs.299</button>
-        <p className="muted" style={{marginTop:8,cursor:'pointer',color:'var(--purple)'}}
-           onClick={async()=>{await api.post('/auth/otp/request',{mobile:f.mobile}); setMsg('✅ OTP resent.')}}>Resend OTP</p>
         <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
       </div>}
 
@@ -1961,6 +1957,8 @@ function Login(){
   // owner OTP
   const [mobile,setMobile]=useState(''); const [code,setCode]=useState(''); const [sent,setSent]=useState(false)
   const [otpUntil,setOtpUntil]=useState(0)
+  // shop owner (mobile + password) + which role is doing "forgot password"
+  const [op,setOp]=useState(''); const [forgotMode,setForgotMode]=useState('emp')
   // employee
   const [u,setU]=useState(''); const [p,setP]=useState('')
   // admin (hidden)
@@ -1981,23 +1979,23 @@ function Login(){
 
   function go(role){ setRole(role); nav('/app/'+(role==='super_admin'?'admin':role==='shop_owner'?'owner':role)) }
 
-  async function reqOtp(){ try{ const r=await api.post('/auth/otp/request',{mobile}); setSent(true)
-    setOtpUntil(Date.now()+60000); setMsg('✅ OTP sent to your number. Valid 5 min.') }
-    catch(e){ setMsg('❌ '+e.message) } }
-  async function verify(){ try{ const r=await api.post('/auth/otp/verify',{mobile,code}); setToken(r.access_token); go('shop_owner') }
+  // shop owner: mobile + password login
+  async function ownerLogin(){ try{ const r=await api.post('/auth/owner/login',{mobile,password:op}); setToken(r.access_token); go('shop_owner') }
     catch(e){ setMsg('❌ '+e.message) } }
   async function empLogin(){ try{ const r=await api.post('/auth/employee/login',{emp_code:u,password:p}); setToken(r.access_token); go('employee') }
     catch(e){ setMsg('❌ '+e.message) } }
   async function adminLogin(){ try{ const r=await api.post('/auth/admin/login',{username:u,password:p}); setToken(r.access_token); go('super_admin') }
     catch(e){ setMsg('❌ '+e.message) } }
-  // forgot
-  async function fReq(){ try{ const r=await api.post('/auth/forgot/request',{mobile:fMobile}); setFSent(true)
+  // forgot (works for owner + employee based on forgotMode)
+  async function fReq(){ try{ const ep=forgotMode==='owner'?'/auth/owner/forgot/request':'/auth/forgot/request'
+    await api.post(ep,{mobile:fMobile}); setFSent(true)
     setFUntil(Date.now()+60000); setMsg('✅ OTP sent to your number. Valid 5 min.') }
     catch(e){ setMsg('❌ '+e.message) } }
-  async function fReset(){ try{ const r=await api.post('/auth/forgot/reset',{mobile:fMobile,code:fCode,new_password:fNew})
-    setFDone(r.username); setMsg('') } catch(e){ setMsg('❌ '+e.message) } }
+  async function fReset(){ try{ const ep=forgotMode==='owner'?'/auth/owner/forgot/reset':'/auth/forgot/reset'
+    const r=await api.post(ep,{mobile:fMobile,code:fCode,new_password:fNew})
+    setFDone(r.username||fMobile); setMsg('') } catch(e){ setMsg('❌ '+e.message) } }
 
-  const backToLogin=()=>{ setShowForgot(false); setFSent(false); setFDone(null); setFMobile(''); setFCode(''); setFNew(''); setMsg('') }
+  const backToLogin=()=>{ setShowForgot(false); setFSent(false); setFDone(null); setFMobile(''); setFCode(''); setFNew(''); setForgotMode('emp'); setMsg('') }
   // employee sign-up — step 1: send OTP; step 2: verify + create + auto-login to dashboard
   const _signupPayload=()=>({username:sUser,mobile:sMobile,email:sEmail||null,password:sPass})
   async function signupStart(){
@@ -2017,7 +2015,7 @@ function Login(){
     {/* ---------- FORGOT PASSWORD (employee) ---------- */}
     {showForgot && <div className="card">
       <div className="row" style={{justifyContent:'space-between',alignItems:'center'}}>
-        <b>🔑 Reset Employee Password</b>
+        <b>🔑 Reset {forgotMode==='owner'?'Shop Owner':'Employee'} Password</b>
         <a className="muted" style={{cursor:'pointer'}} onClick={backToLogin}>← Back</a>
       </div>
       {fDone ? <>
@@ -2094,18 +2092,14 @@ function Login(){
         {tab==='owner' && <>
           <label>Mobile Number</label>
           <input className="input" value={mobile} onChange={e=>setMobile(e.target.value)} placeholder="10-digit mobile"/>
-          {!sent
-            ? <button className="btn" onClick={reqOtp}>Send OTP</button>
-            : <>
-                <label>Enter OTP</label>
-                <input className="input" value={code} onChange={e=>setCode(e.target.value)}/>
-                <button className="btn" onClick={verify}>Verify &amp; Login</button>
-                <div style={{marginTop:8}}>
-                  {left(otpUntil)>0
-                    ? <span className="muted">Resend OTP in {left(otpUntil)}s</span>
-                    : <a style={{cursor:'pointer',color:'var(--purple)'}} onClick={reqOtp}>Resend OTP</a>}
-                </div>
-              </>}
+          <label>Password</label>
+          <PwInput value={op} onChange={e=>setOp(e.target.value)}/>
+          <button className="btn" style={{marginTop:8}} onClick={ownerLogin} disabled={!mobile||!op}>Login</button>
+          <div style={{marginTop:8}}>
+            <a className="muted" style={{cursor:'pointer',color:'var(--purple)'}}
+               onClick={()=>{setForgotMode('owner');setShowForgot(true);setMsg('')}}>Forgot password?</a>
+          </div>
+          <p className="muted" style={{marginTop:10,fontSize:12}}>Registration-la set panna password vachu login pannunga.</p>
         </>}
         {tab==='employee' && <>
           <label>Username or Employee ID</label>
@@ -2115,7 +2109,7 @@ function Login(){
           <button className="btn" style={{marginTop:8}} onClick={empLogin}>Login</button>
           <div className="row" style={{justifyContent:'space-between',marginTop:8}}>
             <a className="muted" style={{cursor:'pointer',color:'var(--purple)'}}
-               onClick={()=>{setShowForgot(true);setMsg('')}}>Forgot password?</a>
+               onClick={()=>{setForgotMode('emp');setShowForgot(true);setMsg('')}}>Forgot password?</a>
             <a style={{cursor:'pointer',color:'var(--purple)',fontWeight:700}}
                onClick={()=>{setShowSignup(true);setMsg('')}}>New? Sign up →</a>
           </div>
