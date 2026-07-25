@@ -348,6 +348,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -1045,7 +1047,7 @@ function MiniBrowser(){
     {cur
       ? <iframe ref={frameRef} src={cur} className="mbframe" allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen></iframe>
       : <div className="mbhome">
-          <p className="muted" style={{fontSize:12.5}}>YouTube video / Maps inga open aagum. Instagram, Facebook, WhatsApp — pudhu tab-la open aagum (avanga embedding block panranga).</p>
+          <p className="muted" style={{fontSize:12.5}}>Mela irukura link-a thattunga, allathu oru link paste pannunga.</p>
           {rec.length>0 && <>
             <b style={{fontSize:13}}>🕘 Recent</b>
             {rec.map((r,i)=><a key={i} onClick={()=>go(r.label,r.url)}>{r.label||r.url}</a>)}
