@@ -352,6 +352,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -1017,6 +1019,17 @@ function MiniBrowser(){
     ['🗺️ Maps','https://maps.google.com/maps?q=tamil+nadu&output=embed'],
     ['🌐 Google','https://www.google.com'],
   ]
+  // Native UPI apps — tapping launches the installed app on the phone
+  const apps=[
+    ['💳 GPay','tez://upi/','https://gpay.app.goo.gl'],
+    ['🟣 PhonePe','phonepe://','https://www.phonepe.com/app'],
+    ['🔵 Paytm','paytmmp://','https://paytm.com'],
+  ]
+  const openApp=(scheme,fallback)=>{
+    const t=Date.now()
+    try{ window.location.href=scheme }catch(e){}
+    setTimeout(()=>{ if(Date.now()-t<1600 && !document.hidden) window.open(fallback,'_blank','noopener') },1200)
+  }
   const onDown=(e)=>{ const t=e.touches?e.touches[0]:e
     drag.current={sx:t.clientX,sy:t.clientY,px:pos.x??(window.innerWidth-380),py:pos.y??(window.innerHeight-560)}
     const mv=(ev)=>{ const p=ev.touches?ev.touches[0]:ev
@@ -1045,6 +1058,8 @@ function MiniBrowser(){
     </div>
     <div className="mbquick">
       {links.map(([l,u])=><button key={l} onClick={()=>go(l,u)}>{l}</button>)}
+      {apps.map(([l,s,f])=><button key={l} style={{background:'#eef7ff',borderColor:'#cfe6ff'}}
+        onClick={()=>openApp(s,f)}>{l}</button>)}
     </div>
     <div className="mburl">
       <input placeholder="Link paste pannunga (YouTube video / Maps...)" value={url}
