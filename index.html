@@ -382,6 +382,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -2893,7 +2895,7 @@ function TvDisplay(){
     const h=()=>unlock()
     window.addEventListener('keydown',h); window.addEventListener('click',h)
     return ()=>{ window.removeEventListener('keydown',h); window.removeEventListener('click',h) }
-  },[needTap, music&&music.url, aVol])
+  },[needTap, curSong&&curSong.url, aVol])
 
   // schedule filter: slide visible only in its hour window (empty = always)
   const inTime=(sl)=>{ const f=sl.from, t=sl.to
