@@ -378,6 +378,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -872,6 +874,7 @@ async function req(path, opts = {}) {
     ...opts,
     headers: { 'Content-Type': 'application/json',
                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+               ...(localStorage.getItem('nm_shop_id') ? { 'X-Shop-Id': localStorage.getItem('nm_shop_id') } : {}),
                ...(opts.headers || {}) },
   })
   const txt = await res.text()
@@ -1598,8 +1601,11 @@ function Register(){
         <div className="grid2">
           <div><label>Owner Name</label><input className="input" onChange={set('owner_name')}/></div>
           <div><label>Category {loadingCat&&!cats.length&&<span className="muted">(loading…)</span>}</label>
-            <select onChange={set('category_id')}><option value="">{loadingCat&&!cats.length?'Loading…':'--'}</option>
-            {cats.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            <input className="input" list="regcatlist" placeholder="Type pannunga — e.g. tea, grocery…"
+              onChange={e=>{ const v=e.target.value
+                const m=cats.find(c=>c.name.toLowerCase()===v.toLowerCase())
+                setF(prev=>({...prev,category_id:m?String(m.id):''})) }}/>
+            <datalist id="regcatlist">{cats.map(c=><option key={c.id} value={c.name}/>)}</datalist></div>
         </div>
         <div className="grid2">
           <div><label>Mobile</label><input className="input" onChange={set('mobile')}/></div>
@@ -1740,7 +1746,11 @@ function Search(){
         <select onChange={set('district')}><option value="">District</option>{districts.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>
         <select onChange={set('assembly')}><option value="">Assembly</option>{assemblies.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select>
         <input className="input" placeholder="Town / Village" onChange={set('town')}/>
-        <select onChange={set('category')}><option value="">Category</option>{cats.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>
+        <input className="input" list="srchcatlist" placeholder="Category — type pannunga…" style={{margin:0}}
+          onChange={e=>{ const v=e.target.value
+            const m=cats.find(c=>c.name.toLowerCase()===v.toLowerCase())
+            setQ(prev=>({...prev,category:m?String(m.id):''})) }}/>
+        <datalist id="srchcatlist">{cats.map(c=><option key={c.id} value={c.name}/>)}</datalist>
       </div>
       <div className="row"><button className="btn" onClick={()=>{setNear(false);search()}}>🔍 Search</button><button className="btn ghost" onClick={nearMe}>📍 Near me</button></div>
       {geoMsg&&<p className="muted" style={{marginTop:6}}>{geoMsg}</p>}
@@ -3624,11 +3634,28 @@ function OwnerDashboard(){
   const [mcCat,setMcCat]=useState(''); const [mcSub,setMcSub]=useState('')
   const [mcItems,setMcItems]=useState([]); const [mcSel,setMcSel]=useState({})
   const [mcLoading,setMcLoading]=useState(false); const [mcMsg,setMcMsg]=useState('')
+  const [myShops,setMyShops]=useState([])
+  const [catp,setCatp]=useState([])
   const load=()=>{ api.get('/me/shop').then(setS).catch(e=>setMsg(e.message))
     api.get('/me/shop/analytics').then(setAn).catch(()=>{})
     api.get('/me/shop/payments').then(setPays).catch(()=>{})
-    api.get('/me/shop/route/status').then(setRoute).catch(()=>{}) }
+    api.get('/me/shop/route/status').then(setRoute).catch(()=>{})
+    api.get('/me/shop/list').then(r=>{ setMyShops(r||[])
+      const sid=localStorage.getItem('nm_shop_id')
+      if(sid && r && !r.some(x=>x.id===sid)) localStorage.removeItem('nm_shop_id') }).catch(()=>{})
+    api.get('/me/shop/catalog').then(r=>setCatp(Array.isArray(r)?r:[])).catch(()=>{}) }
   useEffect(load,[])
+  const switchShop=(id)=>{ localStorage.setItem('nm_shop_id',id); window.location.reload() }
+  const editBio=async()=>{ const v=prompt('Shop Bio (shop page-la customer-ku theriyum. Search-la varathu.)', (s&&s.bio)||'')
+    if(v==null)return; await save({bio:v.trim()},'✅ Bio updated') }
+  const cpPrice=async(p)=>{ const pr=prompt('Price (Rs.)', p.price||''); if(pr==null)return
+    const of=prompt('Offer Price (Rs.) — empty = no offer', p.offer_price||'')
+    try{ await api.patch('/me/shop/catalog/'+p.id,{price:pr?+pr:null, offer_price:of?+of:null})
+      setMsg('✅ Price updated'); load() }catch(e){ setMsg('❌ '+e.message) } }
+  const cpStock=async(p)=>{ try{ await api.patch('/me/shop/catalog/'+p.id,{in_stock:!(p.in_stock!==false)})
+      load() }catch(e){ setMsg('❌ '+e.message) } }
+  const cpDel=async(p)=>{ if(!confirm(p.name+' — delete pannalaama?'))return
+    try{ await api.del('/me/shop/catalog/'+p.id); setMsg('🗑 Deleted'); load() }catch(e){ setMsg('❌ '+e.message) } }
   useEffect(()=>{ api.get('/catalog/categories').then(setMcCats).catch(()=>{}) },[])
   const pickCat=(c)=>{ setMcCat(c); setMcSub(''); setMcItems([]); setMcSel({}); setMcSubs([]); setMcMsg('')
     if(c) api.get('/catalog/subcategories?category='+encodeURIComponent(c)).then(setMcSubs).catch(()=>{}) }
@@ -3704,9 +3731,18 @@ function OwnerDashboard(){
   </div></>)
 
   return (<><Header/><div className="container">
+    {myShops.length>1 && <div className="card" style={{padding:'10px 14px',background:'#fff8ee',border:'1px solid #ffd9a0'}}>
+      <label className="lbl">🏪 Entha kadai? (ungalukku {myShops.length} shops irukku)</label>
+      <select value={localStorage.getItem('nm_shop_id')||myShops[0].id}
+        onChange={e=>switchShop(e.target.value)}>
+        {myShops.map(x=><option key={x.id} value={x.id}>{x.shop_name} ({x.shop_code})</option>)}
+      </select>
+      <p className="muted" style={{fontSize:11.5,marginTop:4}}>Ovvoru shop-um thani — DP, products, billing, TV ellam antha shop-ku mattum apply aagum.</p>
+    </div>}
     <h2 className="brand">{s.shop_name} <button className="btn sm ghost" title="Edit shop name"
       style={{verticalAlign:'middle',marginLeft:6}} onClick={editShopName}>✏️</button></h2>
-    <p className="muted">{s.shop_code} - <span className="pill">{s.status}</span> {s.bio&&<span> - {s.bio}</span>}</p>
+    <p className="muted">{s.shop_code} - <span className="pill">{s.status}</span> {s.bio&&<span> - {s.bio}</span>}
+      <button className="btn sm ghost" style={{marginLeft:6,fontSize:11}} onClick={editBio}>✏️ Bio</button></p>
     <div className="row" style={{marginTop:12}}>
       <div className="kpi"><b>{an.qr_scans||0}</b><span>QR Scans</span></div>
       <div className="kpi"><b>{an.pay_now||0}</b><span>Pay Now</span></div>
@@ -3780,6 +3816,27 @@ function OwnerDashboard(){
         ))}
       </div>
     </div>
+
+    {catp.length>0 && <div className="card">
+      <h3>📦 En Catalog Products ({catp.length})</h3>
+      <p className="muted" style={{fontSize:12,marginTop:2}}>Neenga add panna products — price maathalaam, stock on/off pannalaam, delete pannalaam.</p>
+      <div style={{maxHeight:340,overflowY:'auto'}}>
+        {catp.map(p=>(
+          <div key={p.id} style={{display:'flex',alignItems:'center',gap:8,borderBottom:'1px solid var(--line)',padding:'8px 0',flexWrap:'wrap'}}>
+            <div style={{width:38,height:38,borderRadius:8,overflow:'hidden',background:'#f4f0fb',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              {p.thumbnail?<img src={p.thumbnail} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:'🛍️'}</div>
+            <div style={{flex:1,minWidth:130}}>
+              <b style={{fontSize:13}}>{p.name}</b>
+              <div className="muted" style={{fontSize:11.5}}>
+                {p.offer_price?<><span style={{color:'#0a7a4a',fontWeight:700}}>₹{p.offer_price}</span> <s>₹{p.price}</s></>:(p.price?('₹'+p.price):'No price')}
+                {' · '}{p.in_stock===false?<span style={{color:'#c0392b'}}>Out of stock</span>:'In stock'}</div>
+            </div>
+            <button className="btn sm ghost" style={{fontSize:11}} onClick={()=>cpPrice(p)}>✏️ Price</button>
+            <button className="btn sm ghost" style={{fontSize:11}} onClick={()=>cpStock(p)}>{p.in_stock===false?'✅ Stock In':'🚫 Stock Out'}</button>
+            <button className="btn sm ghost" style={{fontSize:11,color:'#c0392b'}} onClick={()=>cpDel(p)}>✕ Delete</button>
+          </div>))}
+      </div>
+    </div>}
 
     <div className="card">
       <h3>🛒 Master Catalog — Products Add Pannunga</h3>
