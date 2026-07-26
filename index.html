@@ -384,6 +384,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -2822,10 +2824,14 @@ function TvDisplay(){
   const goFs=()=>{ try{ const el=document.documentElement
     ;(el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el) }catch(e){} }
 
-  // get / create pair code
+  // get / create pair code (re-runs if a stale saved code gets cleared)
   useEffect(()=>{ if(!code){
-    api.post('/tv/new',{}).then(r=>{ setCode(r.pair_code); try{localStorage.setItem('nm_tv_code',r.pair_code)}catch(e){} }).catch(()=>{})
-  }},[])
+    let stop=false
+    const mk=()=>api.post('/tv/new',{}).then(r=>{ if(stop)return
+        setCode(r.pair_code); try{localStorage.setItem('nm_tv_code',r.pair_code)}catch(e){} })
+      .catch(()=>{ if(!stop) setTimeout(mk,5000) })   // server cold-start retry
+    mk(); return ()=>{stop=true}
+  }},[code])
   // hour tick (once a minute is enough for slide scheduling)
   useEffect(()=>{ const i=setInterval(()=>setHr(new Date().getHours()),60000); return ()=>clearInterval(i) },[])
   // poll state: 5s until paired, 30s after
