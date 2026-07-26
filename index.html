@@ -380,6 +380,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -1763,7 +1765,6 @@ function Search(){
           <div style={{flex:1,minWidth:0}}><b>{s.shop_name}</b>
             <div className="muted">{s.category||''} {s.town?('- '+s.town):''}{s.distance_km!=null?(' · 📍 '+s.distance_km+' km'):''}</div>
             {s.reviews>0 && <div style={{fontSize:13}}><StarsRow v={s.rating}/> {s.rating} ({s.reviews})</div>}
-            {s.bio && <div className="muted" style={{fontSize:12}}>{s.bio}</div>}
           </div>
         </div>
         <ShopIcons s={s}/>
@@ -2549,19 +2550,35 @@ function Billing(){
   const makePdf=async()=>{
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
-    const el=document.querySelector('.invpaper')
-    const canvas=await window.html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff'})
+    const src=document.querySelector('.invpaper')
+    // render an A4-width clone off-screen so the PDF is a neat full sheet
+    // (mobile-la direct render panna text romba zoom aagi cut aagum)
+    const wrap=document.createElement('div')
+    wrap.style.cssText='position:fixed;left:-10000px;top:0;width:794px;background:#fff'
+    const clone=src.cloneNode(true)
+    clone.style.width='794px'; clone.style.maxWidth='794px'
+    clone.style.borderRadius='0'; clone.style.boxShadow='none'; clone.style.margin='0'
+    wrap.appendChild(clone); document.body.appendChild(wrap)
+    await new Promise(r=>setTimeout(r,350))
+    const canvas=await window.html2canvas(clone,{scale:2,useCORS:true,backgroundColor:'#ffffff',width:794,windowWidth:794})
+    document.body.removeChild(wrap)
     const pdf=new window.jspdf.jsPDF('p','mm','a4')
-    const w=210, h=canvas.height*w/canvas.width
-    pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',0,0,w,Math.min(h,297))
+    const w=190, h=canvas.height*w/canvas.width
+    pdf.addImage(canvas.toDataURL('image/jpeg',0.93),'JPEG',10,10,w,Math.min(h,277))
     return pdf.output('blob') }
+  const waText=(inv)=>{
+    const n=(inv.items||[]).length
+    return `🧾 *${shop.shop_name}* Invoice\n`+
+      `Invoice No: ${inv.invoice_no}\n`+
+      `Items: ${n} · Total: Rs.${R(inv.grand_total).toFixed(2)}\n\n`+
+      `🙏 Thanks for purchasing!\n`+
+      `🛍️ Engaloda shop: ${SITE}/shop/${(shop.shop_code||'').replace('-','')}` }
   const sharePdf=async(inv)=>{
     try{ setMsg('⏳ PDF ready aaguthu…')
       const blob=await makePdf()
       const file=new File([blob],(inv.invoice_no||'invoice')+'.pdf',{type:'application/pdf'})
-      const txt=`Invoice ${inv.invoice_no} · ${shop.shop_name} · Rs.${R(inv.grand_total).toFixed(2)}`
       if(navigator.canShare && navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title:'Invoice '+inv.invoice_no, text:txt}); setMsg('') }
+        await navigator.share({files:[file], title:'Invoice '+inv.invoice_no, text:waText(inv)}); setMsg('') }
       else{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file.name
         document.body.appendChild(a); a.click()
         setMsg('📥 PDF download aachu — WhatsApp-la attach pannunga'); waShare(inv) }
