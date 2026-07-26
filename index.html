@@ -360,6 +360,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -657,6 +659,10 @@ table.spec td{padding:7px 9px;font-size:14px}
   100%{ transform:translateY(105vh) rotate(720deg); opacity:.9 } }
 @media (prefers-reduced-motion: reduce){
   .celebrate-star,.confetti,.celebrate-burst,.ratepick-star{ animation:none } }
+
+/* ===== TV Display slideshow ===== */
+.tvslide{animation:tvIn .8s cubic-bezier(.2,.9,.3,1) both}
+@keyframes tvIn{from{opacity:0;transform:translateY(4vh) scale(.97)}to{opacity:1;transform:none}}
 
 /* ===== Mini Browser (floating popup) ===== */
 .mbfab{position:fixed;right:14px;bottom:76px;z-index:9000;display:flex;flex-direction:column;align-items:center;gap:1px;
@@ -2650,6 +2656,282 @@ function Billing(){
 }
 
 
+/* ===== pages/TvDisplay.jsx ===== */
+
+// Fullscreen digital-signage player. TV opens nammaoor.shop/#/tv
+// -> shows 6-digit pair code -> owner pairs from dashboard -> slideshow.
+function TvDisplay(){
+  const [code,setCode]=useState(()=>{ try{return localStorage.getItem('nm_tv_code')||''}catch(e){return ''} })
+  const [st,setSt]=useState(null)      // server state
+  const [idx,setIdx]=useState(0)       // flattened slide index
+  const [anim,setAnim]=useState(true)
+  const timer=useRef(null)
+
+  // get / create pair code
+  useEffect(()=>{ if(!code){
+    api.post('/tv/new',{}).then(r=>{ setCode(r.pair_code); try{localStorage.setItem('nm_tv_code',r.pair_code)}catch(e){} }).catch(()=>{})
+  }},[])
+  // poll state: 5s until paired, 30s after
+  useEffect(()=>{ if(!code) return
+    let stop=false
+    const tick=async()=>{ try{ const r=await api.get('/tv/state/'+code)
+        if(!stop){ if(r.found===false){ try{localStorage.removeItem('nm_tv_code')}catch(e){}; setCode('') } else setSt(r) } }catch(e){}
+      if(!stop) setTimeout(tick, (st&&st.paired)?30000:5000) }
+    tick(); return ()=>{stop=true}
+  },[code, st&&st.paired])
+
+  // build flattened slide list (products expand into one slide per product)
+  const flat=[]
+  if(st&&st.paired){
+    for(const sl of (st.slides||[])){
+      if(sl.type==='products'){ (st.products||[]).forEach(p=>flat.push({...sl,type:'product',p})) }
+      else flat.push(sl)
+    }
+  }
+  const dur=((st&&st.settings&&st.settings.duration)||8)*1000
+  useEffect(()=>{ if(!st||!st.paired||!st.playing||flat.length===0) return
+    clearTimeout(timer.current)
+    timer.current=setTimeout(()=>{ setAnim(false); setTimeout(()=>{ setIdx(i=>(i+1)%flat.length); setAnim(true) },60) }, dur)
+    return ()=>clearTimeout(timer.current)
+  },[idx, st, flat.length])
+
+  const theme=(st&&st.settings&&st.settings.theme)||'dark'
+  const dark=theme!=='light'
+  const bg=dark?'#0e0b1a':'#f7f4fb'; const ink=dark?'#fff':'#141225'; const sub=dark?'#b9b3d0':'#5a5578'
+  const shop=st&&st.shop
+  const shopUrl=shop?`${SITE}/shop/${(shop.shop_code||'').replace('-','')}`:''
+  const reviewUrl=shop&&shop.qr_token?`${SITE}/s/${shop.qr_token}`:shopUrl
+  const upiUri=shop&&shop.upi_id?`upi://pay?pa=${encodeURIComponent(shop.upi_id)}&pn=${encodeURIComponent(shop.shop_name||'Shop')}&cu=INR`:''
+
+  const Wrap=({children})=>(
+    <div style={{position:'fixed',inset:0,background:bg,color:ink,display:'flex',flexDirection:'column',
+      alignItems:'center',justifyContent:'center',textAlign:'center',padding:'4vh 5vw',overflow:'hidden',
+      fontFamily:"'Poppins',sans-serif"}}>
+      <div className={anim?'tvslide':''} style={{width:'100%',maxWidth:1100,display:'flex',flexDirection:'column',alignItems:'center',gap:'2.2vh'}}>
+        {children}
+      </div>
+      {shop && <div style={{position:'fixed',bottom:14,left:0,right:0,textAlign:'center',fontSize:'1.6vh',color:sub}}>
+        {shop.shop_name} · Powered by NammaOor</div>}
+    </div>)
+
+  if(!code||!st) return <Wrap><div style={{fontSize:'3vh'}}>⏳ NammaOor TV loading…</div></Wrap>
+
+  // ---------- PAIRING SCREEN ----------
+  if(!st.paired) return (
+    <div style={{position:'fixed',inset:0,background:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)',color:'#fff',
+      display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',textAlign:'center',padding:'4vh'}}>
+      <img src="/logo.png" style={{height:'9vh',background:'#fff',borderRadius:14,padding:'1vh'}}/>
+      <h1 style={{fontSize:'5vh',margin:'3vh 0 1vh',fontWeight:800}}>📺 NammaOor TV Display</h1>
+      <p style={{fontSize:'2.4vh',opacity:.95}}>NammaOor app-la Shop Owner login → TV Display → indha code-a podunga:</p>
+      <div style={{background:'#fff',color:'#141225',borderRadius:20,padding:'2vh 5vw',margin:'3vh 0',
+        fontSize:'11vh',fontWeight:900,letterSpacing:'1.2vw',fontVariantNumeric:'tabular-nums'}}>{code}</div>
+      <p style={{fontSize:'2vh',opacity:.85}}>Pair aana udane slideshow automatic-a start aagum.</p>
+    </div>)
+
+  if(!st.playing || flat.length===0) return <Wrap>
+    {shop&&shop.logo_url&&<img src={shop.logo_url} style={{height:'16vh',borderRadius:18}}/>}
+    <div style={{fontSize:'5vh',fontWeight:800}}>{shop?shop.shop_name:''}</div>
+    <div style={{fontSize:'2.4vh',color:sub}}>⏸ Slideshow paused</div>
+  </Wrap>
+
+  const s=flat[Math.min(idx,flat.length-1)]
+  const grad='linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'
+  const gradText={background:grad,WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}
+
+  // ---------- SLIDES ----------
+  if(s.type==='welcome') return <Wrap>
+    {shop.logo_url&&<img src={shop.logo_url} style={{height:'18vh',borderRadius:20,boxShadow:'0 12px 40px rgba(0,0,0,.3)'}}/>}
+    <div style={{fontSize:'7vh',fontWeight:900,...gradText}}>{s.title||'Welcome!'}</div>
+    <div style={{fontSize:'4.5vh',fontWeight:700}}>{shop.shop_name}</div>
+    {s.text&&<div style={{fontSize:'3vh',color:sub}}>{s.text}</div>}
+  </Wrap>
+
+  if(s.type==='product'&&s.p) return <Wrap>
+    <div style={{display:'flex',alignItems:'center',gap:'4vw',flexWrap:'wrap',justifyContent:'center'}}>
+      <div style={{width:'34vh',height:'34vh',borderRadius:24,background:dark?'#1d1733':'#fff',display:'flex',
+        alignItems:'center',justifyContent:'center',overflow:'hidden',boxShadow:'0 14px 44px rgba(0,0,0,.25)'}}>
+        {s.p.image?<img src={s.p.image} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:'14vh'}}>🛍️</span>}
+      </div>
+      <div style={{textAlign:'left',maxWidth:'46vw'}}>
+        <div style={{fontSize:'2.2vh',color:sub,textTransform:'uppercase',letterSpacing:2}}>{s.p.category||'Product'}</div>
+        <div style={{fontSize:'5.5vh',fontWeight:900,lineHeight:1.15}}>{s.p.name}</div>
+        <div style={{marginTop:'1.5vh'}}>
+          {s.p.offer_price
+            ? <><span style={{fontSize:'6.5vh',fontWeight:900,color:'#22C55E'}}>₹{s.p.offer_price}</span>
+                <span style={{fontSize:'3vh',color:sub,textDecoration:'line-through',marginLeft:14}}>₹{s.p.price}</span>
+                <span style={{marginLeft:14,background:'#FF2E7E',color:'#fff',borderRadius:10,padding:'0.6vh 1.4vh',fontSize:'2.4vh',fontWeight:800}}>OFFER</span></>
+            : <span style={{fontSize:'6.5vh',fontWeight:900,...gradText}}>{s.p.price?('₹'+s.p.price):''}</span>}
+          {s.p.unit&&<span style={{fontSize:'2.4vh',color:sub,marginLeft:10}}>/ {s.p.unit}</span>}
+        </div>
+        <div style={{marginTop:'1vh',fontSize:'2.4vh',color:s.p.in_stock===false?'#ef4444':'#22C55E',fontWeight:700}}>
+          {s.p.in_stock===false?'Out of Stock':'✔ In Stock'}</div>
+      </div>
+    </div>
+  </Wrap>
+
+  if(s.type==='qr_pay') return <Wrap>
+    <div style={{fontSize:'5.5vh',fontWeight:900,...gradText}}>💳 Scan & Pay</div>
+    <div style={{background:'#fff',padding:'2.4vh',borderRadius:24,boxShadow:'0 14px 44px rgba(0,0,0,.3)'}}>
+      <img src={qrImg(upiUri||shopUrl)} style={{width:'34vh',height:'34vh'}}/>
+    </div>
+    <div style={{fontSize:'3vh',fontWeight:700}}>{upiUri?'GPay · PhonePe · Paytm — edhu venaalum':'Scan pannunga'}</div>
+    {shop.upi_id&&<div style={{fontSize:'2.2vh',color:sub}}>{shop.upi_id}</div>}
+  </Wrap>
+
+  if(s.type==='review') return <Wrap>
+    <div style={{fontSize:'6vh'}}>⭐⭐⭐⭐⭐</div>
+    <div style={{fontSize:'5vh',fontWeight:900}}>Love our service?</div>
+    <div style={{fontSize:'3vh',color:sub}}>Scan QR to review us — ungaloda rating engalukku mukkiyam! 🙏</div>
+    <div style={{background:'#fff',padding:'2vh',borderRadius:20,boxShadow:'0 14px 44px rgba(0,0,0,.3)'}}>
+      <img src={qrImg(reviewUrl)} style={{width:'28vh',height:'28vh'}}/>
+    </div>
+  </Wrap>
+
+  if(s.type==='info') return <Wrap>
+    {shop.logo_url&&<img src={shop.logo_url} style={{height:'12vh',borderRadius:16}}/>}
+    <div style={{fontSize:'5.5vh',fontWeight:900,...gradText}}>{shop.shop_name}</div>
+    <div style={{fontSize:'2.8vh',color:sub,display:'flex',flexDirection:'column',gap:'1vh'}}>
+      {shop.owner_name&&<span>👤 {shop.owner_name}</span>}
+      {shop.address&&<span>📍 {shop.address}</span>}
+      <span>📞 {shop.mobile}</span>
+      {(shop.open_time||shop.close_time)&&<span>🕐 {shop.open_time||''} – {shop.close_time||''}</span>}
+      {shop.bio&&<span style={{fontSize:'2.4vh'}}>{shop.bio}</span>}
+    </div>
+  </Wrap>
+
+  if(s.type==='image'&&s.image) return (
+    <div style={{position:'fixed',inset:0,background:'#000',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <img src={s.image} className={anim?'tvslide':''} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>
+    </div>)
+
+  // custom text slide fallback
+  return <Wrap>
+    <div style={{fontSize:'6vh',fontWeight:900,...gradText}}>{s.title||''}</div>
+    {s.text&&<div style={{fontSize:'3.2vh',color:sub,whiteSpace:'pre-wrap'}}>{s.text}</div>}
+  </Wrap>
+}
+
+
+/* ===== pages/TvManage.jsx ===== */
+
+const TYPE_META={
+  welcome:['👋','Welcome Screen'], products:['🛍️','Products (auto-sync)'],
+  qr_pay:['💳','Scan & Pay QR'], review:['⭐','Review My Shop'],
+  info:['🏪','Shop Information'], image:['🖼️','Poster / Ad Image'], text:['📝','Custom Text'],
+}
+
+function TvManage(){
+  const [tv,setTv]=useState(null); const [code,setCode]=useState(''); const [msg,setMsg]=useState('')
+  const [nt,setNt]=useState({type:'text',title:'',text:''})
+  const load=()=>api.get('/me/shop/tv').then(setTv).catch(e=>setMsg(e.message))
+  useEffect(()=>{ load(); const t=setInterval(load,30000); return ()=>clearInterval(t) },[])
+
+  const pair=async()=>{ try{ const r=await api.post('/me/shop/tv/pair',{code:code.trim()})
+      setTv({...r,paired:true}); setMsg('✅ TV pair aayiduchu!') }catch(e){ setMsg('❌ '+e.message) } }
+  const save=async(patch,note)=>{ try{ const r=await api.patch('/me/shop/tv',patch)
+      setTv({...r,paired:true}); if(note)setMsg(note) }catch(e){ setMsg('❌ '+e.message) } }
+  const slides=(tv&&tv.slides)||[]
+  const setSlides=(sl,note)=>save({slides:sl},note||'✅ Saved — TV auto-update aagum')
+  const move=(i,d)=>{ const sl=[...slides]; const j=i+d; if(j<0||j>=sl.length)return
+    ;[sl[i],sl[j]]=[sl[j],sl[i]]; setSlides(sl) }
+  const toggleHide=(i)=>{ const sl=slides.map((s,ix)=>ix===i?{...s,hidden:!s.hidden}:s); setSlides(sl) }
+  const del=(i)=>{ if(!confirm('Slide delete pannalaama?'))return; setSlides(slides.filter((_,ix)=>ix!==i)) }
+  const dup=(i)=>{ const sl=[...slides]; sl.splice(i+1,0,{...slides[i],id:Date.now()}); setSlides(sl) }
+  const addSlide=async()=>{
+    const s={id:Date.now(),type:nt.type,title:nt.title||TYPE_META[nt.type][1],text:nt.text,hidden:false}
+    if(nt.type==='image'){ const img=await pickImage(1400); if(!img){setMsg('Image select pannala');return}; s.image=img }
+    setSlides([...slides,s],'✅ Slide add aayiduchu'); setNt({type:'text',title:'',text:''}) }
+  const settings=(tv&&tv.settings)||{duration:8,theme:'dark'}
+
+  return (<><Header/><div className="container" style={{maxWidth:760}}>
+    <h2 className="brand">📺 TV Display</h2>
+    <p className="muted" style={{marginTop:2}}>Unga kadai TV-la products, offers, QR — ellam remote-a control pannunga.</p>
+
+    {!tv && <div className="card">Loading…</div>}
+
+    {tv && !tv.paired && <div className="card">
+      <h3>📡 TV-a Connect Pannunga</h3>
+      <ol style={{paddingLeft:20,lineHeight:2,fontSize:14}}>
+        <li>TV / Android TV browser-la open pannunga: <b>nammaoor.shop/#/tv</b></li>
+        <li>TV screen-la oru <b>6-digit code</b> varum</li>
+        <li>Antha code-a inga podunga:</li>
+      </ol>
+      <div className="row" style={{gap:8}}>
+        <input className="input" style={{flex:1,fontSize:22,textAlign:'center',letterSpacing:6,margin:0}}
+          placeholder="000000" inputMode="numeric" maxLength={6} value={code} onChange={e=>setCode(e.target.value)}/>
+        <button className="btn" onClick={pair} disabled={code.trim().length!==6}>🔗 Pair TV</button>
+      </div>
+      {msg&&<p style={{color:'var(--teal)',marginTop:8}}>{msg}</p>}
+    </div>}
+
+    {tv && tv.paired && <>
+      <div className="card">
+        <div className="row" style={{justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8}}>
+          <div>
+            <span className={'tag '+(tv.online?'a':'e')}>{tv.online?'🟢 TV Online':'🔴 TV Offline'}</span>
+            <span className="muted" style={{marginLeft:8,fontSize:12}}>
+              {tv.last_seen?('Last sync: '+new Date(tv.last_seen).toLocaleTimeString()):''}</span>
+          </div>
+          <div className="row" style={{gap:6}}>
+            {tv.playing
+              ? <button className="btn sm" style={{background:'#c0392b'}} onClick={()=>save({playing:false},'⏸ Paused')}>⏸ Stop</button>
+              : <button className="btn sm tl" onClick={()=>save({playing:true},'▶️ Playing')}>▶️ Start</button>}
+            <button className="btn sm ghost" onClick={async()=>{ if(confirm('TV disconnect pannalaama?')){ await api.del('/me/shop/tv'); setTv({paired:false}) } }}>Unpair</button>
+          </div>
+        </div>
+        <div className="grid2" style={{marginTop:10}}>
+          <div><label className="lbl">Slide Duration (sec)</label>
+            <select value={settings.duration} onChange={e=>save({settings:{...settings,duration:+e.target.value}})}>
+              {[5,8,10,15,20,30].map(n=><option key={n} value={n}>{n} sec</option>)}
+            </select></div>
+          <div><label className="lbl">Theme</label>
+            <select value={settings.theme} onChange={e=>save({settings:{...settings,theme:e.target.value}})}>
+              <option value="dark">Dark (premium)</option><option value="light">Light</option>
+            </select></div>
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>🎞️ Slides ({slides.length})</h3>
+        <p className="muted" style={{fontSize:12,marginTop:2}}>Products slide — kadai products auto-sync (price/photo maathina TV-la thaana update aagum).</p>
+        {slides.map((s,i)=>{ const m=TYPE_META[s.type]||['📄',s.type]; return (
+          <div key={s.id||i} style={{display:'flex',alignItems:'center',gap:8,borderBottom:'1px solid var(--line)',
+            padding:'9px 0',opacity:s.hidden?.45:1}}>
+            <span style={{fontSize:22}}>{m[0]}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <b style={{fontSize:14}}>{s.title||m[1]}</b>
+              <div className="muted" style={{fontSize:11.5}}>{m[1]}{s.hidden?' · hidden':''}</div>
+            </div>
+            <button className="btn sm ghost" onClick={()=>move(i,-1)} disabled={i===0}>↑</button>
+            <button className="btn sm ghost" onClick={()=>move(i,1)} disabled={i===slides.length-1}>↓</button>
+            <button className="btn sm ghost" title="Hide/Show" onClick={()=>toggleHide(i)}>{s.hidden?'👁':'🙈'}</button>
+            <button className="btn sm ghost" title="Duplicate" onClick={()=>dup(i)}>⧉</button>
+            <button className="btn sm ghost" style={{color:'#c0392b'}} onClick={()=>del(i)}>✕</button>
+          </div>)})}
+
+        <h4 style={{margin:'14px 0 4px'}}>➕ Add Slide</h4>
+        <div className="grid2">
+          <select value={nt.type} onChange={e=>setNt({...nt,type:e.target.value})}>
+            {Object.entries(TYPE_META).map(([k,[ic,l]])=><option key={k} value={k}>{ic} {l}</option>)}
+          </select>
+          <input className="input" placeholder="Title (optional)" value={nt.title} onChange={e=>setNt({...nt,title:e.target.value})}/>
+        </div>
+        {(nt.type==='text'||nt.type==='welcome')&&
+          <textarea rows="2" placeholder="Text / message (optional)" value={nt.text} onChange={e=>setNt({...nt,text:e.target.value})}></textarea>}
+        <button className="btn sm" style={{marginTop:6}} onClick={addSlide}>
+          {nt.type==='image'?'📷 Poster upload panni add':'+ Add Slide'}</button>
+      </div>
+
+      <div className="card" style={{background:'#f6f3ff'}}>
+        <b>📡 TV-la open panna:</b> <span style={{fontFamily:'monospace'}}>nammaoor.shop/#/tv</span>
+        <p className="muted" style={{fontSize:12,marginTop:6}}>Android TV / Smart TV browser-la intha link open pannunga. TV internet-la irundha, neenga enga irundhaalum control pannalaam — maathangal ~30 sec-la TV-la varum.</p>
+      </div>
+      {msg&&<p style={{color:'var(--teal)'}}>{msg}</p>}
+    </>}
+  </div></>)
+}
+
+
 /* ===== pages/Login.jsx ===== */
 
 function Login(){
@@ -3034,6 +3316,14 @@ function OwnerDashboard(){
           💾 Save {Object.values(mcSel).filter(x=>x.on).length||''} products to my shop</button>
       </>}
       {mcMsg && <p style={{color:'var(--teal)',marginTop:8}}>{mcMsg}</p>}
+    </div>
+
+    <div className="card" style={{background:'linear-gradient(135deg,#f0f4ff,#fff)',border:'1px solid #c9d8ff'}}>
+      <div className="row" style={{justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10}}>
+        <div><h3 style={{margin:0}}>📺 TV Display</h3>
+          <p className="muted" style={{margin:'4px 0 0'}}>Kadai TV-la products, offers, QR slideshow — remote-a control pannunga.</p></div>
+        <a className="btn" href="#/app/tv">Open TV Display →</a>
+      </div>
     </div>
 
     <div className="card" style={{background:'linear-gradient(135deg,#fff8f0,#fff)',border:'1px solid #ffd9b0'}}>
@@ -3719,6 +4009,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <Route path="/login" element={<Login/>} />
       <Route path="/app/owner" element={<OwnerDashboard/>} />
       <Route path="/app/billing" element={<Billing/>} />
+      <Route path="/tv" element={<TvDisplay/>} />
+      <Route path="/app/tv" element={<TvManage/>} />
       <Route path="/app/ai" element={<AIListing/>} />
       <Route path="/app/employee" element={<EmployeeDashboard/>} />
       <Route path="/app/admin" element={<AdminDashboard/>} />
