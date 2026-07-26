@@ -372,6 +372,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -2741,7 +2743,7 @@ const LOOPFX={float:'tvfx-float', pulse:'tvfx-pulse', blink:'tvfx-blink'}
 function TvClock({ink,dark}){
   const [t,setT]=useState(new Date())
   useEffect(()=>{ const i=setInterval(()=>setT(new Date()),1000); return ()=>clearInterval(i) },[])
-  return <div style={{position:'fixed',top:'2.2vh',right:'2.6vw',zIndex:60,
+  return <div style={{position:'fixed',top:'2.2vh',left:'2.6vw',zIndex:60,
     fontSize:'3vh',fontWeight:800,color:ink,background:dark?'rgba(0,0,0,.35)':'rgba(255,255,255,.6)',
     padding:'.6vh 1.4vw',borderRadius:12,fontVariantNumeric:'tabular-nums'}}>
     {t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
@@ -2753,7 +2755,12 @@ function TvDisplay(){
   const [idx,setIdx]=useState(0)       // flattened slide index
   const [anim,setAnim]=useState(true)
   const [hr,setHr]=useState(new Date().getHours())   // hour only (schedule filter)
+  const [fs,setFs]=useState(false)
   const timer=useRef(null)
+  useEffect(()=>{ const h=()=>setFs(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange',h); return ()=>document.removeEventListener('fullscreenchange',h) },[])
+  const goFs=()=>{ try{ const el=document.documentElement
+    ;(el.requestFullscreen||el.webkitRequestFullscreen||function(){}).call(el) }catch(e){} }
 
   // get / create pair code
   useEffect(()=>{ if(!code){
@@ -2852,6 +2859,11 @@ function TvDisplay(){
 
   // Plain JSX (NOT a component) so the slide tree never remounts on re-render.
   const overlay=(<>
+    <img src="/logo.png" style={{position:'fixed',top:'2vh',right:'2.4vw',height:'5.5vh',zIndex:60,
+      background:'#fff',borderRadius:10,padding:'0.6vh',opacity:.93,boxShadow:'0 4px 14px rgba(0,0,0,.25)'}}/>
+    {!fs && <div onClick={goFs} style={{position:'fixed',bottom:'2vh',right:'2vw',zIndex:75,
+      background:'rgba(0,0,0,.45)',color:'#fff',borderRadius:10,padding:'0.9vh 1.6vw',
+      fontSize:'2vh',fontWeight:700,cursor:'pointer'}}>⛶ Full Screen</div>}
     {settings.clock!==false && <TvClock ink={ink} dark={dark}/>}
     {hasTicker && <div className="tvticker"><span>{settings.ticker} &nbsp;•&nbsp; {settings.ticker} &nbsp;•&nbsp; {settings.ticker}</span></div>}
     {needTap && wantAudio && <div onClick={unlock} style={{position:'fixed',bottom:'10vh',left:'50%',
@@ -2889,6 +2901,8 @@ function TvDisplay(){
       <div style={{background:'#fff',color:'#141225',borderRadius:20,padding:'2vh 5vw',margin:'3vh 0',
         fontSize:'11vh',fontWeight:900,letterSpacing:'1.2vw',fontVariantNumeric:'tabular-nums'}}>{code}</div>
       <p style={{fontSize:'2vh',opacity:.85}}>Pair aana udane slideshow automatic-a start aagum.</p>
+      {!fs && <button onClick={goFs} style={{marginTop:'2vh',background:'#fff',color:'#141225',border:'none',
+        borderRadius:12,padding:'1.4vh 3vw',fontSize:'2.4vh',fontWeight:800,cursor:'pointer'}}>⛶ Full Screen</button>}
     </div>)
 
   if(!st.playing || flat.length===0) return wrap(<>
@@ -2911,27 +2925,78 @@ function TvDisplay(){
     {s.text&&<div style={{fontSize:'3vh',color:sub}}>{s.text}</div>}
   </>)
 
-  if(s.type==='product'&&s.p) return wrap(
+  if(s.type==='product'&&s.p){
+    const p=s.p, tpl=settings.template||'classic'
+    const img=p.image?<img src={p.image} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:'14vh'}}>🛍️</span>
+    const priceRow=(big)=>(<div style={{marginTop:'1.2vh'}}>
+      {p.offer_price
+        ? <><span style={{fontSize:big?'6.5vh':'5vh',fontWeight:900,color:'#22C55E'}}>₹{p.offer_price}</span>
+            <span style={{fontSize:'2.8vh',color:sub,textDecoration:'line-through',marginLeft:12}}>₹{p.price}</span>
+            <span style={{marginLeft:12,background:'#FF2E7E',color:'#fff',borderRadius:10,padding:'0.6vh 1.4vh',fontSize:'2.2vh',fontWeight:800}}>OFFER</span></>
+        : <span style={{fontSize:big?'6.5vh':'5vh',fontWeight:900,...gradText}}>{p.price?('₹'+p.price):''}</span>}
+      {p.unit&&<span style={{fontSize:'2.2vh',color:sub,marginLeft:10}}>/ {p.unit}</span>}
+    </div>)
+    const stock=<div style={{marginTop:'0.8vh',fontSize:'2.2vh',color:p.in_stock===false?'#ef4444':'#22C55E',fontWeight:700}}>
+      {p.in_stock===false?'Out of Stock':'✔ In Stock'}</div>
+
+    // 🃏 POP CARD — colour card back-la, product munnadi pop (Pinterest ref 1)
+    if(tpl==='popcard') return wrap(
+      <div style={{display:'flex',alignItems:'center',gap:'5vw',flexWrap:'wrap',justifyContent:'center'}}>
+        <div style={{position:'relative',width:'42vh',height:'50vh'}}>
+          <div style={{position:'absolute',bottom:0,left:'3vh',right:'3vh',height:'38vh',borderRadius:26,
+            background:grad,boxShadow:'0 18px 50px rgba(255,46,126,.35)'}}/>
+          <div style={{position:'absolute',bottom:'7vh',left:0,right:0,margin:'auto',width:'36vh',height:'36vh',
+            borderRadius:22,overflow:'hidden',transform:'rotate(-6deg)',background:th.card,display:'flex',
+            alignItems:'center',justifyContent:'center',boxShadow:'0 20px 46px rgba(0,0,0,.4)'}}>{img}</div>
+          <div style={{position:'absolute',top:'1vh',right:0,background:'#141225',color:'#fff',borderRadius:12,
+            padding:'0.8vh 1.6vh',fontSize:'2.4vh',fontWeight:800}}>{p.category||'NEW'}</div>
+        </div>
+        <div style={{textAlign:'left',maxWidth:'42vw'}}>
+          <div style={{fontSize:'5.5vh',fontWeight:900,lineHeight:1.1}}>{p.name}</div>
+          {priceRow(true)}{stock}
+        </div>
+      </div>)
+
+    // 🅰️ BIG TEXT — perusa name back-la, product munnadi (Pinterest ref 2)
+    if(tpl==='bigtext') return wrap(
+      <div style={{position:'relative',width:'100%',display:'flex',flexDirection:'column',alignItems:'center'}}>
+        <div style={{fontSize:'12vh',fontWeight:900,textTransform:'uppercase',lineHeight:.9,opacity:.16,
+          letterSpacing:'-0.02em',whiteSpace:'nowrap',overflow:'hidden',maxWidth:'96vw'}}>{p.name}</div>
+        <div style={{marginTop:'-8vh',width:'36vh',height:'36vh',borderRadius:24,overflow:'hidden',
+          background:th.card,display:'flex',alignItems:'center',justifyContent:'center',
+          boxShadow:'0 22px 55px rgba(0,0,0,.45)'}}>{img}</div>
+        <div style={{fontSize:'4.5vh',fontWeight:900,marginTop:'1.5vh'}}>{p.name}</div>
+        {priceRow(true)}{stock}
+      </div>)
+
+    // 🏛️ GALLERY — clean premium minimal (Pinterest ref 3)
+    if(tpl==='gallery') return wrap(
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+        <div style={{fontSize:'2vh',letterSpacing:6,textTransform:'uppercase',color:sub}}>— Our Collection —</div>
+        <div style={{marginTop:'2.5vh',background:'#fff',padding:'2vh',borderRadius:8,
+          boxShadow:'0 24px 60px rgba(0,0,0,.18)'}}>
+          <div style={{width:'36vh',height:'36vh',overflow:'hidden',display:'flex',
+            alignItems:'center',justifyContent:'center',background:'#f6f6f6'}}>{img}</div>
+        </div>
+        <div style={{fontSize:'4.2vh',fontWeight:700,marginTop:'2.5vh',letterSpacing:1}}>{p.name}</div>
+        <div style={{width:'8vh',height:2,background:sub,opacity:.5,margin:'1.2vh 0'}}/>
+        {priceRow(false)}{stock}
+      </div>)
+
+    // 🖼️ CLASSIC (default)
+    return wrap(
     <div style={{display:'flex',alignItems:'center',gap:'4vw',flexWrap:'wrap',justifyContent:'center'}}>
       <div style={{width:'34vh',height:'34vh',borderRadius:24,background:th.card,display:'flex',
         alignItems:'center',justifyContent:'center',overflow:'hidden',boxShadow:'0 14px 44px rgba(0,0,0,.25)'}}>
-        {s.p.image?<img src={s.p.image} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:'14vh'}}>🛍️</span>}
+        {img}
       </div>
       <div style={{textAlign:'left',maxWidth:'46vw'}}>
-        <div style={{fontSize:'2.2vh',color:sub,textTransform:'uppercase',letterSpacing:2}}>{s.p.category||'Product'}</div>
-        <div style={{fontSize:'5.5vh',fontWeight:900,lineHeight:1.15}}>{s.p.name}</div>
-        <div style={{marginTop:'1.5vh'}}>
-          {s.p.offer_price
-            ? <><span style={{fontSize:'6.5vh',fontWeight:900,color:'#22C55E'}}>₹{s.p.offer_price}</span>
-                <span style={{fontSize:'3vh',color:sub,textDecoration:'line-through',marginLeft:14}}>₹{s.p.price}</span>
-                <span style={{marginLeft:14,background:'#FF2E7E',color:'#fff',borderRadius:10,padding:'0.6vh 1.4vh',fontSize:'2.4vh',fontWeight:800}}>OFFER</span></>
-            : <span style={{fontSize:'6.5vh',fontWeight:900,...gradText}}>{s.p.price?('₹'+s.p.price):''}</span>}
-          {s.p.unit&&<span style={{fontSize:'2.4vh',color:sub,marginLeft:10}}>/ {s.p.unit}</span>}
-        </div>
-        <div style={{marginTop:'1vh',fontSize:'2.4vh',color:s.p.in_stock===false?'#ef4444':'#22C55E',fontWeight:700}}>
-          {s.p.in_stock===false?'Out of Stock':'✔ In Stock'}</div>
+        <div style={{fontSize:'2.2vh',color:sub,textTransform:'uppercase',letterSpacing:2}}>{p.category||'Product'}</div>
+        <div style={{fontSize:'5.5vh',fontWeight:900,lineHeight:1.15}}>{p.name}</div>
+        {priceRow(true)}{stock}
       </div>
     </div>)
+  }
 
   if(s.type==='qr_pay') return wrap(<>
     <div style={{fontSize:'5.5vh',fontWeight:900,...gradText}}>💳 Scan & Pay</div>
@@ -3002,6 +3067,11 @@ const LOOP_OPTS=[['none','Illa (stable)'],['float','🪁 Float — methuva midha
 const TRANS_CLS={fade:'tvslide',slide:'tvslideL',slideup:'tvup',zoom:'tvzoom',zoomout:'tvzo',
   flip:'tvflip',rotate:'tvrot',bounce:'tvbounce',blur:'tvblur',pop:'tvpop',swing:'tvswing'}
 const LOOP_CLS={float:'tvfx-float',pulse:'tvfx-pulse',blink:'tvfx-blink'}
+const TEMPLATES=[
+  ['classic','🖼️','Classic','Photo pakkathula details',{}],
+  ['popcard','🃏','Pop Card','Color card mela product pop aagum',{theme:'light',transition:'pop',loop_fx:'float'}],
+  ['bigtext','🅰️','Big Text','Product name perusa back-la style-a',{theme:'dark',transition:'slide',loop_fx:'pulse'}],
+  ['gallery','🏛️','Gallery','Clean premium look (jewellery/boutique)',{theme:'minimal',transition:'fade',loop_fx:'none'}]]
 const PV_THEMES={
   dark:{bg:'#0e0b1a',ink:'#fff',sub:'#b9b3d0'}, light:{bg:'#f7f4fb',ink:'#141225',sub:'#5a5578'},
   minimal:{bg:'#fff',ink:'#111',sub:'#777'},
@@ -3135,18 +3205,48 @@ function TvManage(){
             </select></div>
         </div>
 
+        <label className="lbl" style={{marginTop:12}}>🎨 Design Templates — onnu thattunga, preview paathu use pannunga</label>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {TEMPLATES.map(([id,ic,nm,desc,defs])=>(
+            <div key={id} onClick={()=>save({settings:{...settings,template:id,...defs}},'🎨 '+nm+' template set!')}
+              style={{border:(settings.template||'classic')===id?'2px solid var(--pink,#FF2E7E)':'1px solid var(--line)',
+                borderRadius:12,padding:'10px 12px',cursor:'pointer',background:(settings.template||'classic')===id?'#fff5f9':'#fff'}}>
+              <div style={{fontSize:22}}>{ic}</div>
+              <b style={{fontSize:13}}>{nm}</b>
+              <div className="muted" style={{fontSize:11}}>{desc}</div>
+            </div>))}
+        </div>
+
         <label className="lbl" style={{marginTop:12}}>👀 Live Preview — TV-la ipdi thaan varum</label>
         <div style={{borderRadius:14,overflow:'hidden',border:'1px solid var(--line)',position:'relative',
           background:pvTh.bg,color:pvTh.ink,aspectRatio:'16/9',display:'flex',alignItems:'center',
           justifyContent:'center',textAlign:'center'}} className={pvTh.animBg?'tvbganim':''}>
           <div key={pvKey} className={pvAnim} style={{width:'100%'}}>
-            <div className={pvLoop} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
-              <div style={{fontSize:44}}>🛍️</div>
-              <div style={{fontSize:18,fontWeight:900}}>Sample Product</div>
-              <div><span style={{fontSize:22,fontWeight:900,color:'#22C55E'}}>₹79</span>
-                <span style={{fontSize:13,color:pvTh.sub,textDecoration:'line-through',marginLeft:8}}>₹99</span>
-                <span style={{marginLeft:8,background:'#FF2E7E',color:'#fff',borderRadius:6,padding:'2px 8px',fontSize:11,fontWeight:800}}>OFFER</span></div>
-              <div style={{fontSize:11,color:pvTh.sub}}>{(tv&&tv.name)||'Unga kadai'} · Powered by NammaOor</div>
+            <div className={pvLoop} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              {(settings.template==='popcard') ? (
+                <div style={{position:'relative',width:110,height:120}}>
+                  <div style={{position:'absolute',bottom:0,left:8,right:8,height:86,borderRadius:14,
+                    background:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'}}/>
+                  <div style={{position:'absolute',bottom:18,left:0,right:0,margin:'auto',width:84,height:84,
+                    borderRadius:12,background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',
+                    transform:'rotate(-6deg)',fontSize:38,boxShadow:'0 8px 20px rgba(0,0,0,.3)'}}>🛍️</div>
+                </div>
+              ) : (settings.template==='bigtext') ? (
+                <div style={{position:'relative',textAlign:'center'}}>
+                  <div style={{fontSize:34,fontWeight:900,textTransform:'uppercase',opacity:.16,lineHeight:.9}}>SAMPLE</div>
+                  <div style={{fontSize:38,marginTop:-18}}>🛍️</div>
+                </div>
+              ) : (settings.template==='gallery') ? (
+                <>
+                  <div style={{fontSize:9,letterSpacing:4,textTransform:'uppercase',color:pvTh.sub}}>— Our Collection —</div>
+                  <div style={{background:'#fff',padding:8,borderRadius:4,boxShadow:'0 10px 24px rgba(0,0,0,.2)',fontSize:34}}>🛍️</div>
+                </>
+              ) : <div style={{fontSize:44}}>🛍️</div>}
+              <div style={{fontSize:16,fontWeight:900}}>Sample Product</div>
+              <div><span style={{fontSize:20,fontWeight:900,color:'#22C55E'}}>₹79</span>
+                <span style={{fontSize:12,color:pvTh.sub,textDecoration:'line-through',marginLeft:8}}>₹99</span>
+                <span style={{marginLeft:8,background:'#FF2E7E',color:'#fff',borderRadius:6,padding:'2px 8px',fontSize:10,fontWeight:800}}>OFFER</span></div>
+              <div style={{fontSize:10,color:pvTh.sub}}>{(tv&&tv.name)||'Unga kadai'} · Powered by NammaOor</div>
             </div>
           </div>
           <button className="btn sm ghost" style={{position:'absolute',right:8,bottom:8,background:'rgba(255,255,255,.85)'}}
