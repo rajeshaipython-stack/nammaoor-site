@@ -366,6 +366,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -969,7 +971,6 @@ function Header(){
       </div>
       <div className="nav">
         <Link to="/search">Search</Link>
-        <Link to="/cart">🛒 Cart</Link>
         {role
           ? <>
               <Link to={`/app/${role==='super_admin'?'admin':role==='employee'?'employee':'owner'}`}>Dashboard</Link>
@@ -1394,6 +1395,29 @@ function Register(){
     if(f.owner_password!==pw2){ setMsg('Password rendum match aagala'); return }
     const id=await saveDraft(); if(!id) return
     for(const p of products){ try{ await api.post(`/shops/${id}/product`,{name:p.name,price:p.price?+p.price:null}) }catch{} }
+    // Preferred: Rs.1 today + Rs.99/month UPI Autopay
+    try{
+      const sub=await api.post('/payments/subscription/create',{shop_id:id})
+      if(sub.subscription_id && window.Razorpay){
+        const rzp=new window.Razorpay({
+          key:sub.key_id, subscription_id:sub.subscription_id,
+          name:'NammaOor', description:'Registration ₹1 · then ₹99/month autopay',
+          prefill:{contact:f.mobile, name:f.owner_name}, theme:{color:'#FF2E7E'},
+          handler: async (resp)=>{
+            try{ const d=await api.post('/payments/subscription/verify',{
+                   razorpay_payment_id:resp.razorpay_payment_id,
+                   razorpay_subscription_id:resp.razorpay_subscription_id,
+                   razorpay_signature:resp.razorpay_signature})
+              setResult(d); setStep('linkqr'); setMsg('✅ Autopay set aayiduchu! QR sticker scan pannunga.') }
+            catch(e){ setMsg('Verify failed: '+e.message) }
+          }
+        })
+        rzp.on('payment.failed', ()=>setMsg('Payment failed. Marupadi try pannunga.'))
+        rzp.open(); setMsg('UPI Autopay window open aaguthu... (innaiku ₹1 mattum)')
+        return
+      }
+    }catch(e){ console.log('autopay unavailable, falling back:', e.message) }
+    // Fallback: one-time Rs.299 (if autopay not available on gateway)
     const pay=await api.post('/payments/create',{shop_id:id,type:'registration'})
     if(pay.gateway==='razorpay' && window.Razorpay){
       const rzp=new window.Razorpay({
@@ -1599,13 +1623,13 @@ function Register(){
         <div className="row" style={{marginTop:10}}>
           <button className="btn ghost" onClick={saveDraft}>Save Draft</button>
           <button className="btn" onClick={payNow}
-            disabled={!f.mobile||!f.shop_name||(f.owner_password||'').length<6}>Register &amp; Pay Rs.299</button>
+            disabled={!f.mobile||!f.shop_name||(f.owner_password||'').length<6}>Register — ₹1 Today · ₹99/month Autopay</button>
         </div>
         <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
       </div>}
 
       {step==='linkqr' && <div className="card">
-        <span className="pill">Payment Success - Rs.299</span>
+        <span className="pill">✅ Payment Success — Autopay Active</span>
         <h3 style={{marginTop:8}}>QR Sticker Scan pannunga</h3>
         <p className="muted">Admin kodutha QR sticker-ai scan pannunga - athu inda kadaikku nirandara QR aagum.</p>
         {scanning && <video ref={videoRef} style={{width:'100%',borderRadius:12,marginTop:8}} muted playsInline></video>}
@@ -3415,6 +3439,22 @@ function OwnerDashboard(){
   const addOffer=async()=>{ await api.post('/me/shop/offers',offer); setOffer({title:'',detail:''}); load() }
   const delOffer=async(id)=>{ await api.del('/me/shop/offers/'+id); load() }
   const renew=async()=>{ const r=await api.post('/me/shop/renew'); if(r.gateway==='razorpay'&&window.Razorpay){ new window.Razorpay({key:r.key_id,amount:r.amount*100,currency:'INR',name:'NammaOor',description:'Renewal Rs.299',order_id:r.order_id,theme:{color:'#FF2E7E'},handler:async(x)=>{await api.post('/payments/verify',{razorpay_order_id:x.razorpay_order_id,razorpay_payment_id:x.razorpay_payment_id,razorpay_signature:x.razorpay_signature});setMsg('Renewed!');load()}}).open() } else { await api.post(`/payments/dev/mark-paid/${r.txn_id}`); setMsg('Renewed 3 months'); load() } }
+  const startAutopay=async()=>{ try{
+      const r=await api.post('/payments/subscription/start')
+      if(r.subscription_id && window.Razorpay){
+        new window.Razorpay({key:r.key_id, subscription_id:r.subscription_id,
+          name:'NammaOor', description:'₹99/month UPI Autopay', theme:{color:'#FF2E7E'},
+          handler:async(x)=>{ try{ await api.post('/payments/subscription/verify',{
+              razorpay_payment_id:x.razorpay_payment_id,
+              razorpay_subscription_id:x.razorpay_subscription_id,
+              razorpay_signature:x.razorpay_signature})
+            setMsg('✅ Autopay active! Ini month-a-month automatic.'); load() }
+            catch(e){ setMsg('Verify failed: '+e.message) } }}).open()
+      } else setMsg('Autopay available illa — ₹299 renew use pannunga')
+    }catch(e){ setMsg('Autopay: '+e.message+' — ₹299 renew use pannunga') } }
+  const editShopName=async()=>{ const v=prompt('Shop Name', s.shop_name||''); if(v==null)return
+    const nm=v.trim(); if(nm.length<3){ setMsg('❌ Shop name romba chinnadhu'); return }
+    await save({shop_name:nm},'✅ Shop name updated') }
   const daysLeft = s.expires_at ? Math.max(0, Math.ceil((new Date(s.expires_at)-new Date())/86400000)) : 0
   const expired = (s.status==='expired') || (s.expires_at && new Date(s.expires_at) < new Date())
   const pub=`${SITE}/#/shop/${(s.shop_code||'').replace('-','')}`
@@ -3425,16 +3465,18 @@ function OwnerDashboard(){
     <div className="card" style={{textAlign:'center',border:'2px solid #ffd0d0'}}>
       <div style={{fontSize:52,margin:'6px 0'}}>🔒</div>
       <h2 className="brand">Plan Mudinjiduchu</h2>
-      <p style={{fontWeight:700,color:'#c0392b',marginTop:8}}>Ungaloda 3-month membership {s.expires_at?('('+new Date(s.expires_at).toDateString()+') '):''}mudinjiduchu.</p>
-      <p className="muted" style={{marginTop:8}}>Dashboard-um ungaloda shop page-um marupadi active aaga <b>₹299 renew</b> pannunga. Payment aana udaney ellam thirandhu, innoru 3 months add aagum.</p>
-      <button className="btn" style={{marginTop:16,padding:'15px 24px',fontSize:17,width:'100%'}} onClick={renew}>💳 Renew Rs.299 · 3 Months</button>
+      <p style={{fontWeight:700,color:'#c0392b',marginTop:8}}>Ungaloda membership {s.expires_at?('('+new Date(s.expires_at).toDateString()+') '):''}mudinjiduchu.</p>
+      <p className="muted" style={{marginTop:8}}>Best option: <b>₹99/month UPI Autopay</b> — innaiku chinna authorization amount mattum, appuram every month automatic. Marakka vendam, lock aagaadhu!</p>
+      <button className="btn" style={{marginTop:14,padding:'15px 24px',fontSize:17,width:'100%'}} onClick={startAutopay}>⚡ Start ₹99/month Autopay</button>
+      <button className="btn ghost" style={{marginTop:10,width:'100%'}} onClick={renew}>💳 One-time ₹299 · 3 Months</button>
       <p style={{color:'var(--teal)',marginTop:10}}>{msg}</p>
       <p className="muted" style={{marginTop:10,fontSize:12}}>Renewal panna mudiyalaya? Support-a contact pannunga.</p>
     </div>
   </div></>)
 
   return (<><Header/><div className="container">
-    <h2 className="brand">{s.shop_name}</h2>
+    <h2 className="brand">{s.shop_name} <button className="btn sm ghost" title="Edit shop name"
+      style={{verticalAlign:'middle',marginLeft:6}} onClick={editShopName}>✏️</button></h2>
     <p className="muted">{s.shop_code} - <span className="pill">{s.status}</span> {s.bio&&<span> - {s.bio}</span>}</p>
     <div className="row" style={{marginTop:12}}>
       <div className="kpi"><b>{an.qr_scans||0}</b><span>QR Scans</span></div>
@@ -3451,10 +3493,15 @@ function OwnerDashboard(){
           onClick={()=>downloadFile('/me/shop/poster','nammaoor_poster.pdf')}>
           🖨 Download Poster (print & stick)</button></div>
       <div className="card"><h3>Membership</h3>
-        <p className="muted">Plan: <b>NammaOor Basic (3 months)</b></p>
-        <p className="muted">Renewal date: <b>{s.expires_at?new Date(s.expires_at).toDateString():'-'}</b></p>
+        <p className="muted">Plan: <b>{s.subscription_id?'₹99/month UPI Autopay ⚡':'NammaOor Basic'}</b></p>
+        <p className="muted">{s.subscription_id?'Next charge':'Renewal date'}: <b>{s.expires_at?new Date(s.expires_at).toDateString():'-'}</b></p>
         <p style={{fontWeight:800,fontSize:18,color:daysLeft<15?'#c0392b':'#008C78'}}>{daysLeft} days remaining</p>
-        <button className="btn" onClick={renew}>Renew Rs.299 / 3 months</button>
+        {s.subscription_id
+          ? <p className="muted" style={{fontSize:12}}>Autopay ON — every month ₹99 automatic-a deduct aagum. Onnum panna vendam. ✅</p>
+          : <div className="row" style={{gap:6}}>
+              <button className="btn" onClick={startAutopay}>⚡ ₹99/month Autopay</button>
+              <button className="btn ghost" onClick={renew}>₹299 / 3 months</button>
+            </div>}
         <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p>
       </div>
     </div>
