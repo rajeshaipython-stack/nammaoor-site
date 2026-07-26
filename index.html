@@ -362,6 +362,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -663,6 +665,16 @@ table.spec td{padding:7px 9px;font-size:14px}
 /* ===== TV Display slideshow ===== */
 .tvslide{animation:tvIn .8s cubic-bezier(.2,.9,.3,1) both}
 @keyframes tvIn{from{opacity:0;transform:translateY(4vh) scale(.97)}to{opacity:1;transform:none}}
+.tvslideL{animation:tvInL .7s cubic-bezier(.2,.9,.3,1) both}
+@keyframes tvInL{from{opacity:0;transform:translateX(9vw)}to{opacity:1;transform:none}}
+.tvzoom{animation:tvInZ .7s cubic-bezier(.2,.9,.3,1) both}
+@keyframes tvInZ{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.tvbganim{background-size:320% 320%!important;animation:tvBgMove 14s ease infinite}
+@keyframes tvBgMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.tvticker{position:fixed;left:0;right:0;bottom:0;z-index:70;background:rgba(0,0,0,.62);color:#fff;
+  font-size:2.7vh;font-weight:600;padding:1vh 0;overflow:hidden;white-space:nowrap}
+.tvticker span{display:inline-block;padding-left:100%;animation:tvTick 22s linear infinite}
+@keyframes tvTick{to{transform:translateX(-100%)}}
 
 /* ===== Mini Browser (floating popup) ===== */
 .mbfab{position:fixed;right:14px;bottom:76px;z-index:9000;display:flex;flex-direction:column;align-items:center;gap:1px;
@@ -2660,17 +2672,30 @@ function Billing(){
 
 // Fullscreen digital-signage player. TV opens nammaoor.shop/#/tv
 // -> shows 6-digit pair code -> owner pairs from dashboard -> slideshow.
+
+const THEMES={
+  dark:    {bg:'#0e0b1a', ink:'#fff',     sub:'#b9b3d0', card:'#1d1733', dark:true},
+  light:   {bg:'#f7f4fb', ink:'#141225',  sub:'#5a5578', card:'#fff',    dark:false},
+  minimal: {bg:'#ffffff', ink:'#111111',  sub:'#777777', card:'#f4f4f4', dark:false},
+  luxury:  {bg:'linear-gradient(135deg,#0b0b0b,#221a06,#0b0b0b)', ink:'#f5e6b8', sub:'#c9b36a', card:'#171307', dark:true},
+  festival:{bg:'linear-gradient(-45deg,#FF6A00,#FF2E7E,#7A2FF7,#00C2A8)', ink:'#fff', sub:'#ffe9f4', card:'rgba(0,0,0,.28)', dark:true, animBg:true},
+}
+const TRANS={fade:'tvslide', slide:'tvslideL', zoom:'tvzoom'}
+
 function TvDisplay(){
   const [code,setCode]=useState(()=>{ try{return localStorage.getItem('nm_tv_code')||''}catch(e){return ''} })
   const [st,setSt]=useState(null)      // server state
   const [idx,setIdx]=useState(0)       // flattened slide index
   const [anim,setAnim]=useState(true)
+  const [now,setNow]=useState(new Date())
   const timer=useRef(null)
 
   // get / create pair code
   useEffect(()=>{ if(!code){
     api.post('/tv/new',{}).then(r=>{ setCode(r.pair_code); try{localStorage.setItem('nm_tv_code',r.pair_code)}catch(e){} }).catch(()=>{})
   }},[])
+  // clock tick
+  useEffect(()=>{ const t=setInterval(()=>setNow(new Date()),1000); return ()=>clearInterval(t) },[])
   // poll state: 5s until paired, 30s after
   useEffect(()=>{ if(!code) return
     let stop=false
@@ -2680,41 +2705,62 @@ function TvDisplay(){
     tick(); return ()=>{stop=true}
   },[code, st&&st.paired])
 
+  const settings=(st&&st.settings)||{}
+  const th=THEMES[settings.theme]||THEMES.dark
+  const dark=th.dark
+  const animCls=anim?(TRANS[settings.transition]||'tvslide'):''
+
+  // schedule filter: slide visible only in its hour window (empty = always)
+  const hr=now.getHours()
+  const inTime=(sl)=>{ const f=sl.from, t=sl.to
+    if(f==null||t==null||f===''||t==='') return true
+    const a=+f, b=+t; return a<=b ? (hr>=a&&hr<b) : (hr>=a||hr<b) }
+
   // build flattened slide list (products expand into one slide per product)
   const flat=[]
   if(st&&st.paired){
     for(const sl of (st.slides||[])){
+      if(!inTime(sl)) continue
       if(sl.type==='products'){ (st.products||[]).forEach(p=>flat.push({...sl,type:'product',p})) }
       else flat.push(sl)
     }
   }
-  const dur=((st&&st.settings&&st.settings.duration)||8)*1000
+  const dur=((settings.duration)||8)*1000
   useEffect(()=>{ if(!st||!st.paired||!st.playing||flat.length===0) return
     clearTimeout(timer.current)
     timer.current=setTimeout(()=>{ setAnim(false); setTimeout(()=>{ setIdx(i=>(i+1)%flat.length); setAnim(true) },60) }, dur)
     return ()=>clearTimeout(timer.current)
   },[idx, st, flat.length])
 
-  const theme=(st&&st.settings&&st.settings.theme)||'dark'
-  const dark=theme!=='light'
-  const bg=dark?'#0e0b1a':'#f7f4fb'; const ink=dark?'#fff':'#141225'; const sub=dark?'#b9b3d0':'#5a5578'
+  const bg=th.bg, ink=th.ink, sub=th.sub
   const shop=st&&st.shop
   const shopUrl=shop?`${SITE}/shop/${(shop.shop_code||'').replace('-','')}`:''
   const reviewUrl=shop&&shop.qr_token?`${SITE}/s/${shop.qr_token}`:shopUrl
   const upiUri=shop&&shop.upi_id?`upi://pay?pa=${encodeURIComponent(shop.upi_id)}&pn=${encodeURIComponent(shop.shop_name||'Shop')}&cu=INR`:''
+  const hasTicker=!!(settings.ticker&&String(settings.ticker).trim())
+
+  const Overlay=()=>(<>
+    {settings.clock!==false && <div style={{position:'fixed',top:'2.2vh',right:'2.6vw',zIndex:60,
+      fontSize:'3vh',fontWeight:800,color:ink,background:dark?'rgba(0,0,0,.35)':'rgba(255,255,255,.6)',
+      padding:'.6vh 1.4vw',borderRadius:12,fontVariantNumeric:'tabular-nums'}}>
+      {now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>}
+    {hasTicker && <div className="tvticker"><span>{settings.ticker} &nbsp;•&nbsp; {settings.ticker} &nbsp;•&nbsp; {settings.ticker}</span></div>}
+  </>)
 
   const Wrap=({children})=>(
-    <div style={{position:'fixed',inset:0,background:bg,color:ink,display:'flex',flexDirection:'column',
+    <div className={th.animBg?'tvbganim':''} style={{position:'fixed',inset:0,background:bg,color:ink,display:'flex',flexDirection:'column',
       alignItems:'center',justifyContent:'center',textAlign:'center',padding:'4vh 5vw',overflow:'hidden',
       fontFamily:"'Poppins',sans-serif"}}>
-      <div className={anim?'tvslide':''} style={{width:'100%',maxWidth:1100,display:'flex',flexDirection:'column',alignItems:'center',gap:'2.2vh'}}>
+      <div className={animCls} style={{width:'100%',maxWidth:1100,display:'flex',flexDirection:'column',alignItems:'center',gap:'2.2vh'}}>
         {children}
       </div>
-      {shop && <div style={{position:'fixed',bottom:14,left:0,right:0,textAlign:'center',fontSize:'1.6vh',color:sub}}>
+      {shop && <div style={{position:'fixed',bottom:hasTicker?'6vh':14,left:0,right:0,textAlign:'center',fontSize:'1.6vh',color:sub}}>
         {shop.shop_name} · Powered by NammaOor</div>}
+      <Overlay/>
     </div>)
 
-  if(!code||!st) return <Wrap><div style={{fontSize:'3vh'}}>⏳ NammaOor TV loading…</div></Wrap>
+  if(!code||!st) return <div style={{position:'fixed',inset:0,background:'#0e0b1a',color:'#fff',display:'flex',
+    alignItems:'center',justifyContent:'center',fontSize:'3vh'}}>⏳ NammaOor TV loading…</div>
 
   // ---------- PAIRING SCREEN ----------
   if(!st.paired) return (
@@ -2736,7 +2782,9 @@ function TvDisplay(){
 
   const s=flat[Math.min(idx,flat.length-1)]
   const grad='linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'
-  const gradText={background:grad,WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}
+  const gradText=th.animBg||settings.theme==='luxury'
+    ? {color:ink}
+    : {background:grad,WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}
 
   // ---------- SLIDES ----------
   if(s.type==='welcome') return <Wrap>
@@ -2748,7 +2796,7 @@ function TvDisplay(){
 
   if(s.type==='product'&&s.p) return <Wrap>
     <div style={{display:'flex',alignItems:'center',gap:'4vw',flexWrap:'wrap',justifyContent:'center'}}>
-      <div style={{width:'34vh',height:'34vh',borderRadius:24,background:dark?'#1d1733':'#fff',display:'flex',
+      <div style={{width:'34vh',height:'34vh',borderRadius:24,background:th.card,display:'flex',
         alignItems:'center',justifyContent:'center',overflow:'hidden',boxShadow:'0 14px 44px rgba(0,0,0,.25)'}}>
         {s.p.image?<img src={s.p.image} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:'14vh'}}>🛍️</span>}
       </div>
@@ -2801,7 +2849,15 @@ function TvDisplay(){
 
   if(s.type==='image'&&s.image) return (
     <div style={{position:'fixed',inset:0,background:'#000',display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <img src={s.image} className={anim?'tvslide':''} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>
+      <img src={s.image} className={animCls} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>
+      <Overlay/>
+    </div>)
+
+  if(s.type==='video'&&s.video) return (
+    <div style={{position:'fixed',inset:0,background:'#000',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <video key={s.id||s.video} src={s.video} autoPlay muted loop playsInline
+        style={{maxWidth:'100%',maxHeight:'100%'}}/>
+      <Overlay/>
     </div>)
 
   // custom text slide fallback
@@ -2817,13 +2873,19 @@ function TvDisplay(){
 const TYPE_META={
   welcome:['👋','Welcome Screen'], products:['🛍️','Products (auto-sync)'],
   qr_pay:['💳','Scan & Pay QR'], review:['⭐','Review My Shop'],
-  info:['🏪','Shop Information'], image:['🖼️','Poster / Ad Image'], text:['📝','Custom Text'],
+  info:['🏪','Shop Information'], image:['🖼️','Poster / Ad Image'],
+  video:['🎬','Video (link)'], text:['📝','Custom Text'],
 }
+const THEME_OPTS=[['dark','🌙 Dark (premium)'],['light','☀️ Light'],['minimal','⬜ Minimal (clean white)'],
+  ['luxury','👑 Luxury (gold & black)'],['festival','🎉 Festival (colorful moving)']]
+const TRANS_OPTS=[['fade','✨ Fade'],['slide','➡️ Slide'],['zoom','🔍 Zoom']]
 
 function TvManage(){
   const [tv,setTv]=useState(null); const [code,setCode]=useState(''); const [msg,setMsg]=useState('')
-  const [nt,setNt]=useState({type:'text',title:'',text:''})
-  const load=()=>api.get('/me/shop/tv').then(setTv).catch(e=>setMsg(e.message))
+  const [nt,setNt]=useState({type:'text',title:'',text:'',video:''})
+  const [ticker,setTicker]=useState(''); const [tickerInit,setTickerInit]=useState(false)
+  const load=()=>api.get('/me/shop/tv').then(r=>{ setTv(r)
+    if(!tickerInit&&r&&r.settings){ setTicker(r.settings.ticker||''); setTickerInit(true) } }).catch(e=>setMsg(e.message))
   useEffect(()=>{ load(); const t=setInterval(load,30000); return ()=>clearInterval(t) },[])
 
   const pair=async()=>{ try{ const r=await api.post('/me/shop/tv/pair',{code:code.trim()})
@@ -2837,11 +2899,23 @@ function TvManage(){
   const toggleHide=(i)=>{ const sl=slides.map((s,ix)=>ix===i?{...s,hidden:!s.hidden}:s); setSlides(sl) }
   const del=(i)=>{ if(!confirm('Slide delete pannalaama?'))return; setSlides(slides.filter((_,ix)=>ix!==i)) }
   const dup=(i)=>{ const sl=[...slides]; sl.splice(i+1,0,{...slides[i],id:Date.now()}); setSlides(sl) }
+  const sched=(i)=>{ const cur=slides[i]
+    const v=prompt('Intha slide entha time kaattanum? (24hr, e.g. 9-18 = kaalai 9 to maalai 6).\nEmpty = full time.',
+      (cur.from!=null&&cur.from!=='')?(cur.from+'-'+cur.to):'')
+    if(v===null)return
+    if(!v.trim()){ setSlides(slides.map((s,ix)=>ix===i?{...s,from:null,to:null}:s),'✅ Full time show aagum'); return }
+    const m=v.trim().match(/^(\d{1,2})\s*-\s*(\d{1,2})$/)
+    if(!m||+m[1]>23||+m[2]>24){ alert('Format: 9-18 (0-24 hours)'); return }
+    setSlides(slides.map((s,ix)=>ix===i?{...s,from:+m[1],to:+m[2]}:s),'⏰ Time set: '+m[1]+':00 - '+m[2]+':00') }
   const addSlide=async()=>{
     const s={id:Date.now(),type:nt.type,title:nt.title||TYPE_META[nt.type][1],text:nt.text,hidden:false}
     if(nt.type==='image'){ const img=await pickImage(1400); if(!img){setMsg('Image select pannala');return}; s.image=img }
-    setSlides([...slides,s],'✅ Slide add aayiduchu'); setNt({type:'text',title:'',text:''}) }
+    if(nt.type==='video'){ const u=(nt.video||'').trim()
+      if(!/^https?:\/\/.+\.(mp4|webm|ogg)(\?.*)?$/i.test(u)){ alert('Direct video link venum (.mp4 / .webm). YouTube link work aagathu.'); return }
+      s.video=u }
+    setSlides([...slides,s],'✅ Slide add aayiduchu'); setNt({type:'text',title:'',text:'',video:''}) }
   const settings=(tv&&tv.settings)||{duration:8,theme:'dark'}
+  const hiddenCt=slides.filter(s=>s.hidden).length
 
   return (<><Header/><div className="container" style={{maxWidth:760}}>
     <h2 className="brand">📺 TV Display</h2>
@@ -2879,31 +2953,49 @@ function TvManage(){
             <button className="btn sm ghost" onClick={async()=>{ if(confirm('TV disconnect pannalaama?')){ await api.del('/me/shop/tv'); setTv({paired:false}) } }}>Unpair</button>
           </div>
         </div>
-        <div className="grid2" style={{marginTop:10}}>
+        <p className="muted" style={{fontSize:12,marginTop:8}}>
+          🎞 {slides.length} slides{hiddenCt?` · 🙈 ${hiddenCt} hidden`:''} · ⏱ {settings.duration||8}s / slide</p>
+        <div className="grid2" style={{marginTop:6}}>
           <div><label className="lbl">Slide Duration (sec)</label>
             <select value={settings.duration} onChange={e=>save({settings:{...settings,duration:+e.target.value}})}>
               {[5,8,10,15,20,30].map(n=><option key={n} value={n}>{n} sec</option>)}
             </select></div>
           <div><label className="lbl">Theme</label>
-            <select value={settings.theme} onChange={e=>save({settings:{...settings,theme:e.target.value}})}>
-              <option value="dark">Dark (premium)</option><option value="light">Light</option>
+            <select value={settings.theme} onChange={e=>save({settings:{...settings,theme:e.target.value}},'🎨 Theme changed')}>
+              {THEME_OPTS.map(([v,l])=><option key={v} value={v}>{l}</option>)}
             </select></div>
+          <div><label className="lbl">Slide Animation</label>
+            <select value={settings.transition||'fade'} onChange={e=>save({settings:{...settings,transition:e.target.value}},'✨ Animation changed')}>
+              {TRANS_OPTS.map(([v,l])=><option key={v} value={v}>{l}</option>)}
+            </select></div>
+          <div><label className="lbl">Clock (TV top corner)</label>
+            <select value={settings.clock===false?'off':'on'} onChange={e=>save({settings:{...settings,clock:e.target.value==='on'}})}>
+              <option value="on">🕐 Show</option><option value="off">Hide</option>
+            </select></div>
+        </div>
+        <label className="lbl" style={{marginTop:10}}>📰 Scrolling News Line (TV bottom-la odum)</label>
+        <div className="row" style={{gap:8}}>
+          <input className="input" style={{flex:1,margin:0}} placeholder="e.g. Deepavali Offer! 20% OFF ella items-um · Free home delivery 2km"
+            value={ticker} onChange={e=>setTicker(e.target.value)}/>
+          <button className="btn sm" onClick={()=>save({settings:{...settings,ticker:ticker.trim()}},ticker.trim()?'📰 News line set!':'News line removed')}>Save</button>
         </div>
       </div>
 
       <div className="card">
         <h3>🎞️ Slides ({slides.length})</h3>
-        <p className="muted" style={{fontSize:12,marginTop:2}}>Products slide — kadai products auto-sync (price/photo maathina TV-la thaana update aagum).</p>
+        <p className="muted" style={{fontSize:12,marginTop:2}}>Products slide — kadai products auto-sync. ⏰ = slide-ku time set pannalaam (e.g. lunch offer 12-3 mattum).</p>
         {slides.map((s,i)=>{ const m=TYPE_META[s.type]||['📄',s.type]; return (
-          <div key={s.id||i} style={{display:'flex',alignItems:'center',gap:8,borderBottom:'1px solid var(--line)',
-            padding:'9px 0',opacity:s.hidden?.45:1}}>
+          <div key={s.id||i} style={{display:'flex',alignItems:'center',gap:6,borderBottom:'1px solid var(--line)',
+            padding:'9px 0',opacity:s.hidden?.45:1,flexWrap:'wrap'}}>
             <span style={{fontSize:22}}>{m[0]}</span>
-            <div style={{flex:1,minWidth:0}}>
+            <div style={{flex:1,minWidth:120}}>
               <b style={{fontSize:14}}>{s.title||m[1]}</b>
-              <div className="muted" style={{fontSize:11.5}}>{m[1]}{s.hidden?' · hidden':''}</div>
+              <div className="muted" style={{fontSize:11.5}}>{m[1]}{s.hidden?' · hidden':''}
+                {(s.from!=null&&s.from!=='')?` · ⏰ ${s.from}:00-${s.to}:00`:''}</div>
             </div>
             <button className="btn sm ghost" onClick={()=>move(i,-1)} disabled={i===0}>↑</button>
             <button className="btn sm ghost" onClick={()=>move(i,1)} disabled={i===slides.length-1}>↓</button>
+            <button className="btn sm ghost" title="Time schedule" onClick={()=>sched(i)}>⏰</button>
             <button className="btn sm ghost" title="Hide/Show" onClick={()=>toggleHide(i)}>{s.hidden?'👁':'🙈'}</button>
             <button className="btn sm ghost" title="Duplicate" onClick={()=>dup(i)}>⧉</button>
             <button className="btn sm ghost" style={{color:'#c0392b'}} onClick={()=>del(i)}>✕</button>
@@ -2918,6 +3010,9 @@ function TvManage(){
         </div>
         {(nt.type==='text'||nt.type==='welcome')&&
           <textarea rows="2" placeholder="Text / message (optional)" value={nt.text} onChange={e=>setNt({...nt,text:e.target.value})}></textarea>}
+        {nt.type==='video'&&<>
+          <input className="input" placeholder="Video link (https://....mp4)" value={nt.video} onChange={e=>setNt({...nt,video:e.target.value})}/>
+          <p className="muted" style={{fontSize:11.5,marginTop:2}}>Direct .mp4 link mattum work aagum (YouTube link aagathu). Video TV-la mute-la loop aagum.</p></>}
         <button className="btn sm" style={{marginTop:6}} onClick={addSlide}>
           {nt.type==='image'?'📷 Poster upload panni add':'+ Add Slide'}</button>
       </div>
