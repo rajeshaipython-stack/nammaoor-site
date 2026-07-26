@@ -374,6 +374,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -2785,10 +2787,15 @@ function TvDisplay(){
   // ---------- AUDIO ENGINE (owner-uploaded music + voice announcements) ----------
   const audRef=useRef(null), annRef=useRef(null), fadeTimer=useRef(null), advRef=useRef(0)
   const [needTap,setNeedTap]=useState(false)
-  const music=settings.audio, annc=settings.announce
+  const [songIx,setSongIx]=useState(0)
+  const annc=settings.announce
+  // playlist: full songs play one-after-another, independent of slide changes
+  const playlist=(settings.playlist&&settings.playlist.length)?settings.playlist
+    :((settings.audio&&settings.audio.url)?[settings.audio]:[])
+  const curSong=playlist.length?playlist[songIx%playlist.length]:null
   const aVol=(settings.audio_vol==null?70:settings.audio_vol)/100
   const doFade=settings.audio_fade!==false
-  const wantAudio=!!(st&&st.paired&&st.playing&&music&&music.url&&!settings.audio_mute)
+  const wantAudio=!!(st&&st.paired&&st.playing&&curSong&&curSong.url&&!settings.audio_mute)
   const fadeTo=(el,target,ms)=>{ if(!el)return; clearInterval(fadeTimer.current)
     if(!doFade||ms<=0){ el.volume=Math.max(0,Math.min(1,target)); if(target===0)el.pause(); return }
     const step=(target-el.volume)/(ms/100)
@@ -2801,12 +2808,15 @@ function TvDisplay(){
   useEffect(()=>{
     if(!wantAudio){ if(audRef.current) fadeTo(audRef.current,0,doFade?1500:0); return }
     let a=audRef.current
-    if(!a||a._url!==music.url){ if(a)a.pause(); a=new Audio(music.url); a._url=music.url; audRef.current=a }
-    a.loop=settings.audio_loop!==false
+    if(!a||a._url!==curSong.url){ if(a)a.pause(); a=new Audio(curSong.url); a._url=curSong.url; audRef.current=a }
+    // single song: loop that song; playlist: advance to next full song when this one ENDS
+    a.loop=(playlist.length===1)&&settings.audio_loop!==false
+    a.onended=()=>{ if(playlist.length>1){
+      if(songIx+1<playlist.length||settings.audio_loop!==false) setSongIx(i=>(i+1)%playlist.length) } }
     if(a.paused){ a.volume=doFade?0:aVol
       a.play().then(()=>{ setNeedTap(false); fadeTo(a,aVol,doFade?2500:0) }).catch(()=>setNeedTap(true)) }
     else fadeTo(a,aVol,600)
-  },[wantAudio, music&&music.url, aVol, settings.audio_loop, settings.audio_fade])
+  },[wantAudio, curSong&&curSong.url, aVol, settings.audio_loop, settings.audio_fade, playlist.length])
   useEffect(()=>()=>{ if(audRef.current)audRef.current.pause(); if(annRef.current)annRef.current.pause()
     clearInterval(fadeTimer.current) },[])
   // voice announcement: every N slide-changes, duck music -> play voice -> restore
@@ -3139,10 +3149,13 @@ function TvManage(){
       setTv({...r,paired:true}); setMsg('✅ Audio upload aayiduchu — TV-la play aagum') }
     catch(e){ setMsg('❌ '+e.message) }
     setBusy('') }
-  const delAudio=async(kind)=>{ if(!confirm('Audio remove pannalaama?'))return
-    try{ const r=await api.del('/me/shop/tv/audio?kind='+kind); setTv({...r,paired:true}); setMsg('🗑 Audio removed') }
+  const delAudio=async(kind,index)=>{ if(!confirm('Remove pannalaama?'))return
+    try{ const r=await api.del('/me/shop/tv/audio?kind='+kind+(index!=null?('&index='+index):''))
+      setTv({...r,paired:true}); setMsg('🗑 Removed') }
     catch(e){ setMsg('❌ '+e.message) } }
-  const music=settings.audio, announce=settings.announce
+  const playlistM=(settings.playlist&&settings.playlist.length)?settings.playlist
+    :(settings.audio?[settings.audio]:[])
+  const announce=settings.announce
 
   return (<><Header/><div className="container" style={{maxWidth:760}}>
     <h2 className="brand">📺 TV Display</h2>
@@ -3302,25 +3315,33 @@ function TvManage(){
           Unga sontha audio-va mattum upload pannunga (MP3/WAV/AAC/M4A/OGG, max 12 MB).
           NammaOor engendhum paattu download pannaathu — neenga upload panradhu mattum play aagum.</p>
 
-        <h4 style={{margin:'10px 0 4px'}}>🎶 Background Music</h4>
-        {music ? <>
-          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-            <span style={{fontSize:20}}>🎵</span>
-            <b style={{fontSize:13,flex:1,minWidth:120,overflow:'hidden',textOverflow:'ellipsis'}}>{music.name}</b>
-            <button className="btn sm ghost" disabled={busy==='music'} onClick={()=>uploadAudio('music')}>🔁 Replace</button>
-            <button className="btn sm ghost" style={{color:'#c0392b'}} onClick={()=>delAudio('music')}>🗑 Delete</button>
-          </div>
-          <audio controls src={music.url} style={{width:'100%',marginTop:8,height:36}}/>
+        <h4 style={{margin:'10px 0 4px'}}>🎶 Background Music — Playlist ({playlistM.length}/10)</h4>
+        <p className="muted" style={{fontSize:11.5,marginTop:0}}>
+          Full song play aagum — slides maarinaalum paattu nikkaathu. Oru song mudinja adutha song thaana start.
+          Ellam mudinja first song-la irundhu repeat. 🔁</p>
+        {playlistM.length>0 ? <>
+          {playlistM.map((sg,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:8,borderBottom:'1px solid var(--line)',padding:'7px 0'}}>
+              <b style={{fontSize:13,width:20}}>{i+1}.</b>
+              <div style={{flex:1,minWidth:0}}>
+                <b style={{fontSize:12.5,display:'block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>🎵 {sg.name}</b>
+                <audio controls src={sg.url} style={{width:'100%',height:30,marginTop:3}}/>
+              </div>
+              <button className="btn sm ghost" style={{color:'#c0392b',fontSize:11}} onClick={()=>delAudio('music',i)}>✕</button>
+            </div>))}
+          {playlistM.length<10 &&
+            <button className="btn sm ghost" style={{marginTop:8}} disabled={busy==='music'} onClick={()=>uploadAudio('music')}>
+              {busy==='music'?'⏳ Uploading…':'➕ Add Song'}</button>}
           <div className="grid2" style={{marginTop:10}}>
             <div><label className="lbl">🔊 Volume ({settings.audio_vol==null?70:settings.audio_vol}%)</label>
               <input type="range" min="0" max="100" style={{width:'100%'}}
                 defaultValue={settings.audio_vol==null?70:settings.audio_vol}
                 onMouseUp={e=>save({settings:{...settings,audio_vol:+e.target.value}},'🔊 Volume set')}
                 onTouchEnd={e=>save({settings:{...settings,audio_vol:+e.target.value}},'🔊 Volume set')}/></div>
-            <div><label className="lbl">Loop</label>
+            <div><label className="lbl">Repeat</label>
               <select value={settings.audio_loop===false?'off':'on'}
                 onChange={e=>save({settings:{...settings,audio_loop:e.target.value==='on'}})}>
-                <option value="on">🔁 Loop (repeat aagum)</option><option value="off">Once only</option></select></div>
+                <option value="on">🔁 Playlist repeat</option><option value="off">Once only (stop at end)</option></select></div>
             <div><label className="lbl">Fade In / Out</label>
               <select value={settings.audio_fade===false?'off':'on'}
                 onChange={e=>save({settings:{...settings,audio_fade:e.target.value==='on'}})}>
@@ -3331,7 +3352,7 @@ function TvManage(){
                 <option value="off">🔊 Sound On</option><option value="on">🔇 Mute</option></select></div>
           </div>
         </> : <button className="btn sm" disabled={busy==='music'} onClick={()=>uploadAudio('music')}>
-          {busy==='music'?'⏳ Uploading…':'⬆️ Upload Music'}</button>}
+          {busy==='music'?'⏳ Uploading…':'⬆️ Upload First Song'}</button>}
 
         <h4 style={{margin:'16px 0 4px'}}>🎙️ Voice Announcement</h4>
         <p className="muted" style={{fontSize:12,marginTop:0}}>
