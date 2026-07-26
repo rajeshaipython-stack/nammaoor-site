@@ -368,6 +368,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -2708,20 +2710,31 @@ const THEMES={
 }
 const TRANS={fade:'tvslide', slide:'tvslideL', zoom:'tvzoom'}
 
+// Isolated clock: its own 1-second timer so the MAIN player never re-renders
+// per second (that caused visible flicker/re-animation of slides).
+function TvClock({ink,dark}){
+  const [t,setT]=useState(new Date())
+  useEffect(()=>{ const i=setInterval(()=>setT(new Date()),1000); return ()=>clearInterval(i) },[])
+  return <div style={{position:'fixed',top:'2.2vh',right:'2.6vw',zIndex:60,
+    fontSize:'3vh',fontWeight:800,color:ink,background:dark?'rgba(0,0,0,.35)':'rgba(255,255,255,.6)',
+    padding:'.6vh 1.4vw',borderRadius:12,fontVariantNumeric:'tabular-nums'}}>
+    {t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+}
+
 function TvDisplay(){
   const [code,setCode]=useState(()=>{ try{return localStorage.getItem('nm_tv_code')||''}catch(e){return ''} })
   const [st,setSt]=useState(null)      // server state
   const [idx,setIdx]=useState(0)       // flattened slide index
   const [anim,setAnim]=useState(true)
-  const [now,setNow]=useState(new Date())
+  const [hr,setHr]=useState(new Date().getHours())   // hour only (schedule filter)
   const timer=useRef(null)
 
   // get / create pair code
   useEffect(()=>{ if(!code){
     api.post('/tv/new',{}).then(r=>{ setCode(r.pair_code); try{localStorage.setItem('nm_tv_code',r.pair_code)}catch(e){} }).catch(()=>{})
   }},[])
-  // clock tick
-  useEffect(()=>{ const t=setInterval(()=>setNow(new Date()),1000); return ()=>clearInterval(t) },[])
+  // hour tick (once a minute is enough for slide scheduling)
+  useEffect(()=>{ const i=setInterval(()=>setHr(new Date().getHours()),60000); return ()=>clearInterval(i) },[])
   // poll state: 5s until paired, 30s after
   useEffect(()=>{ if(!code) return
     let stop=false
@@ -2784,7 +2797,6 @@ function TvDisplay(){
   },[needTap, music&&music.url, aVol])
 
   // schedule filter: slide visible only in its hour window (empty = always)
-  const hr=now.getHours()
   const inTime=(sl)=>{ const f=sl.from, t=sl.to
     if(f==null||t==null||f===''||t==='') return true
     const a=+f, b=+t; return a<=b ? (hr>=a&&hr<b) : (hr>=a||hr<b) }
@@ -2812,11 +2824,9 @@ function TvDisplay(){
   const upiUri=shop&&shop.upi_id?`upi://pay?pa=${encodeURIComponent(shop.upi_id)}&pn=${encodeURIComponent(shop.shop_name||'Shop')}&cu=INR`:''
   const hasTicker=!!(settings.ticker&&String(settings.ticker).trim())
 
-  const Overlay=()=>(<>
-    {settings.clock!==false && <div style={{position:'fixed',top:'2.2vh',right:'2.6vw',zIndex:60,
-      fontSize:'3vh',fontWeight:800,color:ink,background:dark?'rgba(0,0,0,.35)':'rgba(255,255,255,.6)',
-      padding:'.6vh 1.4vw',borderRadius:12,fontVariantNumeric:'tabular-nums'}}>
-      {now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>}
+  // Plain JSX (NOT a component) so the slide tree never remounts on re-render.
+  const overlay=(<>
+    {settings.clock!==false && <TvClock ink={ink} dark={dark}/>}
     {hasTicker && <div className="tvticker"><span>{settings.ticker} &nbsp;•&nbsp; {settings.ticker} &nbsp;•&nbsp; {settings.ticker}</span></div>}
     {needTap && wantAudio && <div onClick={unlock} style={{position:'fixed',bottom:'10vh',left:'50%',
       transform:'translateX(-50%)',zIndex:80,background:'#fff',color:'#141225',borderRadius:16,
@@ -2824,7 +2834,8 @@ function TvDisplay(){
       🔊 Sound ON — remote-la OK press pannunga</div>}
   </>)
 
-  const Wrap=({children})=>(
+  // Plain function (lowercase) — returns JSX in place, keeps DOM stable across renders.
+  const wrap=(children)=>(
     <div className={th.animBg?'tvbganim':''} style={{position:'fixed',inset:0,background:bg,color:ink,display:'flex',flexDirection:'column',
       alignItems:'center',justifyContent:'center',textAlign:'center',padding:'4vh 5vw',overflow:'hidden',
       fontFamily:"'Poppins',sans-serif"}}>
@@ -2833,7 +2844,7 @@ function TvDisplay(){
       </div>
       {shop && <div style={{position:'fixed',bottom:hasTicker?'6vh':14,left:0,right:0,textAlign:'center',fontSize:'1.6vh',color:sub}}>
         {shop.shop_name} · Powered by NammaOor</div>}
-      <Overlay/>
+      {overlay}
     </div>)
 
   if(!code||!st) return <div style={{position:'fixed',inset:0,background:'#0e0b1a',color:'#fff',display:'flex',
@@ -2851,11 +2862,11 @@ function TvDisplay(){
       <p style={{fontSize:'2vh',opacity:.85}}>Pair aana udane slideshow automatic-a start aagum.</p>
     </div>)
 
-  if(!st.playing || flat.length===0) return <Wrap>
+  if(!st.playing || flat.length===0) return wrap(<>
     {shop&&shop.logo_url&&<img src={shop.logo_url} style={{height:'16vh',borderRadius:18}}/>}
     <div style={{fontSize:'5vh',fontWeight:800}}>{shop?shop.shop_name:''}</div>
     <div style={{fontSize:'2.4vh',color:sub}}>⏸ Slideshow paused</div>
-  </Wrap>
+  </>)
 
   const s=flat[Math.min(idx,flat.length-1)]
   const grad='linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'
@@ -2864,14 +2875,14 @@ function TvDisplay(){
     : {background:grad,WebkitBackgroundClip:'text',backgroundClip:'text',color:'transparent'}
 
   // ---------- SLIDES ----------
-  if(s.type==='welcome') return <Wrap>
+  if(s.type==='welcome') return wrap(<>
     {shop.logo_url&&<img src={shop.logo_url} style={{height:'18vh',borderRadius:20,boxShadow:'0 12px 40px rgba(0,0,0,.3)'}}/>}
     <div style={{fontSize:'7vh',fontWeight:900,...gradText}}>{s.title||'Welcome!'}</div>
     <div style={{fontSize:'4.5vh',fontWeight:700}}>{shop.shop_name}</div>
     {s.text&&<div style={{fontSize:'3vh',color:sub}}>{s.text}</div>}
-  </Wrap>
+  </>)
 
-  if(s.type==='product'&&s.p) return <Wrap>
+  if(s.type==='product'&&s.p) return wrap(
     <div style={{display:'flex',alignItems:'center',gap:'4vw',flexWrap:'wrap',justifyContent:'center'}}>
       <div style={{width:'34vh',height:'34vh',borderRadius:24,background:th.card,display:'flex',
         alignItems:'center',justifyContent:'center',overflow:'hidden',boxShadow:'0 14px 44px rgba(0,0,0,.25)'}}>
@@ -2891,28 +2902,27 @@ function TvDisplay(){
         <div style={{marginTop:'1vh',fontSize:'2.4vh',color:s.p.in_stock===false?'#ef4444':'#22C55E',fontWeight:700}}>
           {s.p.in_stock===false?'Out of Stock':'✔ In Stock'}</div>
       </div>
-    </div>
-  </Wrap>
+    </div>)
 
-  if(s.type==='qr_pay') return <Wrap>
+  if(s.type==='qr_pay') return wrap(<>
     <div style={{fontSize:'5.5vh',fontWeight:900,...gradText}}>💳 Scan & Pay</div>
     <div style={{background:'#fff',padding:'2.4vh',borderRadius:24,boxShadow:'0 14px 44px rgba(0,0,0,.3)'}}>
       <img src={qrImg(upiUri||shopUrl)} style={{width:'34vh',height:'34vh'}}/>
     </div>
     <div style={{fontSize:'3vh',fontWeight:700}}>{upiUri?'GPay · PhonePe · Paytm — edhu venaalum':'Scan pannunga'}</div>
     {shop.upi_id&&<div style={{fontSize:'2.2vh',color:sub}}>{shop.upi_id}</div>}
-  </Wrap>
+  </>)
 
-  if(s.type==='review') return <Wrap>
+  if(s.type==='review') return wrap(<>
     <div style={{fontSize:'6vh'}}>⭐⭐⭐⭐⭐</div>
     <div style={{fontSize:'5vh',fontWeight:900}}>Love our service?</div>
     <div style={{fontSize:'3vh',color:sub}}>Scan QR to review us — ungaloda rating engalukku mukkiyam! 🙏</div>
     <div style={{background:'#fff',padding:'2vh',borderRadius:20,boxShadow:'0 14px 44px rgba(0,0,0,.3)'}}>
       <img src={qrImg(reviewUrl)} style={{width:'28vh',height:'28vh'}}/>
     </div>
-  </Wrap>
+  </>)
 
-  if(s.type==='info') return <Wrap>
+  if(s.type==='info') return wrap(<>
     {shop.logo_url&&<img src={shop.logo_url} style={{height:'12vh',borderRadius:16}}/>}
     <div style={{fontSize:'5.5vh',fontWeight:900,...gradText}}>{shop.shop_name}</div>
     <div style={{fontSize:'2.8vh',color:sub,display:'flex',flexDirection:'column',gap:'1vh'}}>
@@ -2922,26 +2932,26 @@ function TvDisplay(){
       {(shop.open_time||shop.close_time)&&<span>🕐 {shop.open_time||''} – {shop.close_time||''}</span>}
       {shop.bio&&<span style={{fontSize:'2.4vh'}}>{shop.bio}</span>}
     </div>
-  </Wrap>
+  </>)
 
   if(s.type==='image'&&s.image) return (
     <div style={{position:'fixed',inset:0,background:'#000',display:'flex',alignItems:'center',justifyContent:'center'}}>
       <img src={s.image} className={animCls} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain'}}/>
-      <Overlay/>
+      {overlay}
     </div>)
 
   if(s.type==='video'&&s.video) return (
     <div style={{position:'fixed',inset:0,background:'#000',display:'flex',alignItems:'center',justifyContent:'center'}}>
       <video key={s.id||s.video} src={s.video} autoPlay muted loop playsInline
         style={{maxWidth:'100%',maxHeight:'100%'}}/>
-      <Overlay/>
+      {overlay}
     </div>)
 
   // custom text slide fallback
-  return <Wrap>
+  return wrap(<>
     <div style={{fontSize:'6vh',fontWeight:900,...gradText}}>{s.title||''}</div>
     {s.text&&<div style={{fontSize:'3.2vh',color:sub,whiteSpace:'pre-wrap'}}>{s.text}</div>}
-  </Wrap>
+  </>)
 }
 
 
