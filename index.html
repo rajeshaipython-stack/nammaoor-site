@@ -364,6 +364,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -2710,6 +2712,53 @@ function TvDisplay(){
   const dark=th.dark
   const animCls=anim?(TRANS[settings.transition]||'tvslide'):''
 
+  // ---------- AUDIO ENGINE (owner-uploaded music + voice announcements) ----------
+  const audRef=useRef(null), annRef=useRef(null), fadeTimer=useRef(null), advRef=useRef(0)
+  const [needTap,setNeedTap]=useState(false)
+  const music=settings.audio, annc=settings.announce
+  const aVol=(settings.audio_vol==null?70:settings.audio_vol)/100
+  const doFade=settings.audio_fade!==false
+  const wantAudio=!!(st&&st.paired&&st.playing&&music&&music.url&&!settings.audio_mute)
+  const fadeTo=(el,target,ms)=>{ if(!el)return; clearInterval(fadeTimer.current)
+    if(!doFade||ms<=0){ el.volume=Math.max(0,Math.min(1,target)); if(target===0)el.pause(); return }
+    const step=(target-el.volume)/(ms/100)
+    fadeTimer.current=setInterval(()=>{ let v=el.volume+step
+      if((step>0&&v>=target)||(step<0&&v<=target)){ v=target; clearInterval(fadeTimer.current); if(target===0)el.pause() }
+      el.volume=Math.max(0,Math.min(1,v)) },100) }
+  const unlock=()=>{ const a=audRef.current
+    if(a){ a.play().then(()=>{ setNeedTap(false); fadeTo(a,aVol,doFade?2000:0) }).catch(()=>{}) }
+    if(annRef.current){ annRef.current.play().then(()=>{ annRef.current.pause(); annRef.current.currentTime=0 }).catch(()=>{}) } }
+  useEffect(()=>{
+    if(!wantAudio){ if(audRef.current) fadeTo(audRef.current,0,doFade?1500:0); return }
+    let a=audRef.current
+    if(!a||a._url!==music.url){ if(a)a.pause(); a=new Audio(music.url); a._url=music.url; audRef.current=a }
+    a.loop=settings.audio_loop!==false
+    if(a.paused){ a.volume=doFade?0:aVol
+      a.play().then(()=>{ setNeedTap(false); fadeTo(a,aVol,doFade?2500:0) }).catch(()=>setNeedTap(true)) }
+    else fadeTo(a,aVol,600)
+  },[wantAudio, music&&music.url, aVol, settings.audio_loop, settings.audio_fade])
+  useEffect(()=>()=>{ if(audRef.current)audRef.current.pause(); if(annRef.current)annRef.current.pause()
+    clearInterval(fadeTimer.current) },[])
+  // voice announcement: every N slide-changes, duck music -> play voice -> restore
+  useEffect(()=>{ if(!st||!st.paired||!st.playing) return
+    advRef.current++
+    const every=settings.announce_every||5
+    if(!annc||!annc.url||advRef.current%every!==0) return
+    let v=annRef.current
+    if(!v||v._url!==annc.url){ v=new Audio(annc.url); v._url=annc.url; annRef.current=v }
+    const a=audRef.current
+    if(a&&!a.paused){ clearInterval(fadeTimer.current); a.volume=Math.max(0,aVol*0.15) }
+    v.volume=1; v.currentTime=0
+    v.onended=()=>{ if(a&&!a.paused) fadeTo(a,aVol,800) }
+    v.play().catch(()=>{})
+  },[idx])
+  // TV remote OK / any key / click unlocks sound (browser autoplay rule)
+  useEffect(()=>{ if(!needTap) return
+    const h=()=>unlock()
+    window.addEventListener('keydown',h); window.addEventListener('click',h)
+    return ()=>{ window.removeEventListener('keydown',h); window.removeEventListener('click',h) }
+  },[needTap, music&&music.url, aVol])
+
   // schedule filter: slide visible only in its hour window (empty = always)
   const hr=now.getHours()
   const inTime=(sl)=>{ const f=sl.from, t=sl.to
@@ -2745,6 +2794,10 @@ function TvDisplay(){
       padding:'.6vh 1.4vw',borderRadius:12,fontVariantNumeric:'tabular-nums'}}>
       {now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>}
     {hasTicker && <div className="tvticker"><span>{settings.ticker} &nbsp;•&nbsp; {settings.ticker} &nbsp;•&nbsp; {settings.ticker}</span></div>}
+    {needTap && wantAudio && <div onClick={unlock} style={{position:'fixed',bottom:'10vh',left:'50%',
+      transform:'translateX(-50%)',zIndex:80,background:'#fff',color:'#141225',borderRadius:16,
+      padding:'1.6vh 3vw',fontSize:'2.6vh',fontWeight:800,boxShadow:'0 10px 34px rgba(0,0,0,.45)',cursor:'pointer'}}>
+      🔊 Sound ON — remote-la OK press pannunga</div>}
   </>)
 
   const Wrap=({children})=>(
@@ -2880,6 +2933,16 @@ const THEME_OPTS=[['dark','🌙 Dark (premium)'],['light','☀️ Light'],['mini
   ['luxury','👑 Luxury (gold & black)'],['festival','🎉 Festival (colorful moving)']]
 const TRANS_OPTS=[['fade','✨ Fade'],['slide','➡️ Slide'],['zoom','🔍 Zoom']]
 
+const AUDIO_CONSENT="I confirm that I own this audio or have the necessary permission to use it. I understand that I am solely responsible for the content I upload.\n\n(Intha audio enakku sontham / permission irukku. Naan upload panra content-ku naan mattum thaan responsible-nu oppukkuren.)\n\nOK = Accept & Upload"
+const pickAudio=()=>new Promise(res=>{
+  const i=document.createElement('input'); i.type='file'
+  i.accept='.mp3,.wav,.aac,.m4a,.ogg,audio/*'
+  i.onchange=()=>{ const f=i.files&&i.files[0]; if(!f)return res(null)
+    if(!/audio\//.test(f.type)&&!/\.(mp3|wav|aac|m4a|ogg)$/i.test(f.name)){ alert('Audio file mattum (MP3/WAV/AAC/M4A/OGG)'); return res(null) }
+    if(f.size>12*1024*1024){ alert('Max 12 MB. Periya file-a chinna panni (MP3 128kbps) upload pannunga.'); return res(null) }
+    const r=new FileReader(); r.onload=()=>res({data:r.result,name:f.name}); r.readAsDataURL(f) }
+  i.click() })
+
 function TvManage(){
   const [tv,setTv]=useState(null); const [code,setCode]=useState(''); const [msg,setMsg]=useState('')
   const [nt,setNt]=useState({type:'text',title:'',text:'',video:''})
@@ -2916,6 +2979,19 @@ function TvManage(){
     setSlides([...slides,s],'✅ Slide add aayiduchu'); setNt({type:'text',title:'',text:'',video:''}) }
   const settings=(tv&&tv.settings)||{duration:8,theme:'dark'}
   const hiddenCt=slides.filter(s=>s.hidden).length
+  const [busy,setBusy]=useState('')
+  const uploadAudio=async(kind)=>{
+    if(!confirm(AUDIO_CONSENT)) return
+    const f=await pickAudio(); if(!f) return
+    setBusy(kind); setMsg('⏳ Uploading audio…')
+    try{ const r=await api.post('/me/shop/tv/audio',{data_url:f.data,kind,name:f.name})
+      setTv({...r,paired:true}); setMsg('✅ Audio upload aayiduchu — TV-la play aagum') }
+    catch(e){ setMsg('❌ '+e.message) }
+    setBusy('') }
+  const delAudio=async(kind)=>{ if(!confirm('Audio remove pannalaama?'))return
+    try{ const r=await api.del('/me/shop/tv/audio?kind='+kind); setTv({...r,paired:true}); setMsg('🗑 Audio removed') }
+    catch(e){ setMsg('❌ '+e.message) } }
+  const music=settings.audio, announce=settings.announce
 
   return (<><Header/><div className="container" style={{maxWidth:760}}>
     <h2 className="brand">📺 TV Display</h2>
@@ -3015,6 +3091,68 @@ function TvManage(){
           <p className="muted" style={{fontSize:11.5,marginTop:2}}>Direct .mp4 link mattum work aagum (YouTube link aagathu). Video TV-la mute-la loop aagum.</p></>}
         <button className="btn sm" style={{marginTop:6}} onClick={addSlide}>
           {nt.type==='image'?'📷 Poster upload panni add':'+ Add Slide'}</button>
+      </div>
+
+      <div className="card">
+        <h3>🎵 Music & Audio</h3>
+        <p className="muted" style={{fontSize:12,marginTop:2}}>
+          Unga sontha audio-va mattum upload pannunga (MP3/WAV/AAC/M4A/OGG, max 12 MB).
+          NammaOor engendhum paattu download pannaathu — neenga upload panradhu mattum play aagum.</p>
+
+        <h4 style={{margin:'10px 0 4px'}}>🎶 Background Music</h4>
+        {music ? <>
+          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+            <span style={{fontSize:20}}>🎵</span>
+            <b style={{fontSize:13,flex:1,minWidth:120,overflow:'hidden',textOverflow:'ellipsis'}}>{music.name}</b>
+            <button className="btn sm ghost" disabled={busy==='music'} onClick={()=>uploadAudio('music')}>🔁 Replace</button>
+            <button className="btn sm ghost" style={{color:'#c0392b'}} onClick={()=>delAudio('music')}>🗑 Delete</button>
+          </div>
+          <audio controls src={music.url} style={{width:'100%',marginTop:8,height:36}}/>
+          <div className="grid2" style={{marginTop:10}}>
+            <div><label className="lbl">🔊 Volume ({settings.audio_vol==null?70:settings.audio_vol}%)</label>
+              <input type="range" min="0" max="100" style={{width:'100%'}}
+                defaultValue={settings.audio_vol==null?70:settings.audio_vol}
+                onMouseUp={e=>save({settings:{...settings,audio_vol:+e.target.value}},'🔊 Volume set')}
+                onTouchEnd={e=>save({settings:{...settings,audio_vol:+e.target.value}},'🔊 Volume set')}/></div>
+            <div><label className="lbl">Loop</label>
+              <select value={settings.audio_loop===false?'off':'on'}
+                onChange={e=>save({settings:{...settings,audio_loop:e.target.value==='on'}})}>
+                <option value="on">🔁 Loop (repeat aagum)</option><option value="off">Once only</option></select></div>
+            <div><label className="lbl">Fade In / Out</label>
+              <select value={settings.audio_fade===false?'off':'on'}
+                onChange={e=>save({settings:{...settings,audio_fade:e.target.value==='on'}})}>
+                <option value="on">🌊 Smooth fade</option><option value="off">Direct</option></select></div>
+            <div><label className="lbl">Mute</label>
+              <select value={settings.audio_mute?'on':'off'}
+                onChange={e=>save({settings:{...settings,audio_mute:e.target.value==='on'}},e.target.value==='on'?'🔇 Muted':'🔊 Unmuted')}>
+                <option value="off">🔊 Sound On</option><option value="on">🔇 Mute</option></select></div>
+          </div>
+        </> : <button className="btn sm" disabled={busy==='music'} onClick={()=>uploadAudio('music')}>
+          {busy==='music'?'⏳ Uploading…':'⬆️ Upload Music'}</button>}
+
+        <h4 style={{margin:'16px 0 4px'}}>🎙️ Voice Announcement</h4>
+        <p className="muted" style={{fontSize:12,marginTop:0}}>
+          Unga voice-la record panni upload pannunga — e.g. "Welcome to our shop!", "Today's offer: Buy 2 Get 1 Free".
+          Music konjam kammi aagi, announcement play aagi, thirumba music varum.</p>
+        {announce ? <>
+          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+            <span style={{fontSize:20}}>🎙️</span>
+            <b style={{fontSize:13,flex:1,minWidth:120,overflow:'hidden',textOverflow:'ellipsis'}}>{announce.name}</b>
+            <button className="btn sm ghost" disabled={busy==='announce'} onClick={()=>uploadAudio('announce')}>🔁 Replace</button>
+            <button className="btn sm ghost" style={{color:'#c0392b'}} onClick={()=>delAudio('announce')}>🗑 Delete</button>
+          </div>
+          <audio controls src={announce.url} style={{width:'100%',marginTop:8,height:36}}/>
+          <label className="lbl" style={{marginTop:8}}>Eppo play aaganum?</label>
+          <select value={settings.announce_every||5}
+            onChange={e=>save({settings:{...settings,announce_every:+e.target.value}},'🎙️ Announcement timing set')}>
+            {[2,3,5,8,10,15].map(n=><option key={n} value={n}>Every {n} slides</option>)}
+          </select>
+        </> : <button className="btn sm ghost" disabled={busy==='announce'} onClick={()=>uploadAudio('announce')}>
+          {busy==='announce'?'⏳ Uploading…':'⬆️ Upload Voice Announcement'}</button>}
+
+        <p className="muted" style={{fontSize:11,marginTop:12,borderTop:'1px solid var(--line)',paddingTop:8}}>
+          ⚠️ TV-la first time sound varanum-na, TV remote-la OK button oru thadava press pannanum
+          (browser rule — auto-sound block). Adhukku appuram thaana play aagum.</p>
       </div>
 
       <div className="card" style={{background:'#f6f3ff'}}>
