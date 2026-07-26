@@ -1,0 +1,16 @@
+{
+  "name": "NammaOor",
+  "short_name": "NammaOor",
+  "description": "Tamil Nadu local shops directory — QR, products, offers, TV display.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e0b1a",
+  "theme_color": "#FF2E7E",
+  "icons": [
+    { "src": "https://nammaoor.shop/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "https://nammaoor.shop/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "https://nammaoor.shop/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" }
+  ]
+}
