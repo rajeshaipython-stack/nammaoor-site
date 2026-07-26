@@ -370,6 +370,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -681,6 +683,28 @@ table.spec td{padding:7px 9px;font-size:14px}
   font-size:2.7vh;font-weight:600;padding:1vh 0;overflow:hidden;white-space:nowrap}
 .tvticker span{display:inline-block;padding-left:100%;animation:tvTick 22s linear infinite}
 @keyframes tvTick{to{transform:translateX(-100%)}}
+.tvup{animation:tvUpK .7s cubic-bezier(.2,.9,.3,1) both}
+@keyframes tvUpK{from{opacity:0;transform:translateY(10vh)}to{opacity:1;transform:none}}
+.tvzo{animation:tvZoK .7s ease both}
+@keyframes tvZoK{from{opacity:0;transform:scale(1.28)}to{opacity:1;transform:scale(1)}}
+.tvflip{animation:tvFlipK .8s ease both}
+@keyframes tvFlipK{from{opacity:0;transform:perspective(900px) rotateY(75deg)}to{opacity:1;transform:none}}
+.tvrot{animation:tvRotK .8s cubic-bezier(.2,.9,.3,1) both}
+@keyframes tvRotK{from{opacity:0;transform:rotate(-8deg) scale(.85)}to{opacity:1;transform:none}}
+.tvbounce{animation:tvBounceK .95s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes tvBounceK{0%{opacity:0;transform:translateY(-14vh)}60%{opacity:1;transform:translateY(2vh)}80%{transform:translateY(-1vh)}100%{opacity:1;transform:none}}
+.tvblur{animation:tvBlurK .8s ease both}
+@keyframes tvBlurK{from{opacity:0;filter:blur(16px)}to{opacity:1;filter:blur(0)}}
+.tvpop{animation:tvPopK .6s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes tvPopK{from{opacity:0;transform:scale(.45)}to{opacity:1;transform:scale(1)}}
+.tvswing{animation:tvSwingK .9s ease both;transform-origin:top center}
+@keyframes tvSwingK{0%{opacity:0;transform:rotate(7deg)}55%{transform:rotate(-3deg)}100%{opacity:1;transform:none}}
+.tvfx-float{animation:tvFloatK 3.4s ease-in-out infinite}
+@keyframes tvFloatK{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6vh)}}
+.tvfx-pulse{animation:tvPulseK 2s ease-in-out infinite}
+@keyframes tvPulseK{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.tvfx-blink{animation:tvBlinkK 1.8s ease-in-out infinite}
+@keyframes tvBlinkK{0%,55%,100%{opacity:1}70%{opacity:.35}85%{opacity:1}}
 
 /* ===== Mini Browser (floating popup) ===== */
 .mbfab{position:fixed;right:14px;bottom:76px;z-index:9000;display:flex;flex-direction:column;align-items:center;gap:1px;
@@ -2708,7 +2732,9 @@ const THEMES={
   luxury:  {bg:'linear-gradient(135deg,#0b0b0b,#221a06,#0b0b0b)', ink:'#f5e6b8', sub:'#c9b36a', card:'#171307', dark:true},
   festival:{bg:'linear-gradient(-45deg,#FF6A00,#FF2E7E,#7A2FF7,#00C2A8)', ink:'#fff', sub:'#ffe9f4', card:'rgba(0,0,0,.28)', dark:true, animBg:true},
 }
-const TRANS={fade:'tvslide', slide:'tvslideL', zoom:'tvzoom'}
+const TRANS={fade:'tvslide', slide:'tvslideL', slideup:'tvup', zoom:'tvzoom', zoomout:'tvzo',
+  flip:'tvflip', rotate:'tvrot', bounce:'tvbounce', blur:'tvblur', pop:'tvpop', swing:'tvswing'}
+const LOOPFX={float:'tvfx-float', pulse:'tvfx-pulse', blink:'tvfx-blink'}
 
 // Isolated clock: its own 1-second timer so the MAIN player never re-renders
 // per second (that caused visible flicker/re-animation of slides).
@@ -2835,12 +2861,15 @@ function TvDisplay(){
   </>)
 
   // Plain function (lowercase) — returns JSX in place, keeps DOM stable across renders.
+  const loopFx=LOOPFX[settings.loop_fx]||''
   const wrap=(children)=>(
     <div className={th.animBg?'tvbganim':''} style={{position:'fixed',inset:0,background:bg,color:ink,display:'flex',flexDirection:'column',
       alignItems:'center',justifyContent:'center',textAlign:'center',padding:'4vh 5vw',overflow:'hidden',
       fontFamily:"'Poppins',sans-serif"}}>
-      <div className={animCls} style={{width:'100%',maxWidth:1100,display:'flex',flexDirection:'column',alignItems:'center',gap:'2.2vh'}}>
-        {children}
+      <div className={animCls} style={{width:'100%',maxWidth:1100}}>
+        <div className={loopFx} style={{width:'100%',display:'flex',flexDirection:'column',alignItems:'center',gap:'2.2vh'}}>
+          {children}
+        </div>
       </div>
       {shop && <div style={{position:'fixed',bottom:hasTicker?'6vh':14,left:0,right:0,textAlign:'center',fontSize:'1.6vh',color:sub}}>
         {shop.shop_name} · Powered by NammaOor</div>}
@@ -2965,7 +2994,19 @@ const TYPE_META={
 }
 const THEME_OPTS=[['dark','🌙 Dark (premium)'],['light','☀️ Light'],['minimal','⬜ Minimal (clean white)'],
   ['luxury','👑 Luxury (gold & black)'],['festival','🎉 Festival (colorful moving)']]
-const TRANS_OPTS=[['fade','✨ Fade'],['slide','➡️ Slide'],['zoom','🔍 Zoom']]
+const TRANS_OPTS=[['fade','✨ Fade Up'],['slide','➡️ Slide In'],['slideup','⬆️ Rise Up'],
+  ['zoom','🔍 Zoom In'],['zoomout','🔎 Zoom Out'],['flip','🔃 Flip 3D'],['rotate','🌀 Rotate In'],
+  ['bounce','🏀 Bounce'],['blur','💨 Blur Focus'],['pop','🎈 Pop'],['swing','🎐 Swing']]
+const LOOP_OPTS=[['none','Illa (stable)'],['float','🪁 Float — methuva midhakkum'],
+  ['pulse','💓 Pulse — thudikkum'],['blink','✨ Blink — minnum']]
+const TRANS_CLS={fade:'tvslide',slide:'tvslideL',slideup:'tvup',zoom:'tvzoom',zoomout:'tvzo',
+  flip:'tvflip',rotate:'tvrot',bounce:'tvbounce',blur:'tvblur',pop:'tvpop',swing:'tvswing'}
+const LOOP_CLS={float:'tvfx-float',pulse:'tvfx-pulse',blink:'tvfx-blink'}
+const PV_THEMES={
+  dark:{bg:'#0e0b1a',ink:'#fff',sub:'#b9b3d0'}, light:{bg:'#f7f4fb',ink:'#141225',sub:'#5a5578'},
+  minimal:{bg:'#fff',ink:'#111',sub:'#777'},
+  luxury:{bg:'linear-gradient(135deg,#0b0b0b,#221a06,#0b0b0b)',ink:'#f5e6b8',sub:'#c9b36a'},
+  festival:{bg:'linear-gradient(-45deg,#FF6A00,#FF2E7E,#7A2FF7,#00C2A8)',ink:'#fff',sub:'#ffe9f4',animBg:true}}
 
 const AUDIO_CONSENT="I confirm that I own this audio or have the necessary permission to use it. I understand that I am solely responsible for the content I upload.\n\n(Intha audio enakku sontham / permission irukku. Naan upload panra content-ku naan mattum thaan responsible-nu oppukkuren.)\n\nOK = Accept & Upload"
 const pickAudio=()=>new Promise(res=>{
@@ -3013,6 +3054,12 @@ function TvManage(){
     setSlides([...slides,s],'✅ Slide add aayiduchu'); setNt({type:'text',title:'',text:'',video:''}) }
   const settings=(tv&&tv.settings)||{duration:8,theme:'dark'}
   const hiddenCt=slides.filter(s=>s.hidden).length
+  // live preview replay
+  const [pvKey,setPvKey]=useState(0)
+  useEffect(()=>{ const i=setInterval(()=>setPvKey(k=>k+1),4000); return ()=>clearInterval(i) },[])
+  const pvTh=PV_THEMES[settings.theme]||PV_THEMES.dark
+  const pvAnim=TRANS_CLS[settings.transition]||'tvslide'
+  const pvLoop=LOOP_CLS[settings.loop_fx]||''
   const [busy,setBusy]=useState('')
   const uploadAudio=async(kind)=>{
     if(!confirm(AUDIO_CONSENT)) return
@@ -3082,6 +3129,28 @@ function TvManage(){
             <select value={settings.clock===false?'off':'on'} onChange={e=>save({settings:{...settings,clock:e.target.value==='on'}})}>
               <option value="on">🕐 Show</option><option value="off">Hide</option>
             </select></div>
+          <div><label className="lbl">Loop Effect (slide full time)</label>
+            <select value={settings.loop_fx||'none'} onChange={e=>save({settings:{...settings,loop_fx:e.target.value}},'💫 Loop effect set')}>
+              {LOOP_OPTS.map(([v,l])=><option key={v} value={v}>{l}</option>)}
+            </select></div>
+        </div>
+
+        <label className="lbl" style={{marginTop:12}}>👀 Live Preview — TV-la ipdi thaan varum</label>
+        <div style={{borderRadius:14,overflow:'hidden',border:'1px solid var(--line)',position:'relative',
+          background:pvTh.bg,color:pvTh.ink,aspectRatio:'16/9',display:'flex',alignItems:'center',
+          justifyContent:'center',textAlign:'center'}} className={pvTh.animBg?'tvbganim':''}>
+          <div key={pvKey} className={pvAnim} style={{width:'100%'}}>
+            <div className={pvLoop} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+              <div style={{fontSize:44}}>🛍️</div>
+              <div style={{fontSize:18,fontWeight:900}}>Sample Product</div>
+              <div><span style={{fontSize:22,fontWeight:900,color:'#22C55E'}}>₹79</span>
+                <span style={{fontSize:13,color:pvTh.sub,textDecoration:'line-through',marginLeft:8}}>₹99</span>
+                <span style={{marginLeft:8,background:'#FF2E7E',color:'#fff',borderRadius:6,padding:'2px 8px',fontSize:11,fontWeight:800}}>OFFER</span></div>
+              <div style={{fontSize:11,color:pvTh.sub}}>{(tv&&tv.name)||'Unga kadai'} · Powered by NammaOor</div>
+            </div>
+          </div>
+          <button className="btn sm ghost" style={{position:'absolute',right:8,bottom:8,background:'rgba(255,255,255,.85)'}}
+            onClick={()=>setPvKey(k=>k+1)}>▶ Replay</button>
         </div>
         <label className="lbl" style={{marginTop:10}}>📰 Scrolling News Line (TV bottom-la odum)</label>
         <div className="row" style={{gap:8}}>
@@ -3103,12 +3172,12 @@ function TvManage(){
               <div className="muted" style={{fontSize:11.5}}>{m[1]}{s.hidden?' · hidden':''}
                 {(s.from!=null&&s.from!=='')?` · ⏰ ${s.from}:00-${s.to}:00`:''}</div>
             </div>
-            <button className="btn sm ghost" onClick={()=>move(i,-1)} disabled={i===0}>↑</button>
-            <button className="btn sm ghost" onClick={()=>move(i,1)} disabled={i===slides.length-1}>↓</button>
-            <button className="btn sm ghost" title="Time schedule" onClick={()=>sched(i)}>⏰</button>
-            <button className="btn sm ghost" title="Hide/Show" onClick={()=>toggleHide(i)}>{s.hidden?'👁':'🙈'}</button>
-            <button className="btn sm ghost" title="Duplicate" onClick={()=>dup(i)}>⧉</button>
-            <button className="btn sm ghost" style={{color:'#c0392b'}} onClick={()=>del(i)}>✕</button>
+            <button className="btn sm ghost" style={{fontSize:11}} onClick={()=>move(i,-1)} disabled={i===0}>↑ Mela</button>
+            <button className="btn sm ghost" style={{fontSize:11}} onClick={()=>move(i,1)} disabled={i===slides.length-1}>↓ Keezha</button>
+            <button className="btn sm ghost" style={{fontSize:11}} onClick={()=>sched(i)}>⏰ Time</button>
+            <button className="btn sm ghost" style={{fontSize:11}} onClick={()=>toggleHide(i)}>{s.hidden?'👁 Show':'🙈 Hide'}</button>
+            <button className="btn sm ghost" style={{fontSize:11}} onClick={()=>dup(i)}>⧉ Copy</button>
+            <button className="btn sm ghost" style={{fontSize:11,color:'#c0392b'}} onClick={()=>del(i)}>✕ Delete</button>
           </div>)})}
 
         <h4 style={{margin:'14px 0 4px'}}>➕ Add Slide</h4>
