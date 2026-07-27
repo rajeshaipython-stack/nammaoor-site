@@ -26,8 +26,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
@@ -340,6 +345,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -895,6 +902,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 /* ==APPCSS_END== */
 </style>
+
 
 
 
@@ -1585,7 +1593,7 @@ function Register(){
       if(sub.subscription_id && window.Razorpay){
         const rzp=new window.Razorpay({
           key:sub.key_id, subscription_id:sub.subscription_id,
-          name:'NammaOor', description:'Registration ₹1 · then ₹99/month autopay',
+          name:'NammaOor', description:'Shop Registration — ₹1 Only',
           prefill:{contact:f.mobile, name:f.owner_name}, theme:{color:'#FF2E7E'},
           handler: async (resp)=>{
             try{ const d=await api.post('/payments/subscription/verify',{
@@ -1599,7 +1607,7 @@ function Register(){
           }
         })
         rzp.on('payment.failed', ()=>setMsg('Payment failed. Marupadi try pannunga.'))
-        rzp.open(); setMsg('UPI Autopay window open aaguthu... (innaiku ₹1 mattum)')
+        rzp.open(); setMsg('Payment window open aaguthu... ₹1 mattum kattunga')
         return
       }
     }catch(e){ console.log('autopay unavailable, falling back:', e.message) }
@@ -1814,7 +1822,7 @@ function Register(){
         <div className="row" style={{marginTop:10}}>
           <button className="btn ghost" onClick={saveDraft}>Save Draft</button>
           <button className="btn" onClick={payNow}
-            disabled={!f.mobile||!f.shop_name||(f.owner_password||'').length<6}>Register — ₹1 Today · ₹99/month Autopay</button>
+            disabled={!f.mobile||!f.shop_name||(f.owner_password||'').length<6}>Register — Pay ₹1 Only</button>
         </div>
         <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
       </div>}
@@ -3901,7 +3909,20 @@ function OwnerDashboard(){
   const saveEdit=async(id)=>{ await api.patch('/me/shop/products/'+id,{name:ef.name,price:ef.price?+ef.price:null}); setEdit(null); load() }
   const addOffer=async()=>{ await api.post('/me/shop/offers',offer); setOffer({title:'',detail:''}); load() }
   const delOffer=async(id)=>{ await api.del('/me/shop/offers/'+id); load() }
-  const renew=async()=>{ const r=await api.post('/me/shop/renew'); if(r.gateway==='razorpay'&&window.Razorpay){ new window.Razorpay({key:r.key_id,amount:r.amount*100,currency:'INR',name:'NammaOor',description:'Renewal Rs.299',order_id:r.order_id,theme:{color:'#FF2E7E'},handler:async(x)=>{await api.post('/payments/verify',{razorpay_order_id:x.razorpay_order_id,razorpay_payment_id:x.razorpay_payment_id,razorpay_signature:x.razorpay_signature});setMsg('Renewed!');load()}}).open() } else { await api.post(`/payments/dev/mark-paid/${r.txn_id}`); setMsg('Renewed 3 months'); load() } }
+  const renew=async(months=3)=>{ try{
+      setMsg('⏳ Payment ready aaguthu…')
+      const r=await api.post('/me/shop/renew?months='+months)
+      if(r.gateway==='razorpay' && r.order_id && window.Razorpay){
+        new window.Razorpay({key:r.key_id, amount:r.amount*100, currency:'INR', name:'NammaOor',
+          description:months===1?'Renewal — ₹99 · 1 Month':'Renewal — ₹299 · 3 Months',
+          order_id:r.order_id, theme:{color:'#FF2E7E'},
+          handler:async(x)=>{ try{ await api.post('/payments/verify',{razorpay_order_id:x.razorpay_order_id,
+            razorpay_payment_id:x.razorpay_payment_id, razorpay_signature:x.razorpay_signature})
+            setMsg('✅ Renewed!'); load() }catch(e){ setMsg('Verify failed: '+e.message) } }}).open()
+        setMsg('Payment window open aaguthu…')
+      } else if(r.txn_id){ await api.post(`/payments/dev/mark-paid/${r.txn_id}`); setMsg('✅ Renewed'); load() }
+      else setMsg('❌ Payment start fail: '+(r.pay_error||'try again'))
+    }catch(e){ setMsg('❌ '+e.message) } }
   const startAutopay=async()=>{ try{
       const r=await api.post('/payments/subscription/start')
       if(r.subscription_id && window.Razorpay){
@@ -3995,9 +4016,9 @@ function OwnerDashboard(){
       <div style={{fontSize:52,margin:'6px 0'}}>🔒</div>
       <h2 className="brand">Plan Mudinjiduchu</h2>
       <p style={{fontWeight:700,color:'#c0392b',marginTop:8}}>Ungaloda membership {s.expires_at?('('+new Date(s.expires_at).toDateString()+') '):''}mudinjiduchu.</p>
-      <p className="muted" style={{marginTop:8}}>Best option: <b>₹99/month UPI Autopay</b> — innaiku chinna authorization amount mattum, appuram every month automatic. Marakka vendam, lock aagaadhu!</p>
-      <button className="btn" style={{marginTop:14,padding:'15px 24px',fontSize:17,width:'100%'}} onClick={startAutopay}>⚡ Start ₹99/month Autopay</button>
-      <button className="btn ghost" style={{marginTop:10,width:'100%'}} onClick={renew}>💳 One-time ₹299 · 3 Months</button>
+      <p className="muted" style={{marginTop:8}}>Dashboard marupadi active aaga <b>₹99 pay pannunga</b> (1 month). Payment aana udane ellam thirandhu, 1 month add aagum.</p>
+      <button className="btn" style={{marginTop:14,padding:'15px 24px',fontSize:17,width:'100%'}} onClick={()=>renew(1)}>💳 Pay ₹99 · 1 Month</button>
+      <button className="btn ghost" style={{marginTop:10,width:'100%'}} onClick={()=>renew(3)}>Or ₹299 · 3 Months (save more)</button>
       <p style={{color:'var(--teal)',marginTop:10}}>{msg}</p>
       <p className="muted" style={{marginTop:10,fontSize:12}}>Renewal panna mudiyalaya? Support-a contact pannunga.</p>
     </div>
@@ -4036,9 +4057,10 @@ function OwnerDashboard(){
         <p style={{fontWeight:800,fontSize:18,color:daysLeft<15?'#c0392b':'#008C78'}}>{daysLeft} days remaining</p>
         {s.subscription_id
           ? <p className="muted" style={{fontSize:12}}>Autopay ON — every month ₹99 automatic-a deduct aagum. Onnum panna vendam. ✅</p>
-          : <div className="row" style={{gap:6}}>
-              <button className="btn" onClick={startAutopay}>⚡ ₹99/month Autopay</button>
-              <button className="btn ghost" onClick={renew}>₹299 / 3 months</button>
+          : <div className="row" style={{gap:6,flexWrap:'wrap'}}>
+              <button className="btn" onClick={()=>renew(1)}>💳 Pay ₹99 · 1 Month</button>
+              <button className="btn ghost" onClick={()=>renew(3)}>₹299 · 3 Months</button>
+              <button className="btn ghost" onClick={startAutopay}>⚡ Auto-pay ON</button>
             </div>}
         <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p>
       </div>
