@@ -50,8 +50,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
@@ -370,6 +375,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -937,6 +944,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 /* ==APPCSS_END== */
 </style>
+
 
 
 
@@ -2212,7 +2220,12 @@ function Stars({value,onPick}){
     style={{cursor:onPick?'pointer':'default',fontSize:22,color:n<=value?'#FFB800':'#ddd'}}>*</span>)}</span>
 }
 
-function ProdCards({items}){
+function ProdCards({items, wa, shopName, onOrder}){
+  const order=(e,p)=>{ e.preventDefault(); e.stopPropagation()
+    const price=p.offer_price||p.price
+    const txt=`Naan ithai order panna virumburen:\n\n*${p.title||p.name}*`+(price?` — Rs.${price}`:'')+`\n\nKadai: ${shopName||''} (via NammaOor)`
+    if(onOrder) onOrder()
+    window.open(`https://wa.me/91${wa}?text=${encodeURIComponent(txt)}`,'_blank') }
   return (
     <div className="pgrid">
       {items.map(p=>{
@@ -2230,6 +2243,11 @@ function ProdCards({items}){
               <b className="pctitle">{p.title||p.name}</b>
               <span className="pcprice">Rs.{price||'—'}{off>0 && <s className="muted">Rs.{p.price}</s>}</span>
               {p.short_desc && <span className="pc-desc">{p.short_desc}</span>}
+              {wa && <button onClick={e=>order(e,p)} style={{marginTop:8,width:'100%',border:'none',cursor:'pointer',
+                background:'#25D366',color:'#fff',borderRadius:9,padding:'8px 6px',fontWeight:800,fontSize:12.5,
+                display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
+                <svg width="15" height="15" viewBox="0 0 24 24"><path fill="#fff" d="M12 2a10 10 0 00-8.6 15l-1.3 4.9 5-1.3A10 10 0 1012 2zm0 2a8 8 0 11-4.1 14.9l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 0112 4zm4.5 10.4c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 01-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5.2-.4v-.4l-.8-1.9c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.6.3-.7.7-.9 1.6-.6 2.6.4 1.4 1.3 2.6 2.5 3.6 1.6 1.4 3.3 1.9 4.3 1.9.6 0 1.2-.2 1.6-.7.2-.3.3-.7.2-1 0-.1-.2-.2-.4-.3z"/></svg>
+                Order</button>}
             </div>
           </a>
         )
@@ -2387,7 +2405,7 @@ function ShopPage(){
 
       {/* HERO */}
       <div style={{position:'relative',borderRadius:22,overflow:'hidden',boxShadow:'0 12px 34px rgba(20,18,37,.18)'}}>
-        <div style={{height:200,background:s.cover_url?`center/cover no-repeat url(${s.cover_url})`:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'}}/>
+        <div style={{height:200,background:s.cover_url?`center/cover no-repeat url(${s.cover_url})`:(s.theme_color?`linear-gradient(135deg, ${s.theme_color}, ${s.theme_color}bb)`:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)')}}/>
         <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.78),rgba(0,0,0,.05) 58%)'}}/>
         <button onClick={toggleFollow} style={{position:'absolute',top:12,right:12,zIndex:2,border:'none',cursor:'pointer',
           borderRadius:22,padding:'8px 16px',fontWeight:800,fontSize:13,whiteSpace:'nowrap',
@@ -2423,7 +2441,7 @@ function ShopPage(){
       {/* Products */}
       {catalog.length>0 && <div style={SEC}>
         <h3 style={SH}>🛍 Products <span className="muted" style={{fontWeight:600,fontSize:13}}>({catalog.length})</span></h3>
-        <ProdCards items={catalog}/></div>}
+        <ProdCards items={catalog} wa={s.whatsapp} shopName={s.shop_name} onOrder={()=>ev('whatsapp')}/></div>}
       {catalog.length===0 && s.products?.length>0 && <div style={SEC}>
         <h3 style={SH}>🛍 Products</h3>
         {s.products.map((p,i)=><div key={i} className="row" style={{justifyContent:'space-between',borderBottom:'1px solid var(--line)',padding:'8px 0'}}>
@@ -4050,6 +4068,13 @@ function OwnerDashboard(){
   const delStory=async(id)=>{ if(!confirm('Story delete pannalaama?'))return
     await api.del('/me/shop/stories/'+id); api.get('/me/shop/stories').then(r=>setStories(Array.isArray(r)?r:[])) }
   const switchShop=(id)=>{ localStorage.setItem('nm_shop_id',id); window.location.reload() }
+  const uploadMedia=async(kind)=>{ const img=await pickImage(kind==='cover'?1280:600); if(!img)return
+    setMsg('⏳ Uploading…')
+    try{ const r=await api.post('/me/shop/media',{image:img,kind})
+      setS(v=>({...v,[kind==='logo'?'logo_url':'cover_url']:r.url})); setMsg('✅ '+(kind==='logo'?'Logo':'Cover photo')+' updated!') }
+    catch(e){ setMsg('❌ '+e.message) } }
+  const pickTheme=async(c)=>{ try{ await api.post('/me/shop/theme',{theme_color:c})
+      setS(v=>({...v,theme_color:c})); setMsg('✅ Theme colour set') }catch(e){ setMsg('❌ '+e.message) } }
   const editBio=async()=>{ const v=prompt('Shop Bio (shop page-la customer-ku theriyum. Search-la varathu.)', (s&&s.bio)||'')
     if(v==null)return; await save({bio:v.trim()},'✅ Bio updated') }
   const cpPrice=async(p)=>{ const pr=prompt('Price (Rs.)', p.price||''); if(pr==null)return
@@ -4253,6 +4278,32 @@ function OwnerDashboard(){
               <button className="btn ghost" onClick={startAutopay}>⚡ Auto-pay ON</button>
             </div>}
         <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p>
+      </div>
+    </div>
+
+    <div className="card">
+      <h3>🎨 Shop Website Look</h3>
+      <p className="muted" style={{fontSize:12.5,marginTop:2}}>Cover photo, logo & colour maathunga — customer QR scan panna unga shop page inga maadhiri azhaga theriyum.</p>
+      {/* live mini preview */}
+      <div style={{position:'relative',borderRadius:14,overflow:'hidden',marginTop:10,boxShadow:'0 4px 14px rgba(0,0,0,.12)'}}>
+        <div style={{height:90,background:s.cover_url?`center/cover no-repeat url(${s.cover_url})`:(s.theme_color?`linear-gradient(135deg, ${s.theme_color}, ${s.theme_color}bb)`:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)')}}/>
+        <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.7),transparent 60%)'}}/>
+        <div style={{position:'absolute',left:10,bottom:8,display:'flex',alignItems:'flex-end',gap:8}}>
+          <div style={{width:42,height:42,borderRadius:10,background:'#fff',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>
+            {s.logo_url?<img src={s.logo_url} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:'🏪'}</div>
+          <b style={{color:'#fff',fontSize:14,textShadow:'0 1px 4px rgba(0,0,0,.5)'}}>{s.shop_name}</b>
+        </div>
+      </div>
+      <div className="row" style={{gap:8,marginTop:10,flexWrap:'wrap'}}>
+        <button className="btn ghost sm" onClick={()=>uploadMedia('cover')}>🖼 {s.cover_url?'Change':'Add'} Cover</button>
+        <button className="btn ghost sm" onClick={()=>uploadMedia('logo')}>⭐ {s.logo_url?'Change':'Add'} Logo</button>
+      </div>
+      <p className="muted" style={{fontSize:12,margin:'12px 0 6px'}}>Theme colour (cover illaina idhu background aagum):</p>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        {['#FF6A00','#E11D48','#7A2FF7','#2563EB','#059669','#0891B2','#D97706','#DB2777','#475569','#141225'].map(c=>(
+          <button key={c} onClick={()=>pickTheme(c)} title={c} style={{width:32,height:32,borderRadius:'50%',cursor:'pointer',
+            background:c,border:s.theme_color===c?'3px solid #141225':'2px solid #fff',boxShadow:'0 1px 4px rgba(0,0,0,.2)'}}/>))}
+        {s.theme_color && <button className="btn ghost sm" onClick={()=>pickTheme('')}>Reset</button>}
       </div>
     </div>
 
