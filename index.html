@@ -54,8 +54,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
@@ -375,6 +380,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -944,6 +951,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 /* ==APPCSS_END== */
 </style>
+
 
 
 
@@ -2215,9 +2223,17 @@ function launchUpi(uri, app){
   catch(e){ try{ window.location.href=target }catch(_){}}
 }
 
-function Stars({value,onPick}){
-  return <span>{[1,2,3,4,5].map(n=><span key={n} onClick={onPick?()=>onPick(n):undefined}
-    style={{cursor:onPick?'pointer':'default',fontSize:22,color:n<=value?'#FFB800':'#ddd'}}>*</span>)}</span>
+function Stars({value,onPick,size}){
+  const sz=size||22
+  return <span style={{display:'inline-flex',gap:onPick?4:2,lineHeight:1}}>
+    {[1,2,3,4,5].map(n=><span key={n} onClick={onPick?()=>onPick(n):undefined}
+      style={{cursor:onPick?'pointer':'default',fontSize:sz,lineHeight:1,
+        color:n<=value?'#FFB800':'#d8d8e2',
+        textShadow:n<=value?'0 1px 2px rgba(255,150,0,.35)':'none',
+        transition:'transform .12s'}}
+      onMouseDown={onPick?e=>{e.currentTarget.style.transform='scale(1.25)'}:undefined}
+      onMouseUp={onPick?e=>{e.currentTarget.style.transform='scale(1)'}:undefined}>★</span>)}
+  </span>
 }
 
 function ProdCards({items, wa, shopName, onOrder}){
@@ -2488,8 +2504,8 @@ function ShopPage(){
           <div style={{fontSize:38,fontWeight:900,color:'#141225',lineHeight:1}}>{rev.avg}</div>
           <div><Stars value={Math.round(rev.avg)}/><div className="muted" style={{fontSize:12}}>{rev.count} ratings · {rev.reviews.filter(r=>r.text).length} reviews</div></div></div>}
         <div style={{padding:12,background:'#f7f6fc',borderRadius:12}}>
-          <p style={{margin:'0 0 4px',fontWeight:700,fontSize:13.5,color:'#141225'}}>Ungaloda rating:</p>
-          <Stars value={myR.rating} onPick={n=>setMyR({...myR,rating:n})}/>
+          <p style={{margin:'0 0 6px',fontWeight:700,fontSize:13.5,color:'#141225'}}>Ungaloda rating — star-a thattunga:</p>
+          <Stars value={myR.rating} onPick={n=>setMyR({...myR,rating:n})} size={36}/>
           <input className="input" placeholder="Your name (optional)" value={myR.name} onChange={e=>setMyR({...myR,name:e.target.value})}/>
           <textarea rows="2" placeholder="Write a review (optional)" value={myR.text} onChange={e=>setMyR({...myR,text:e.target.value})}></textarea>
           <div className="row"><button className="btn sm" onClick={submitReview}>Submit</button>
