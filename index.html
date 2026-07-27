@@ -18,8 +18,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
@@ -330,6 +335,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -881,6 +888,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 /* ==APPCSS_END== */
 </style>
+
 
 <!-- NM_PIXEL_START -->
 <script>
@@ -3822,6 +3830,11 @@ function OwnerDashboard(){
   const [mcLoading,setMcLoading]=useState(false); const [mcMsg,setMcMsg]=useState('')
   const [myShops,setMyShops]=useState([])
   const [catp,setCatp]=useState([])
+  // poster maker state (MUST be before any early return — React hooks rule)
+  const [posterPhoto,setPosterPhoto]=useState(null)
+  const [posterStyle,setPosterStyle]=useState('classic')
+  const [posterMsg,setPosterMsg]=useState('')
+  const posterCanvas=useRef(null)
   const load=()=>{ api.get('/me/shop').then(setS).catch(e=>setMsg(e.message))
     api.get('/me/shop/analytics').then(setAn).catch(()=>{})
     api.get('/me/shop/payments').then(setPays).catch(()=>{})
@@ -3899,10 +3912,6 @@ function OwnerDashboard(){
     await save({shop_name:nm},'✅ Shop name updated') }
 
   // ---- Create Your Own QR Poster (client-side canvas, scan-safe) ----
-  const [posterPhoto,setPosterPhoto]=useState(null)
-  const [posterStyle,setPosterStyle]=useState('classic')
-  const [posterMsg,setPosterMsg]=useState('')
-  const posterCanvas=useRef(null)
   const loadScriptO=(src)=>new Promise((res,rej)=>{ if(document.querySelector(`script[src="${src}"]`))return res()
     const el=document.createElement('script'); el.src=src; el.onload=res; el.onerror=()=>rej(new Error('load fail')); document.head.appendChild(el) })
   const loadImg=(src)=>new Promise((res,rej)=>{ const im=new Image(); im.crossOrigin='anonymous'; im.onload=()=>res(im); im.onerror=()=>rej(new Error('img')); im.src=src })
