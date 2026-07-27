@@ -390,6 +390,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -1304,9 +1306,70 @@ function Landing(){
         : '❌ Location edukka mudiyala. Phone-la GPS/Location ON pannunga, appuram try pannunga.') },
       {enableHighAccuracy:true,timeout:15000,maximumAge:0}) }
   const s=SLIDES[i]
+  // ---- App download (Android APK / iOS add-to-home / TV APK) ----
+  const [dlOpen,setDlOpen]=useState(false)
+  const [installed,setInstalled]=useState({})
+  const ua=(typeof navigator!=='undefined'?navigator.userAgent:'')
+  const isAndroid=/Android/i.test(ua), isIOS=/iPhone|iPad|iPod/i.test(ua)
+  const standalone=(typeof window!=='undefined') &&
+    (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true)
+  useEffect(()=>{ // Android Chrome can tell us if our app is already installed
+    if(navigator.getInstalledRelatedApps) navigator.getInstalledRelatedApps()
+      .then(list=>{ const m={}; (list||[]).forEach(a=>{ if(a.id) m[a.id]=true }); setInstalled(m) }).catch(()=>{})
+  },[])
+  const APPS=[
+    {id:'shop.nammaoor.twa', icon:'🤖', name:'NammaOor — Android App',
+     desc:'Customer · Shop Owner · Employee — ellame indha app-la',
+     href:'/app.apk', ok:isAndroid},
+    {id:'ios', icon:'🍎', name:'NammaOor — iPhone / iPad',
+     desc:'Safari-la thirandhu Share ⬆️ → "Add to Home Screen" thattunga',
+     href:null, ok:isIOS},
+    {id:'shop.nammaoor.tv', icon:'📺', name:'NammaOor TV App',
+     desc:'Smart TV / Android TV-la kadai display-ku',
+     href:'/tv.apk', ok:true},
+  ]
+
   return (<>
     <Header/>
     <div className="container">
+      <div style={{display:'flex',justifyContent:'center',margin:'4px 0 12px'}}>
+        <button onClick={()=>setDlOpen(true)} style={{border:'none',cursor:'pointer',color:'#fff',
+          borderRadius:14,padding:'12px 26px',fontSize:15.5,fontWeight:800,
+          background:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)',
+          boxShadow:'0 8px 22px rgba(255,46,126,.35)'}}>📥 Download App</button>
+      </div>
+
+      {dlOpen && <div onClick={()=>setDlOpen(false)} style={{position:'fixed',inset:0,zIndex:200,
+        background:'rgba(12,8,26,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+        <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:18,padding:18,
+          width:'100%',maxWidth:420,boxShadow:'0 20px 60px rgba(0,0,0,.35)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <b style={{fontSize:17}}>📥 Download NammaOor</b>
+            <button onClick={()=>setDlOpen(false)} style={{border:'none',background:'none',fontSize:22,cursor:'pointer'}}>✕</button>
+          </div>
+          {APPS.map(a=>{
+            const done = installed[a.id] || (a.id==='ios' && isIOS && standalone) ||
+                         (a.id==='shop.nammaoor.twa' && isAndroid && standalone)
+            return (
+            <div key={a.id} style={{display:'flex',alignItems:'center',gap:10,marginTop:12,
+              border:'1px solid var(--line)',borderRadius:14,padding:'11px 12px',
+              opacity:(a.ok||a.id==='shop.nammaoor.tv')?1:.55}}>
+              <div style={{fontSize:28}}>{a.icon}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <b style={{fontSize:13.5,display:'block'}}>{a.name}</b>
+                <span className="muted" style={{fontSize:11.5}}>{a.desc}</span>
+              </div>
+              {done
+                ? <span style={{fontSize:12,fontWeight:800,color:'#0a7a4a',whiteSpace:'nowrap'}}>✅ In device</span>
+                : a.href
+                  ? <a href={a.href} download style={{textDecoration:'none',background:'linear-gradient(135deg,#FF6A00,#FF2E7E)',
+                      color:'#fff',borderRadius:10,padding:'9px 14px',fontSize:12.5,fontWeight:800,whiteSpace:'nowrap'}}>Download</a>
+                  : <span style={{fontSize:11.5,fontWeight:700,color:'#7A2FF7',whiteSpace:'nowrap',textAlign:'right'}}>Safari-la<br/>Add to Home</span>}
+            </div>)})}
+          <p className="muted" style={{fontSize:11,marginTop:12,lineHeight:1.5}}>
+            Android-la install pannum pothu "Unknown sources" kekkum — Allow kudunga. Namma sontha app, safe. 🔐</p>
+        </div>
+      </div>}
       <div style={{position:'relative',borderRadius:20,overflow:'hidden',minHeight:230,
         background:s.g,transition:'background .6s ease',color:'#fff',
         display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',

@@ -8,6 +8,11 @@
   "orientation": "any",
   "background_color": "#0e0b1a",
   "theme_color": "#FF2E7E",
+  "prefer_related_applications": false,
+  "related_applications": [
+    { "platform": "play", "id": "shop.nammaoor.twa", "url": "https://nammaoor.shop/app.apk" },
+    { "platform": "play", "id": "shop.nammaoor.tv", "url": "https://nammaoor.shop/tv.apk" }
+  ],
   "icons": [
     { "src": "https://nammaoor.shop/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "https://nammaoor.shop/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
