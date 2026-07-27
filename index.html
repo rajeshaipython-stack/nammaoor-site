@@ -42,8 +42,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
@@ -360,6 +365,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -930,6 +937,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
 <!-- NM_PIXEL_START -->
 <script>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -1383,17 +1391,29 @@ function Landing(){
   useEffect(()=>{ const t=setInterval(()=>setI(p=>(p+1)%SLIDES.length),3000); return ()=>clearInterval(t) },[])
   const nav=useNavigate()
   const [shops,setShops]=useState([]); const [nearOn,setNearOn]=useState(false); const [geoMsg,setGeoMsg]=useState('')
-  const [stories,setStories]=useState([]); const [storyIx,setStoryIx]=useState(-1)
+  const [stories,setStories]=useState([]); const [grpIx,setGrpIx]=useState(-1); const [itIx,setItIx]=useState(0)
   const [following,setFollowing]=useState([])
+  // group stories by shop -> one icon per shop, tap plays all that shop's stories in order
+  const shopGroups=(()=>{ const m=new Map()
+    for(const st of stories){ if(!m.has(st.shop_code)) m.set(st.shop_code,{shop_code:st.shop_code,shop_name:st.shop_name,logo_url:st.logo_url,items:[]}); m.get(st.shop_code).items.push(st) }
+    const arr=[...m.values()]; arr.forEach(g=>g.items.reverse()); return arr })()
+  const openGrp=(ix)=>{ setGrpIx(ix); setItIx(0) }
+  const closeStory=()=>setGrpIx(-1)
+  const nextStory=()=>{ const g=shopGroups[grpIx]; if(!g)return
+    if(itIx+1<g.items.length){ setItIx(itIx+1) }
+    else if(grpIx+1<shopGroups.length){ setGrpIx(grpIx+1); setItIx(0) }
+    else { setGrpIx(-1) } }
+  const prevStory=()=>{ if(itIx>0){ setItIx(itIx-1) }
+    else if(grpIx>0){ const pg=shopGroups[grpIx-1]; setGrpIx(grpIx-1); setItIx(Math.max(0,pg.items.length-1)) } }
   // recent/random shops on home (no forced GPS prompt)
   useEffect(()=>{ api.get('/search').then(r=>{ if(r&&r.length){ const a=[...r].sort(()=>Math.random()-0.5); setShops(a.slice(0,8)) } }).catch(()=>{})
     api.get('/stories').then(r=>{ if(Array.isArray(r)) setStories(r) }).catch(()=>{})
     api.get('/following?device_token='+deviceToken()).then(r=>{ if(Array.isArray(r)) setFollowing(r) }).catch(()=>{}) },[])
-  // story viewer auto-advance
-  useEffect(()=>{ if(storyIx<0) return
-    const t=setTimeout(()=>{ setStoryIx(i=> i+1<stories.length ? i+1 : -1) },6000)
+  // story viewer auto-advance (per shop, then next shop)
+  useEffect(()=>{ if(grpIx<0) return
+    const t=setTimeout(nextStory,6000)
     return ()=>clearTimeout(t)
-  },[storyIx,stories.length])
+  },[grpIx,itIx])
   const nearMe=()=>{
     setGeoMsg('📍 Location edukkuthu…')
     if(!navigator.geolocation){ setGeoMsg('❌ Intha browser location support pannala. Chrome/Safari-la open pannunga.'); return }
@@ -1432,19 +1452,22 @@ function Landing(){
   return (<>
     <Header/>
     <div className="container">
-      {/* 24h Stories strip */}
-      {stories.length>0 && <div style={{display:'flex',gap:12,overflowX:'auto',padding:'12px 2px 4px',marginTop:8}}>
-        {stories.map((st,ix)=>(
-          <div key={st.id} onClick={()=>setStoryIx(ix)} style={{flex:'0 0 auto',textAlign:'center',cursor:'pointer',width:74}}>
-            <div style={{width:66,height:66,borderRadius:'50%',padding:3,margin:'0 auto',
+      {/* 24h Stories strip — one icon per shop */}
+      {shopGroups.length>0 && <div style={{display:'flex',gap:12,overflowX:'auto',padding:'12px 2px 4px',marginTop:8}}>
+        {shopGroups.map((g,ix)=>(
+          <div key={g.shop_code} onClick={()=>openGrp(ix)} style={{flex:'0 0 auto',textAlign:'center',cursor:'pointer',width:74}}>
+            <div style={{width:66,height:66,borderRadius:'50%',padding:3,margin:'0 auto',position:'relative',
               background:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'}}>
               <div style={{width:'100%',height:'100%',borderRadius:'50%',overflow:'hidden',background:'#fff',
                 display:'flex',alignItems:'center',justifyContent:'center'}}>
-                {st.logo_url?<img src={st.logo_url} onError={onImgErr} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                {g.logo_url?<img src={g.logo_url} onError={onImgErr} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                   :<span style={{fontSize:26}}>🏪</span>}
               </div>
+              {g.items.length>1 && <span style={{position:'absolute',top:-2,right:-2,minWidth:18,height:18,borderRadius:9,
+                background:'#141225',color:'#fff',fontSize:11,fontWeight:800,display:'flex',alignItems:'center',
+                justifyContent:'center',padding:'0 4px',border:'2px solid #fff'}}>{g.items.length}</span>}
             </div>
-            <div style={{fontSize:11,marginTop:4,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{st.shop_name}</div>
+            <div style={{fontSize:11,marginTop:4,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{g.shop_name}</div>
           </div>))}
       </div>}
 
@@ -1465,27 +1488,27 @@ function Landing(){
         </div>
       </div>}
 
-      {/* fullscreen story viewer */}
-      {storyIx>=0 && stories[storyIx] && (()=>{ const st=stories[storyIx]; return (
-        <div onClick={()=>setStoryIx(-1)} style={{position:'fixed',inset:0,zIndex:300,background:'#000',
+      {/* fullscreen story viewer — grouped by shop */}
+      {grpIx>=0 && shopGroups[grpIx] && (()=>{ const g=shopGroups[grpIx]; const st=g.items[itIx]||g.items[0]; return (
+        <div onClick={closeStory} style={{position:'fixed',inset:0,zIndex:300,background:'#000',
           display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
           <div style={{position:'absolute',top:0,left:0,right:0,display:'flex',gap:4,padding:8}}>
-            {stories.map((_,k)=><div key={k} style={{flex:1,height:3,borderRadius:3,
-              background:k<storyIx?'#fff':k===storyIx?'#fff':'rgba(255,255,255,.35)'}}/>)}
+            {g.items.map((_,k)=><div key={k} style={{flex:1,height:3,borderRadius:3,
+              background:k<=itIx?'#fff':'rgba(255,255,255,.35)'}}/>)}
           </div>
           <div style={{position:'absolute',top:20,left:14,right:14,display:'flex',alignItems:'center',gap:8,color:'#fff',zIndex:2}}>
             <div style={{width:38,height:38,borderRadius:'50%',overflow:'hidden',background:'#fff',flex:'0 0 auto'}}>
-              {st.logo_url?<img src={st.logo_url} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:20}}>🏪</span>}</div>
-            <b style={{fontSize:14,flex:1}}>{st.shop_name}</b>
-            <span onClick={e=>{e.stopPropagation();setStoryIx(-1)}} style={{fontSize:26,cursor:'pointer'}}>✕</span>
+              {g.logo_url?<img src={g.logo_url} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:20}}>🏪</span>}</div>
+            <b style={{fontSize:14,flex:1}}>{g.shop_name}</b>
+            <span onClick={e=>{e.stopPropagation();closeStory()}} style={{fontSize:26,cursor:'pointer'}}>✕</span>
           </div>
           {/* tap zones */}
-          <div onClick={e=>{e.stopPropagation();setStoryIx(i=>i>0?i-1:0)}} style={{position:'absolute',left:0,top:0,bottom:0,width:'33%',zIndex:1}}/>
-          <div onClick={e=>{e.stopPropagation();setStoryIx(i=>i+1<stories.length?i+1:-1)}} style={{position:'absolute',right:0,top:0,bottom:0,width:'33%',zIndex:1}}/>
+          <div onClick={e=>{e.stopPropagation();prevStory()}} style={{position:'absolute',left:0,top:0,bottom:0,width:'33%',zIndex:1}}/>
+          <div onClick={e=>{e.stopPropagation();nextStory()}} style={{position:'absolute',right:0,top:0,bottom:0,width:'33%',zIndex:1}}/>
           {st.image_url && <img src={st.image_url} style={{maxWidth:'100%',maxHeight:'82vh',objectFit:'contain'}}/>}
           {st.text && <div style={{color:'#fff',fontSize:18,textAlign:'center',padding:'14px 24px',maxWidth:600,
             background:st.image_url?'rgba(0,0,0,.45)':'transparent',borderRadius:12,marginTop:st.image_url?-70:0,zIndex:2}}>{st.text}</div>}
-          <a href={'#/shop/'+st.shop_code} onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:24,zIndex:2,
+          <a href={'#/shop/'+g.shop_code} onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:24,zIndex:2,
             background:'#fff',color:'#141225',borderRadius:20,padding:'10px 26px',fontWeight:800,textDecoration:'none'}}>Visit Shop →</a>
         </div>)})()}
 
