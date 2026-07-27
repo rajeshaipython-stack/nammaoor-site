@@ -14,8 +14,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="theme-color" content="#FF2E7E">
@@ -325,6 +330,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -874,6 +881,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 /* ==APPCSS_END== */
 </style>
+
 <!-- NM_PIXEL_START -->
 <script>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -3889,6 +3897,76 @@ function OwnerDashboard(){
   const editShopName=async()=>{ const v=prompt('Shop Name', s.shop_name||''); if(v==null)return
     const nm=v.trim(); if(nm.length<3){ setMsg('❌ Shop name romba chinnadhu'); return }
     await save({shop_name:nm},'✅ Shop name updated') }
+
+  // ---- Create Your Own QR Poster (client-side canvas, scan-safe) ----
+  const [posterPhoto,setPosterPhoto]=useState(null)
+  const [posterStyle,setPosterStyle]=useState('classic')
+  const [posterMsg,setPosterMsg]=useState('')
+  const posterCanvas=useRef(null)
+  const loadScriptO=(src)=>new Promise((res,rej)=>{ if(document.querySelector(`script[src="${src}"]`))return res()
+    const el=document.createElement('script'); el.src=src; el.onload=res; el.onerror=()=>rej(new Error('load fail')); document.head.appendChild(el) })
+  const loadImg=(src)=>new Promise((res,rej)=>{ const im=new Image(); im.crossOrigin='anonymous'; im.onload=()=>res(im); im.onerror=()=>rej(new Error('img')); im.src=src })
+  const STY={
+    classic:{bg:'#f3eee9', band:'#1b1230', accent:'#FF2E7E', ink:'#1b1230'},
+    bold:{bg:'#0e0b1a', band:'#FF2E7E', accent:'#FFD400', ink:'#ffffff'},
+    minimal:{bg:'#ffffff', band:'#222', accent:'#7A2FF7', ink:'#222'},
+  }
+  const drawPoster=async()=>{
+    setPosterMsg('⏳ Making poster…')
+    try{
+      await loadScriptO('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js')
+      const W=1080,H=1440, c=posterCanvas.current, ctx=c.getContext('2d')
+      c.width=W; c.height=H
+      const t=STY[posterStyle]||STY.classic
+      ctx.fillStyle=t.bg; ctx.fillRect(0,0,W,H)
+      // owner photo (top ~55%) — cover fit, no stretch
+      const ph=posterPhoto||s.cover_url||s.logo_url
+      if(ph){ try{ const im=await loadImg(ph)
+        const dw=W, dh=Math.round(H*0.56)
+        const r=Math.max(dw/im.width, dh/im.height), iw=im.width*r, ih=im.height*r
+        ctx.save(); ctx.beginPath(); ctx.rect(0,0,dw,dh); ctx.clip()
+        ctx.drawImage(im,(dw-iw)/2,(dh-ih)/2,iw,ih)
+        // soft gradient at bottom of photo -> blend to bg
+        const g=ctx.createLinearGradient(0,dh-200,0,dh); g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,t.bg)
+        ctx.fillStyle=g; ctx.fillRect(0,dh-200,dw,200); ctx.restore()
+      }catch(e){} }
+      // shop name band
+      ctx.fillStyle=t.band; const by=Math.round(H*0.56)
+      ctx.fillRect(0,by,W,120)
+      ctx.fillStyle=(t.ink==='#222'||t.ink==='#1b1230')?'#fff':t.ink
+      ctx.font='bold 58px Poppins,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'
+      let nm=(s.shop_name||'My Shop'); if(nm.length>22)nm=nm.slice(0,21)+'…'
+      ctx.fillText(nm, W/2, by+60)
+      // QR (ecc H) via qrcodejs into a hidden div, then draw its canvas
+      const holder=document.createElement('div'); holder.style.display='none'; document.body.appendChild(holder)
+      /* global QRCode */
+      new window.QRCode(holder,{text:pub,width:520,height:520,correctLevel:window.QRCode.CorrectLevel.H})
+      await new Promise(r=>setTimeout(r,120))
+      const qc=holder.querySelector('canvas')||holder.querySelector('img')
+      const qx=(W-560)/2, qy=by+170
+      // white rounded card behind QR
+      ctx.fillStyle='#fff'; const rr=28
+      ctx.beginPath(); ctx.moveTo(qx+rr,qy); ctx.arcTo(qx+560,qy,qx+560,qy+560,rr)
+      ctx.arcTo(qx+560,qy+560,qx,qy+560,rr); ctx.arcTo(qx,qy+560,qx,qy,rr); ctx.arcTo(qx,qy,qx+560,qy,rr); ctx.fill()
+      if(qc){ if(qc.tagName==='IMG'){ const qi=await loadImg(qc.src); ctx.drawImage(qi,qx+20,qy+20,520,520) }
+        else ctx.drawImage(qc,qx+20,qy+20,520,520) }
+      document.body.removeChild(holder)
+      // small NammaOor logo in QR center
+      try{ const lg=await loadImg('/logo.png'); const ls=110; ctx.save()
+        ctx.fillStyle='#fff'; ctx.fillRect(W/2-ls/2-8,qy+280-ls/2-8,ls+16,ls+16)
+        ctx.drawImage(lg,W/2-ls/2,qy+280-ls/2,ls,ls); ctx.restore() }catch(e){}
+      // footer text
+      ctx.fillStyle=t.accent; ctx.font='italic bold 46px Poppins,sans-serif'
+      ctx.fillText('Scan & Visit', W/2, qy+620)
+      ctx.fillStyle=t.ink; ctx.font='500 34px Poppins,sans-serif'
+      ctx.fillText('My Shop on', W/2, qy+672)
+      ctx.font='bold 44px Poppins,sans-serif'; ctx.fillText('NammaOor.shop', W/2, qy+722)
+      setPosterMsg('✅ Ready! Download panni WhatsApp/print pannunga.')
+    }catch(e){ setPosterMsg('❌ '+e.message) }
+  }
+  const downloadPoster=()=>{ const c=posterCanvas.current; if(!c)return
+    const a=document.createElement('a'); a.href=c.toDataURL('image/png'); a.download=(s.shop_code||'nammaoor')+'_QR_poster.png'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a) }
   const daysLeft = s.expires_at ? Math.max(0, Math.ceil((new Date(s.expires_at)-new Date())/86400000)) : 0
   const expired = (s.status==='expired') || (s.expires_at && new Date(s.expires_at) < new Date())
   const pub=`${SITE}/#/shop/${(s.shop_code||'').replace('-','')}`
@@ -3947,6 +4025,23 @@ function OwnerDashboard(){
             </div>}
         <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p>
       </div>
+    </div>
+
+    <div className="card">
+      <h3>🎨 Create Your QR Poster</h3>
+      <p className="muted" style={{fontSize:12.5,marginTop:2}}>Upload your photo → shop name + QR + NammaOor branding, ready-made poster. Scan 100% works. WhatsApp / print pannunga.</p>
+      <div className="row" style={{gap:8,marginTop:8,flexWrap:'wrap'}}>
+        <button className="btn ghost" onClick={async()=>{ const d=await pickImage(1000); if(d){ setPosterPhoto(d); setPosterMsg('Photo ready — Make Poster thattunga') } }}>📷 Upload Photo</button>
+        <select value={posterStyle} onChange={e=>setPosterStyle(e.target.value)} style={{maxWidth:150}}>
+          <option value="classic">🎞 Classic</option><option value="bold">⚡ Bold</option><option value="minimal">⬜ Minimal</option>
+        </select>
+        <button className="btn" onClick={drawPoster}>✨ Make Poster</button>
+      </div>
+      <div style={{marginTop:10,display:'flex',justifyContent:'center'}}>
+        <canvas ref={posterCanvas} style={{width:'100%',maxWidth:300,borderRadius:12,border:'1px solid var(--line)',display:'block'}}/>
+      </div>
+      <button className="btn tl" style={{width:'100%',marginTop:8}} onClick={downloadPoster}>⬇️ Download Poster (PNG)</button>
+      <p style={{color:'var(--teal)',fontSize:13,marginTop:6}}>{posterMsg}</p>
     </div>
 
     <div className="card"><h3>Profile</h3>
