@@ -34,8 +34,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
@@ -350,6 +355,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -914,6 +921,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
 <!-- NM_PIXEL_START -->
 <script>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -1368,7 +1376,7 @@ function Landing(){
   const [stories,setStories]=useState([]); const [storyIx,setStoryIx]=useState(-1)
   // recent/random shops on home (no forced GPS prompt)
   useEffect(()=>{ api.get('/search').then(r=>{ if(r&&r.length){ const a=[...r].sort(()=>Math.random()-0.5); setShops(a.slice(0,8)) } }).catch(()=>{})
-    api.get('/public/stories').then(r=>{ if(Array.isArray(r)) setStories(r) }).catch(()=>{}) },[])
+    api.get('/stories').then(r=>{ if(Array.isArray(r)) setStories(r) }).catch(()=>{}) },[])
   // story viewer auto-advance
   useEffect(()=>{ if(storyIx<0) return
     const t=setTimeout(()=>{ setStoryIx(i=> i+1<stories.length ? i+1 : -1) },6000)
