@@ -388,6 +388,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -1351,6 +1353,24 @@ function Landing(){
             </div>))}
         </div>
       </div>}
+
+      {/* shop-owner feature shortcuts (login-gated inside) */}
+      <div className="grid2" style={{marginTop:22,gap:12}}>
+        <div className="card" onClick={()=>nav('/app/tv')} style={{cursor:'pointer',textAlign:'center',
+          background:'linear-gradient(135deg,#1b1230,#3a1d5c)',color:'#fff',border:'none'}}>
+          <div style={{fontSize:30}}>📺</div>
+          <b style={{fontSize:15}}>NammaOor TV Display</b>
+          <div style={{fontSize:12,opacity:.85,marginTop:2}}>Kadai TV-la products & ads</div>
+        </div>
+        <div className="card" onClick={()=>nav('/app/billing')} style={{cursor:'pointer',textAlign:'center',
+          background:'linear-gradient(135deg,#FF6A00,#FF2E7E)',color:'#fff',border:'none'}}>
+          <div style={{fontSize:30}}>🧾</div>
+          <b style={{fontSize:15}}>Add Your Billing</b>
+          <div style={{fontSize:12,opacity:.9,marginTop:2}}>Invoice · GST · WhatsApp PDF</div>
+        </div>
+      </div>
+      <p className="muted" style={{textAlign:'center',fontSize:11.5,marginTop:6}}>
+        Shop Owner-ku mattum · login pannunga</p>
 
       {/* role cards at the BOTTOM (secondary) */}
       <p className="muted" style={{textAlign:'center',marginTop:24,marginBottom:2,fontWeight:600}}>Neenga yaaru?</p>
@@ -2600,7 +2620,19 @@ function Billing(){
     await api.del('/me/shop/invoices/'+id); loadHistory(period,qy); load() }
   const markPaid=async(id)=>{ await api.patch('/me/shop/invoices/'+id,{payment_status:'paid'}); loadHistory(period,qy); load() }
 
-  if(!shop) return <><Header/><div className="container"><div className="card">{msg||'Loading…'}<p className="muted">Shop owner-aa login pannirukanum.</p></div></div></>
+  if(!shop){
+    const notOwner=!localStorage.getItem('token')||localStorage.getItem('role')!=='shop_owner'
+    if(notOwner) return (<><Header/><div className="container" style={{maxWidth:520}}>
+      <div className="card" style={{textAlign:'center'}}>
+        <div style={{fontSize:44}}>🧾</div>
+        <h2 className="brand" style={{marginTop:4}}>Billing & Invoice</h2>
+        <p className="muted">Customer bill, GST, WhatsApp PDF invoice — ellam ungaloda phone-la.</p>
+        <p style={{fontWeight:700,marginTop:10}}>Idhu Shop Owner-ku mattum.</p>
+        <a className="btn" href="#/login" style={{display:'inline-block',marginTop:8}}>🔐 Shop Owner Login</a>
+        <p className="muted" style={{fontSize:12,marginTop:10}}>Kadai innum register pannalaya? <a href="#/register">Kadai Pathivu</a></p>
+      </div></div></>)
+    return <><Header/><div className="container"><div className="card">{msg||'Loading…'}</div></div></>
+  }
   const shopUrl=`${SITE}/shop/${(shop.shop_code||'').replace('-','')}`
 
   // ================= PRINT / VIEW INVOICE =================
@@ -3228,6 +3260,17 @@ function TvManage(){
   const playlistM=(settings.playlist&&settings.playlist.length)?settings.playlist
     :(settings.audio?[settings.audio]:[])
   const announce=settings.announce
+
+  const notOwner=!localStorage.getItem('token')||localStorage.getItem('role')!=='shop_owner'
+  if(notOwner) return (<><Header/><div className="container" style={{maxWidth:520}}>
+    <div className="card" style={{textAlign:'center'}}>
+      <div style={{fontSize:44}}>📺</div>
+      <h2 className="brand" style={{marginTop:4}}>NammaOor TV Display</h2>
+      <p className="muted">Kadai TV-la products, offers, QR, ads — ellam phone-la irundhu control pannalaam.</p>
+      <p style={{fontWeight:700,marginTop:10}}>Idhu Shop Owner-ku mattum.</p>
+      <a className="btn" href="#/login" style={{display:'inline-block',marginTop:8}}>🔐 Shop Owner Login</a>
+      <p className="muted" style={{fontSize:12,marginTop:10}}>Kadai innum register pannalaya? <a href="#/register">Kadai Pathivu</a></p>
+    </div></div></>)
 
   return (<><Header/><div className="container" style={{maxWidth:760}}>
     <h2 className="brand">📺 TV Display</h2>
