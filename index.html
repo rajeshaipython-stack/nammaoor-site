@@ -392,6 +392,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -1271,11 +1273,11 @@ function MiniBrowser(){
 
 /* ===== pages/Landing.jsx ===== */
 
+// Poster slideshow — images shown as-is (no crop, no colour change)
 const SLIDES=[
-  {icon:'💳', title:'Easy to Pay', sub:'QR scan pannunga — GPay / PhonePe / Paytm. Instant, no app install.', g:'linear-gradient(135deg,#00b894,#0984e3)'},
-  {icon:'💼', title:'Easy to Earn', sub:'Employees kadai register panni ₹100 sambadhikkalaam. Wallet + withdrawals.', g:'linear-gradient(135deg,#6c5ce7,#a55eea)'},
-  {icon:'✨', title:'AI Listing', sub:'Photo eduthu podunga — AI title, description, price ready. Publish in seconds.', g:'linear-gradient(135deg,#e17055,#fdcb6e)'},
-  {icon:'📱', title:'WhatsApp · Call · Reviews', sub:'Customers neenga nera contact pannuvaanga. Ratings-la nambikkai valarum.', g:'linear-gradient(135deg,#ff2e7e,#7a2ff7)'},
+  {img:'/promo1.jpg', alt:'NammaOor — Porul Pathivu (Product Listing) · Registration Rs.1', to:'/register'},
+  {img:'/promo2.jpg', alt:'NammaOor TV Display — kadai products TV ads · Registration Rs.1', to:'/app/tv'},
+  {img:'/promo3.jpg', alt:'NammaOor Billing and Invoice · Registration Rs.1', to:'/app/billing'},
 ]
 
 function Landing(){
@@ -1370,18 +1372,13 @@ function Landing(){
             Android-la install pannum pothu "Unknown sources" kekkum — Allow kudunga. Namma sontha app, safe. 🔐</p>
         </div>
       </div>}
-      <div style={{position:'relative',borderRadius:20,overflow:'hidden',minHeight:230,
-        background:s.g,transition:'background .6s ease',color:'#fff',
-        display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-        textAlign:'center',padding:'34px 22px',boxShadow:'0 10px 30px rgba(0,0,0,.12)'}}>
-        <div key={i} style={{animation:'nmFade .6s ease'}}>
-          <div style={{fontSize:56,lineHeight:1}}>{s.icon}</div>
-          <h1 style={{fontSize:30,fontWeight:800,margin:'12px 0 6px'}}>{s.title}</h1>
-          <p style={{maxWidth:420,margin:'0 auto',opacity:.95,fontSize:15}}>{s.sub}</p>
-        </div>
-        <div style={{display:'flex',gap:8,marginTop:20}}>
+      <div style={{position:'relative',borderRadius:18,overflow:'hidden',background:'#fff',
+        boxShadow:'0 10px 30px rgba(0,0,0,.12)'}}>
+        <img key={i} src={s.img} alt={s.alt} onClick={()=>nav(s.to)}
+          style={{display:'block',width:'100%',height:'auto',cursor:'pointer',animation:'nmFade .6s ease'}}/>
+        <div style={{position:'absolute',left:0,right:0,bottom:10,display:'flex',gap:8,justifyContent:'center'}}>
           {SLIDES.map((_,k)=><span key={k} onClick={()=>setI(k)} style={{width:k===i?22:9,height:9,
-            borderRadius:9,background:k===i?'#fff':'rgba(255,255,255,.5)',transition:'all .3s',cursor:'pointer'}}/>)}
+            borderRadius:9,background:k===i?'#FF2E7E':'rgba(0,0,0,.25)',transition:'all .3s',cursor:'pointer'}}/>)}
         </div>
       </div>
       <style>{'@keyframes nmFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'}</style>
@@ -1456,9 +1453,10 @@ function Register(){
   const _h = (typeof window!=='undefined' && window.location.hash) || ''
   const _q = _h.includes('?') ? _h.split('?')[1] : (typeof window!=='undefined' ? window.location.search.slice(1) : '')
   const empParam = new URLSearchParams(_q).get('emp')          // present => an employee is registering
+  const ownParam = new URLSearchParams(_q).get('own')          // ?own=1 => owner self-register, skip chooser
   const emp = empParam || ''
-  // Entry chooser: no ?emp => came from "Kadai Pathivu" => ask Own / Other first.
-  const [mode,setMode]=useState(empParam ? 'form' : 'choose')
+  // Entry chooser: no ?emp / ?own => came from "Kadai Pathivu" => ask Own / Other first.
+  const [mode,setMode]=useState((empParam||ownParam) ? 'form' : 'choose')
   const [districts,setD]=useState(NM_DISTRICTS); const [assemblies,setA]=useState([]); const [cats,setC]=useState([])
   const [loadingCat,setLoadingCat]=useState(true); const [loadingAsm,setLoadingAsm]=useState(false)
   const [pw2,setPw2]=useState('')
@@ -2691,8 +2689,10 @@ function Billing(){
         <h2 className="brand" style={{marginTop:4}}>Billing & Invoice</h2>
         <p className="muted">Customer bill, GST, WhatsApp PDF invoice — ellam ungaloda phone-la.</p>
         <p style={{fontWeight:700,marginTop:10}}>Idhu Shop Owner-ku mattum.</p>
-        <a className="btn" href="#/login" style={{display:'inline-block',marginTop:8}}>🔐 Shop Owner Login</a>
-        <p className="muted" style={{fontSize:12,marginTop:10}}>Kadai innum register pannalaya? <a href="#/register">Kadai Pathivu</a></p>
+        <a className="btn" href="#/login" style={{display:'block',marginTop:10}}>🔐 Shop Owner Login</a>
+        <a href="#/register?own=1" style={{display:'block',marginTop:10,textDecoration:'none',color:'#fff',
+          borderRadius:12,padding:'13px 18px',fontSize:15,fontWeight:800,
+          background:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'}}>🏪 New Shop Register — ₹1 Only</a>
       </div></div></>)
     return <><Header/><div className="container"><div className="card">{msg||'Loading…'}</div></div></>
   }
@@ -3331,8 +3331,10 @@ function TvManage(){
       <h2 className="brand" style={{marginTop:4}}>NammaOor TV Display</h2>
       <p className="muted">Kadai TV-la products, offers, QR, ads — ellam phone-la irundhu control pannalaam.</p>
       <p style={{fontWeight:700,marginTop:10}}>Idhu Shop Owner-ku mattum.</p>
-      <a className="btn" href="#/login" style={{display:'inline-block',marginTop:8}}>🔐 Shop Owner Login</a>
-      <p className="muted" style={{fontSize:12,marginTop:10}}>Kadai innum register pannalaya? <a href="#/register">Kadai Pathivu</a></p>
+      <a className="btn" href="#/login" style={{display:'block',marginTop:10}}>🔐 Shop Owner Login</a>
+      <a href="#/register?own=1" style={{display:'block',marginTop:10,textDecoration:'none',color:'#fff',
+        borderRadius:12,padding:'13px 18px',fontSize:15,fontWeight:800,
+        background:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'}}>🏪 New Shop Register — ₹1 Only</a>
     </div></div></>)
 
   return (<><Header/><div className="container" style={{maxWidth:760}}>
