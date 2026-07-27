@@ -30,8 +30,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
@@ -345,6 +350,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -906,6 +913,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
 <!-- NM_PIXEL_START -->
 <script>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -1357,8 +1365,15 @@ function Landing(){
   useEffect(()=>{ const t=setInterval(()=>setI(p=>(p+1)%SLIDES.length),3000); return ()=>clearInterval(t) },[])
   const nav=useNavigate()
   const [shops,setShops]=useState([]); const [nearOn,setNearOn]=useState(false); const [geoMsg,setGeoMsg]=useState('')
+  const [stories,setStories]=useState([]); const [storyIx,setStoryIx]=useState(-1)
   // recent/random shops on home (no forced GPS prompt)
-  useEffect(()=>{ api.get('/search').then(r=>{ if(r&&r.length){ const a=[...r].sort(()=>Math.random()-0.5); setShops(a.slice(0,8)) } }).catch(()=>{}) },[])
+  useEffect(()=>{ api.get('/search').then(r=>{ if(r&&r.length){ const a=[...r].sort(()=>Math.random()-0.5); setShops(a.slice(0,8)) } }).catch(()=>{})
+    api.get('/public/stories').then(r=>{ if(Array.isArray(r)) setStories(r) }).catch(()=>{}) },[])
+  // story viewer auto-advance
+  useEffect(()=>{ if(storyIx<0) return
+    const t=setTimeout(()=>{ setStoryIx(i=> i+1<stories.length ? i+1 : -1) },6000)
+    return ()=>clearTimeout(t)
+  },[storyIx,stories.length])
   const nearMe=()=>{
     setGeoMsg('📍 Location edukkuthu…')
     if(!navigator.geolocation){ setGeoMsg('❌ Intha browser location support pannala. Chrome/Safari-la open pannunga.'); return }
@@ -1397,6 +1412,46 @@ function Landing(){
   return (<>
     <Header/>
     <div className="container">
+      {/* 24h Stories strip */}
+      {stories.length>0 && <div style={{display:'flex',gap:12,overflowX:'auto',padding:'12px 2px 4px',marginTop:8}}>
+        {stories.map((st,ix)=>(
+          <div key={st.id} onClick={()=>setStoryIx(ix)} style={{flex:'0 0 auto',textAlign:'center',cursor:'pointer',width:74}}>
+            <div style={{width:66,height:66,borderRadius:'50%',padding:3,margin:'0 auto',
+              background:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'}}>
+              <div style={{width:'100%',height:'100%',borderRadius:'50%',overflow:'hidden',background:'#fff',
+                display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {st.logo_url?<img src={st.logo_url} onError={onImgErr} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                  :<span style={{fontSize:26}}>🏪</span>}
+              </div>
+            </div>
+            <div style={{fontSize:11,marginTop:4,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{st.shop_name}</div>
+          </div>))}
+      </div>}
+
+      {/* fullscreen story viewer */}
+      {storyIx>=0 && stories[storyIx] && (()=>{ const st=stories[storyIx]; return (
+        <div onClick={()=>setStoryIx(-1)} style={{position:'fixed',inset:0,zIndex:300,background:'#000',
+          display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
+          <div style={{position:'absolute',top:0,left:0,right:0,display:'flex',gap:4,padding:8}}>
+            {stories.map((_,k)=><div key={k} style={{flex:1,height:3,borderRadius:3,
+              background:k<storyIx?'#fff':k===storyIx?'#fff':'rgba(255,255,255,.35)'}}/>)}
+          </div>
+          <div style={{position:'absolute',top:20,left:14,right:14,display:'flex',alignItems:'center',gap:8,color:'#fff',zIndex:2}}>
+            <div style={{width:38,height:38,borderRadius:'50%',overflow:'hidden',background:'#fff',flex:'0 0 auto'}}>
+              {st.logo_url?<img src={st.logo_url} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:<span style={{fontSize:20}}>🏪</span>}</div>
+            <b style={{fontSize:14,flex:1}}>{st.shop_name}</b>
+            <span onClick={e=>{e.stopPropagation();setStoryIx(-1)}} style={{fontSize:26,cursor:'pointer'}}>✕</span>
+          </div>
+          {/* tap zones */}
+          <div onClick={e=>{e.stopPropagation();setStoryIx(i=>i>0?i-1:0)}} style={{position:'absolute',left:0,top:0,bottom:0,width:'33%',zIndex:1}}/>
+          <div onClick={e=>{e.stopPropagation();setStoryIx(i=>i+1<stories.length?i+1:-1)}} style={{position:'absolute',right:0,top:0,bottom:0,width:'33%',zIndex:1}}/>
+          {st.image_url && <img src={st.image_url} style={{maxWidth:'100%',maxHeight:'82vh',objectFit:'contain'}}/>}
+          {st.text && <div style={{color:'#fff',fontSize:18,textAlign:'center',padding:'14px 24px',maxWidth:600,
+            background:st.image_url?'rgba(0,0,0,.45)':'transparent',borderRadius:12,marginTop:st.image_url?-70:0,zIndex:2}}>{st.text}</div>}
+          <a href={'#/shop/'+st.shop_code} onClick={e=>e.stopPropagation()} style={{position:'absolute',bottom:24,zIndex:2,
+            background:'#fff',color:'#141225',borderRadius:20,padding:'10px 26px',fontWeight:800,textDecoration:'none'}}>Visit Shop →</a>
+        </div>)})()}
+
       <div style={{display:'flex',justifyContent:'center',margin:'4px 0 12px'}}>
         <button onClick={()=>setDlOpen(true)} style={{border:'none',cursor:'pointer',color:'#fff',
           borderRadius:14,padding:'12px 26px',fontSize:15.5,fontWeight:800,
@@ -3846,6 +3901,7 @@ function OwnerDashboard(){
   const [mcLoading,setMcLoading]=useState(false); const [mcMsg,setMcMsg]=useState('')
   const [myShops,setMyShops]=useState([])
   const [catp,setCatp]=useState([])
+  const [stories,setStories]=useState([]); const [stPhoto,setStPhoto]=useState(null); const [stText,setStText]=useState(''); const [stMsg,setStMsg]=useState('')
   // poster maker state (MUST be before any early return — React hooks rule)
   const [posterPhoto,setPosterPhoto]=useState(null)
   const [posterStyle,setPosterStyle]=useState('classic')
@@ -3858,8 +3914,17 @@ function OwnerDashboard(){
     api.get('/me/shop/list').then(r=>{ setMyShops(r||[])
       const sid=localStorage.getItem('nm_shop_id')
       if(sid && r && !r.some(x=>x.id===sid)) localStorage.removeItem('nm_shop_id') }).catch(()=>{})
-    api.get('/me/shop/catalog').then(r=>setCatp(Array.isArray(r)?r:[])).catch(()=>{}) }
+    api.get('/me/shop/catalog').then(r=>setCatp(Array.isArray(r)?r:[])).catch(()=>{})
+    api.get('/me/shop/stories').then(r=>setStories(Array.isArray(r)?r:[])).catch(()=>{}) }
   useEffect(load,[])
+  const postStory=async()=>{ if(!stPhoto && !stText.trim()){ setStMsg('Photo illa text podunga'); return }
+    setStMsg('⏳ Posting…')
+    try{ await api.post('/me/shop/stories',{image:stPhoto,text:stText.trim()})
+      setStPhoto(null); setStText(''); setStMsg('✅ Story posted! 24 hours home page-la varum.')
+      api.get('/me/shop/stories').then(r=>setStories(Array.isArray(r)?r:[])) }
+    catch(e){ setStMsg('❌ '+e.message) } }
+  const delStory=async(id)=>{ if(!confirm('Story delete pannalaama?'))return
+    await api.del('/me/shop/stories/'+id); api.get('/me/shop/stories').then(r=>setStories(Array.isArray(r)?r:[])) }
   const switchShop=(id)=>{ localStorage.setItem('nm_shop_id',id); window.location.reload() }
   const editBio=async()=>{ const v=prompt('Shop Bio (shop page-la customer-ku theriyum. Search-la varathu.)', (s&&s.bio)||'')
     if(v==null)return; await save({bio:v.trim()},'✅ Bio updated') }
@@ -4064,6 +4129,31 @@ function OwnerDashboard(){
             </div>}
         <p style={{color:'var(--teal)',marginTop:8}}>{msg}</p>
       </div>
+    </div>
+
+    <div className="card">
+      <h3>📣 Post a Story (24 hours)</h3>
+      <p className="muted" style={{fontSize:12.5,marginTop:2}}>Photo / offer / update podunga — home page mela circle-la varum, 24 hours kalichu thaana marainjidum. Customers-ku fresh-a theriyum!</p>
+      <div className="row" style={{gap:8,marginTop:8,flexWrap:'wrap',alignItems:'center'}}>
+        {stPhoto
+          ? <img src={stPhoto} onClick={async()=>{const d=await pickImage(1200); if(d)setStPhoto(d)}} style={{width:60,height:60,borderRadius:10,objectFit:'cover',cursor:'pointer'}}/>
+          : <button className="btn ghost" onClick={async()=>{const d=await pickImage(1200); if(d)setStPhoto(d)}}>📷 Add Photo</button>}
+        <input className="input" style={{flex:1,minWidth:160}} placeholder="Text / offer (optional)" maxLength={280} value={stText} onChange={e=>setStText(e.target.value)}/>
+        <button className="btn" onClick={postStory}>📣 Post</button>
+      </div>
+      {stories.length>0 && <div style={{display:'flex',gap:10,overflowX:'auto',marginTop:12}}>
+        {stories.map(st=>(
+          <div key={st.id} style={{flex:'0 0 auto',width:88,position:'relative'}}>
+            <div style={{width:88,height:120,borderRadius:12,overflow:'hidden',background:'#1b1230',
+              display:'flex',alignItems:'center',justifyContent:'center'}}>
+              {st.image_url?<img src={st.image_url} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                :<span style={{color:'#fff',fontSize:11,padding:6,textAlign:'center'}}>{st.text}</span>}
+            </div>
+            <button onClick={()=>delStory(st.id)} style={{position:'absolute',top:4,right:4,border:'none',
+              background:'rgba(0,0,0,.6)',color:'#fff',borderRadius:'50%',width:22,height:22,cursor:'pointer',fontSize:12}}>✕</button>
+          </div>))}
+      </div>}
+      <p style={{color:'var(--teal)',fontSize:13,marginTop:6}}>{stMsg}</p>
     </div>
 
     <div className="card">
