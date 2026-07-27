@@ -386,6 +386,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -1677,20 +1679,26 @@ function Register(){
 
       {step==='linkqr' && <div className="card">
         <span className="pill">✅ Payment Success — Autopay Active</span>
-        <h3 style={{marginTop:8}}>QR Sticker Scan pannunga</h3>
-        <p className="muted">Admin kodutha QR sticker-ai scan pannunga - athu inda kadaikku nirandara QR aagum.</p>
+        <h3 style={{marginTop:8}}>QR Setup</h3>
+
+        <div style={{background:'#fff5f9',border:'1px solid #ffd0e4',borderRadius:12,padding:14,marginTop:8}}>
+          <p style={{margin:0,fontSize:13.5,fontWeight:700}}>✨ Pudhu QR venuma? Naanga generate panni tharom!</p>
+          <p className="muted" style={{margin:'4px 0 0',fontSize:12.5}}>Printout eduthu kadaila oticikonga — appave ready.</p>
+          <button className="btn" onClick={genQr} style={{marginTop:10,width:'100%',padding:'14px 18px',fontSize:16,
+            fontWeight:800,border:'none',color:'#fff',
+            background:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)'}}>✨ Generate QR</button>
+        </div>
+
+        <div style={{margin:'14px 0',textAlign:'center',color:'var(--muted)',fontSize:13}}>— allathu, sticker already iruntha —</div>
+
+        <p className="muted" style={{margin:0}}>Admin kodutha QR sticker-ai scan pannunga:</p>
         {scanning && <video ref={videoRef} style={{width:'100%',borderRadius:12,marginTop:8}} muted playsInline></video>}
         <div className="row" style={{marginTop:8}}>
-          <button className="btn" onClick={startScan}>Scan QR</button>
+          <button className="btn ghost" onClick={startScan}>📷 Scan QR</button>
         </div>
         <p className="muted" style={{marginTop:10}}>Allathu sticker-la achitta code-ai type pannunga:</p>
         <input className="input" placeholder="QR code (e.g. A1B2C3D4)" value={token} onChange={e=>setTok(e.target.value)}/>
-        <button className="btn" onClick={linkQr} disabled={!token}>Link QR - Finish</button>
-        <div style={{margin:'14px 0',textAlign:'center',color:'var(--muted)',fontSize:13}}>— allathu —</div>
-        <div style={{background:'#f6f2ff',border:'1px solid #e3d9fb',borderRadius:12,padding:12}}>
-          <p className="muted" style={{margin:0,fontSize:13}}>Sticker illaya? Namma pudhu QR generate panni tharuvom — printout eduthu kadaila oticikonga.</p>
-          <button className="btn ghost" style={{marginTop:8}} onClick={genQr}>✨ Generate QR (No sticker)</button>
-        </div>
+        <button className="btn ghost" onClick={linkQr} disabled={!token}>Link QR - Finish</button>
         <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
       </div>}
     </div>
