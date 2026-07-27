@@ -394,6 +394,8 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
@@ -1274,10 +1276,11 @@ function MiniBrowser(){
 /* ===== pages/Landing.jsx ===== */
 
 // Poster slideshow — images shown as-is (no crop, no colour change)
+// bump ?v= whenever a poster image is replaced (busts app/browser cache)
 const SLIDES=[
-  {img:'/promo1.jpg', alt:'NammaOor — Porul Pathivu (Product Listing) · Registration Rs.1', to:'/register'},
-  {img:'/promo2.jpg', alt:'NammaOor TV Display — kadai products TV ads · Registration Rs.1', to:'/app/tv'},
-  {img:'/promo3.jpg', alt:'NammaOor Billing and Invoice · Registration Rs.1', to:'/app/billing'},
+  {img:'/promo1.jpg?v=3', alt:'NammaOor — Porul Pathivu (Product Listing) · Registration Rs.1', to:'/register'},
+  {img:'/promo2.jpg?v=3', alt:'NammaOor TV Display — kadai products TV ads · Registration Rs.1', to:'/app/tv'},
+  {img:'/promo3.jpg?v=3', alt:'NammaOor Billing and Invoice · Registration Rs.1', to:'/app/billing'},
 ]
 
 function Landing(){
