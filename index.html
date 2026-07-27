@@ -10,8 +10,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="theme-color" content="#FF2E7E">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -320,6 +325,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -867,6 +874,20 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 /* ==APPCSS_END== */
 </style>
+<!-- NM_PIXEL_START -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','3505110446330287');fbq('track','PageView');
+// SPA: hash route maarum podhu-um PageView anuppu
+window.addEventListener('hashchange',function(){try{fbq('track','PageView')}catch(e){}});
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=3505110446330287&ev=PageView&noscript=1"/></noscript>
+<!-- NM_PIXEL_END -->
 </head><body><div id="root"></div>
 <script type="text/babel" data-presets="react">
 
@@ -1532,6 +1553,8 @@ function Register(){
     if(f.owner_password!==pw2){ setMsg('Password rendum match aagala'); return }
     const id=await saveDraft(); if(!id) return
     for(const p of products){ try{ await api.post(`/shops/${id}/product`,{name:p.name,price:p.price?+p.price:null}) }catch{} }
+    // Meta Pixel: payment start
+    try{ if(window.fbq) window.fbq('track','InitiateCheckout',{content_name:'Shop Registration'}) }catch(e){}
     // Preferred: Rs.1 today + Rs.99/month UPI Autopay
     try{
       const sub=await api.post('/payments/subscription/create',{shop_id:id})
@@ -1545,6 +1568,8 @@ function Register(){
                    razorpay_payment_id:resp.razorpay_payment_id,
                    razorpay_subscription_id:resp.razorpay_subscription_id,
                    razorpay_signature:resp.razorpay_signature})
+              try{ if(window.fbq) window.fbq('track','CompleteRegistration',
+                {content_name:'Shop Registration',value:1,currency:'INR'}) }catch(e){}
               setResult(d); setStep('linkqr'); setMsg('✅ Autopay set aayiduchu! QR sticker scan pannunga.') }
             catch(e){ setMsg('Verify failed: '+e.message) }
           }
@@ -1565,6 +1590,8 @@ function Register(){
         handler: async (resp)=>{
           try{ const d=await api.post('/payments/verify',{razorpay_order_id:resp.razorpay_order_id,
                  razorpay_payment_id:resp.razorpay_payment_id, razorpay_signature:resp.razorpay_signature})
+            try{ if(window.fbq) window.fbq('track','CompleteRegistration',
+              {content_name:'Shop Registration',value:299,currency:'INR'}) }catch(e){}
             setResult(d); setStep('linkqr'); setMsg('Payment success! QR sticker scan pannunga.') }
           catch(e){ setMsg('Verify failed: '+e.message) }
         }
