@@ -1,0 +1,22 @@
+name: Keep NammaOor backend awake
+
+# Pings the Render backend every ~10 minutes so the free tier never
+# sleeps (Render sleeps after 15 min idle). This removes the cold-start
+# "site not opening" delay that customers were seeing.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes (UTC; best-effort on GitHub)
+  workflow_dispatch:          # allows manual "Run workflow" button
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake backend (health + DB touch)
+        run: |
+          echo "Pinging NammaOor backend..."
+          curl -s -m 60 https://nammoor.onrender.com/health || true
+          # this endpoint runs a real DB query -> also keeps Supabase awake
+          curl -s -m 60 "https://nammoor.onrender.com/v1/following?device_token=keepalive" || true
+          echo "Done."
