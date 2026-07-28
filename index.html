@@ -66,8 +66,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
@@ -390,6 +395,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -965,6 +972,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 /* ==APPCSS_END== */
 </style>
+
 
 
 
@@ -1681,6 +1689,8 @@ function Register(){
   const [districts,setD]=useState(NM_DISTRICTS); const [assemblies,setA]=useState([]); const [cats,setC]=useState([])
   const [loadingCat,setLoadingCat]=useState(true); const [loadingAsm,setLoadingAsm]=useState(false)
   const [pw2,setPw2]=useState('')
+  // In-app browsers (WhatsApp/Instagram/FB) often block Razorpay — warn & guide to Chrome
+  const inApp = (typeof navigator!=='undefined') && /(FBAN|FBAV|Instagram|Line\/|Snapchat|WhatsApp|; wv\))/i.test(navigator.userAgent||'')
   const [f,setF]=useState({emp_code:emp,own_shop:!empParam,owner_password:'',shop_name:'',owner_name:'',mobile:'',whatsapp:'',
     district_id:'',assembly_id:'',town:'',area:'',category_id:'',address:'',google_maps:'',
     lat:null,lng:null,description:'',bio:'',open_time:'',close_time:'',leave_days:'',upi_id:'',facebook:'',instagram:'',website:'',logo_url:'',cover_url:'',photos:[]})
@@ -1748,7 +1758,9 @@ function Register(){
     // Preferred: Rs.1 today + Rs.99/month UPI Autopay
     try{
       const sub=await api.post('/payments/subscription/create',{shop_id:id})
-      if(sub.subscription_id && window.Razorpay){
+      if(sub.subscription_id){
+        if(!window.Razorpay){
+          setMsg('⚠️ Payment app load aagala. Internet check panni, Chrome browser-la open panni marupadi try pannunga.'); return }
         const rzp=new window.Razorpay({
           key:sub.key_id, subscription_id:sub.subscription_id,
           name:'NammaOor', description:'Shop Registration — ₹1 Only',
@@ -1765,7 +1777,8 @@ function Register(){
           }
         })
         rzp.on('payment.failed', ()=>setMsg('Payment failed. Marupadi try pannunga.'))
-        rzp.open(); setMsg('Payment window open aaguthu... ₹1 mattum kattunga')
+        try{ rzp.open(); setMsg('Payment window open aaguthu... ₹1 mattum kattunga') }
+        catch(err){ setMsg('⚠️ Payment window open aagala. WhatsApp/Instagram-la irundhaa, mேlai ⋮ menu → "Open in Chrome" select panni try pannunga.') }
         return
       }
     }catch(e){ console.log('autopay unavailable, falling back:', e.message) }
@@ -1977,12 +1990,15 @@ function Register(){
           <PwInput value={f.owner_password} onChange={e=>setF({...f,owner_password:e.target.value})} placeholder="Password (min 6)"/>
           <PwInput value={pw2} onChange={e=>setPw2(e.target.value)} placeholder="Confirm password"/>
         </div>
+        {inApp && <div style={{background:'#fff4e6',border:'1px solid #ffcc80',borderRadius:10,padding:'10px 12px',marginTop:10,fontSize:13,color:'#8a4b00'}}>
+          ⚠️ Neenga WhatsApp/app-ku ulla thirandhirukkeenga. Payment window sari-a open aaga — mேlai <b>⋮ menu → "Open in Chrome"</b> (illa external browser) select panni register pannunga.</div>}
         <div className="row" style={{marginTop:10}}>
           <button className="btn ghost" onClick={saveDraft}>Save Draft</button>
           <button className="btn" onClick={payNow}
             disabled={!f.mobile||!f.shop_name||(f.owner_password||'').length<6}>Register — Pay ₹1 Only</button>
         </div>
-        <p style={{marginTop:10,color:'var(--teal)'}}>{msg}</p>
+        <p className="muted" style={{marginTop:8,fontSize:12}}>💡 Payment window open aagalana: browser ⋮ menu → "Open in Chrome" select pannunga.</p>
+        <p style={{marginTop:6,color:'var(--teal)',fontWeight:700}}>{msg}</p>
       </div>}
 
       {step==='linkqr' && <div className="card">
