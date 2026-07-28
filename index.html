@@ -62,8 +62,13 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
@@ -385,6 +390,8 @@ table.spec td{padding:7px 9px;font-size:14px}
   box-shadow:0 2px 6px rgba(0,0,0,.15); transition:transform .12s ease; }
 .sic:hover{ transform:translateY(-2px) scale(1.05); }
 .sic:active{ transform:scale(.95); }
+
+
 
 
 
@@ -958,6 +965,7 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 /* ==APPCSS_END== */
 </style>
+
 
 
 
@@ -1544,11 +1552,14 @@ function Landing(){
             background:'#fff',color:'#141225',borderRadius:20,padding:'10px 26px',fontWeight:800,textDecoration:'none'}}>Visit Shop →</a>
         </div>)})()}
 
-      <div style={{display:'flex',justifyContent:'center',margin:'4px 0 12px'}}>
+      <div style={{display:'flex',justifyContent:'center',gap:10,flexWrap:'wrap',margin:'4px 0 12px'}}>
         <button onClick={()=>setDlOpen(true)} style={{border:'none',cursor:'pointer',color:'#fff',
-          borderRadius:14,padding:'12px 26px',fontSize:15.5,fontWeight:800,
+          borderRadius:14,padding:'12px 22px',fontSize:15,fontWeight:800,
           background:'linear-gradient(135deg,#FF6A00,#FF2E7E,#7A2FF7)',
           boxShadow:'0 8px 22px rgba(255,46,126,.35)'}}>📥 Download App</button>
+        <button onClick={()=>nav('/register?own=1')} style={{border:'2px solid #7A2FF7',cursor:'pointer',color:'#7A2FF7',
+          borderRadius:14,padding:'12px 22px',fontSize:15,fontWeight:800,background:'#fff',
+          boxShadow:'0 8px 22px rgba(122,47,247,.18)'}}>🏪 Register Shop — ₹1</button>
       </div>
 
       {dlOpen && <div onClick={()=>setDlOpen(false)} style={{position:'fixed',inset:0,zIndex:200,
