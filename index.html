@@ -74,8 +74,23 @@
 <meta property="og:image:height" content="1096">
 <meta property="og:site_name" content="NammaOor">
 <meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="1096">
+<meta property="og:site_name" content="NammaOor">
+<meta property="og:locale" content="ta_IN">
 <meta property="og:url" content="https://nammaoor.shop/">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
+<meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
 <meta name="twitter:image" content="https://nammaoor.shop/promo1.jpg?v=3">
@@ -514,12 +529,59 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 
 
+
+
+
+
+
+
 /* ==APPCSS_START== */
 :root{--saffron:#FF6A00;--magenta:#FF2E7E;--purple:#7A2FF7;--teal:#008C78;
   --ink:#141225;--bg:#f5f4fb;--line:#e7e4f2;--muted:#6b6880}
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif}
-body{background:var(--bg);color:var(--ink)}
+body{background:var(--bg);color:var(--ink);padding-bottom:66px}
 a{text-decoration:none;color:inherit}
+
+/* ===== UI/UX polish pack ===== */
+/* bottom navigation bar */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:150;display:flex;
+  background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);box-shadow:0 -4px 18px rgba(20,18,37,.06);
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:none;cursor:pointer;padding:6px 2px;color:var(--muted);
+  font-size:11px;font-weight:700;transition:transform .12s,color .12s}
+.bnav-item .bnav-ic{font-size:21px;line-height:1;filter:grayscale(.4);transition:filter .12s,transform .12s}
+.bnav-item.on{color:var(--purple)}
+.bnav-item.on .bnav-ic{filter:none;transform:translateY(-1px) scale(1.08)}
+.bnav-item:active{transform:scale(.9)}
+.bnav-item.cta .bnav-ic{background:linear-gradient(135deg,var(--saffron),var(--magenta));
+  color:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:19px;filter:none;margin-top:-14px;
+  box-shadow:0 6px 16px rgba(255,46,126,.4);border:3px solid #fff}
+.bnav-item.cta{color:var(--magenta)}
+
+/* skeleton shimmer loaders */
+@keyframes nmShimmer{0%{background-position:-380px 0}100%{background-position:380px 0}}
+.skel{background:#ece9f5;background-image:linear-gradient(90deg,#ece9f5 0px,#f6f4fc 190px,#ece9f5 380px);
+  background-size:760px 100%;border-radius:10px;animation:nmShimmer 1.2s infinite linear}
+.skel-card{display:flex;gap:12px;align-items:center;padding:14px;background:#fff;border-radius:16px;
+  box-shadow:0 3px 12px rgba(20,18,37,.05);margin-top:12px}
+.skel-av{width:48px;height:48px;border-radius:12px;flex:0 0 auto}
+.skel-ln{height:12px}
+
+/* card micro-animations */
+.scard,.pcard,.card{transition:transform .14s,box-shadow .14s}
+.scard:active,.pcard:active{transform:scale(.985)}
+.scard{cursor:pointer}
+
+/* filter / sort chips */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
+.chip{flex:0 0 auto;border:1.5px solid var(--line);background:#fff;color:var(--muted);
+  border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.12s}
+.chip.on{background:linear-gradient(135deg,var(--saffron),var(--magenta));color:#fff;border-color:transparent}
+.chip:active{transform:scale(.94)}
+/* ===== end polish pack ===== */
 .brand{font-family:'Baloo Thambi 2';font-weight:800;
   background:linear-gradient(135deg,var(--saffron),var(--magenta),var(--purple));
   -webkit-background-clip:text;background-clip:text;color:transparent}
@@ -978,6 +1040,9 @@ table.spec td{padding:7px 9px;font-size:14px}
 
 /* ==APPCSS_END== */
 </style>
+
+
+
 
 
 
@@ -1981,6 +2046,53 @@ function MiniBrowser() {
   }, "◤"));
 }
 
+/* ===== components/BottomNav.jsx ===== */
+
+// App-like bottom navigation for customer-facing pages.
+// Hidden on TV, dashboards, billing, register and login screens.
+function BottomNav() {
+  const loc = useLocation();
+  const nav = useNavigate();
+  const p = loc.pathname || '/';
+  if (/^\/(tv|app|register|login|s\/)/.test(p)) return null;
+  const items = [{
+    to: '/',
+    icon: '🏠',
+    label: 'Home',
+    match: x => x === '/'
+  }, {
+    to: '/search',
+    icon: '🔍',
+    label: 'Search',
+    match: x => x.startsWith('/search')
+  }, {
+    to: '/register?own=1',
+    icon: '🏪',
+    label: 'Register',
+    cta: true,
+    match: () => false
+  }, {
+    to: '/login',
+    icon: '👤',
+    label: 'Account',
+    match: x => x.startsWith('/login')
+  }];
+  return /*#__PURE__*/React.createElement("nav", {
+    className: "bnav"
+  }, items.map((it, i) => {
+    const active = it.match(p);
+    return /*#__PURE__*/React.createElement("button", {
+      key: i,
+      className: 'bnav-item' + (active ? ' on' : '') + (it.cta ? ' cta' : ''),
+      onClick: () => nav(it.to)
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "bnav-ic"
+    }, it.icon), /*#__PURE__*/React.createElement("span", {
+      className: "bnav-tx"
+    }, it.label));
+  }));
+}
+
 /* ===== pages/Landing.jsx ===== */
 
 // Poster slideshow — images shown as-is (no crop, no colour change)
@@ -2469,7 +2581,7 @@ function Landing() {
       background: '#fff',
       boxShadow: '0 8px 22px rgba(122,47,247,.18)'
     }
-  }, "🏪 Register Shop — ₹1")), dlOpen && /*#__PURE__*/React.createElement("div", {
+  }, "🏪 Register Shop — FREE")), dlOpen && /*#__PURE__*/React.createElement("div", {
     onClick: () => setDlOpen(false),
     style: {
       position: 'fixed',
@@ -3008,6 +3120,7 @@ function Register() {
     }
   }
   async function payNow() {
+    // FREE registration — 30-day trial, no payment
     if ((f.owner_password || '').length < 6) {
       setMsg('Password podunga (min 6 characters)');
       return;
@@ -3026,118 +3139,19 @@ function Register() {
         });
       } catch {}
     }
-    // Meta Pixel: payment start
+    setMsg('⏳ Pathivu aaguthu...');
     try {
-      if (window.fbq) window.fbq('track', 'InitiateCheckout', {
-        content_name: 'Shop Registration'
-      });
-    } catch (e) {}
-    // Preferred: Rs.1 today + Rs.99/month UPI Autopay
-    try {
-      const sub = await api.post('/payments/subscription/create', {
-        shop_id: id
-      });
-      if (sub.subscription_id) {
-        if (!window.Razorpay) {
-          setMsg('⚠️ Payment app load aagala. Internet check panni, Chrome browser-la open panni marupadi try pannunga.');
-          return;
-        }
-        const rzp = new window.Razorpay({
-          key: sub.key_id,
-          subscription_id: sub.subscription_id,
-          name: 'NammaOor',
-          description: 'Shop Registration — ₹1 Only',
-          prefill: {
-            contact: f.mobile,
-            name: f.owner_name
-          },
-          theme: {
-            color: '#FF2E7E'
-          },
-          handler: async resp => {
-            try {
-              const d = await api.post('/payments/subscription/verify', {
-                razorpay_payment_id: resp.razorpay_payment_id,
-                razorpay_subscription_id: resp.razorpay_subscription_id,
-                razorpay_signature: resp.razorpay_signature
-              });
-              try {
-                if (window.fbq) window.fbq('track', 'CompleteRegistration', {
-                  content_name: 'Shop Registration',
-                  value: 1,
-                  currency: 'INR'
-                });
-              } catch (e) {}
-              setResult(d);
-              setStep('linkqr');
-              setMsg('✅ Autopay set aayiduchu! QR sticker scan pannunga.');
-            } catch (e) {
-              setMsg('Verify failed: ' + e.message);
-            }
-          }
+      const r = await api.post(`/shops/${id}/activate`);
+      try {
+        if (window.fbq) window.fbq('track', 'CompleteRegistration', {
+          content_name: 'Shop Registration (Free)'
         });
-        rzp.on('payment.failed', () => setMsg('Payment failed. Marupadi try pannunga.'));
-        try {
-          rzp.open();
-          setMsg('Payment window open aaguthu... ₹1 mattum kattunga');
-        } catch (err) {
-          setMsg('⚠️ Payment window open aagala. WhatsApp/Instagram-la irundhaa, mேlai ⋮ menu → "Open in Chrome" select panni try pannunga.');
-        }
-        return;
-      }
-    } catch (e) {
-      console.log('autopay unavailable, falling back:', e.message);
-    }
-    // Fallback: one-time Rs.299 (if autopay not available on gateway)
-    const pay = await api.post('/payments/create', {
-      shop_id: id,
-      type: 'registration'
-    });
-    if (pay.gateway === 'razorpay' && window.Razorpay) {
-      const rzp = new window.Razorpay({
-        key: pay.key_id,
-        amount: pay.amount * 100,
-        currency: 'INR',
-        name: 'NammaOor',
-        description: 'Shop Registration Rs.299',
-        order_id: pay.order_id,
-        prefill: {
-          contact: f.mobile,
-          name: f.owner_name
-        },
-        theme: {
-          color: '#FF2E7E'
-        },
-        handler: async resp => {
-          try {
-            const d = await api.post('/payments/verify', {
-              razorpay_order_id: resp.razorpay_order_id,
-              razorpay_payment_id: resp.razorpay_payment_id,
-              razorpay_signature: resp.razorpay_signature
-            });
-            try {
-              if (window.fbq) window.fbq('track', 'CompleteRegistration', {
-                content_name: 'Shop Registration',
-                value: 299,
-                currency: 'INR'
-              });
-            } catch (e) {}
-            setResult(d);
-            setStep('linkqr');
-            setMsg('Payment success! QR sticker scan pannunga.');
-          } catch (e) {
-            setMsg('Verify failed: ' + e.message);
-          }
-        }
-      });
-      rzp.on('payment.failed', () => setMsg('Payment failed. Marupadi try pannunga.'));
-      rzp.open();
-      setMsg('Payment window open aaguthu...');
-    } else {
-      const done = await api.post(`/payments/dev/mark-paid/${pay.txn_id}`);
-      setResult(done);
+      } catch (e) {}
+      setResult(r);
       setStep('linkqr');
-      setMsg('Payment success (dev). QR sticker scan pannunga.');
+      setMsg('✅ Free registration success! 30 naal free. Ippo QR generate pannunga.');
+    } catch (e) {
+      setMsg('❌ ' + e.message);
     }
   }
   async function linkQr() {
@@ -3739,17 +3753,18 @@ function Register() {
     value: pw2,
     onChange: e => setPw2(e.target.value),
     placeholder: "Confirm password"
-  })), inApp && /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     style: {
-      background: '#fff4e6',
-      border: '1px solid #ffcc80',
+      background: '#eef7f0',
+      border: '1px solid #b7e0c4',
       borderRadius: 10,
       padding: '10px 12px',
       marginTop: 10,
       fontSize: 13,
-      color: '#8a4b00'
+      color: '#188a4a',
+      fontWeight: 700
     }
-  }, "⚠️ Neenga WhatsApp/app-ku ulla thirandhirukkeenga. Payment window sari-a open aaga — mேlai ", /*#__PURE__*/React.createElement("b", null, "⋮ menu → \"Open in Chrome\""), " (illa external browser) select panni register pannunga."), /*#__PURE__*/React.createElement("div", {
+  }, "🎁 Mudhal pathivu FREE! 30 naal free-a use pannunga. Appuram mattum ₹99/month."), /*#__PURE__*/React.createElement("div", {
     className: "row",
     style: {
       marginTop: 10
@@ -3761,15 +3776,9 @@ function Register() {
     className: "btn",
     onClick: payNow,
     disabled: !f.mobile || !f.shop_name || (f.owner_password || '').length < 6
-  }, "Register — Pay ₹1 Only")), /*#__PURE__*/React.createElement("p", {
-    className: "muted",
+  }, "🏪 Register FREE — Pathivu Pannunga")), /*#__PURE__*/React.createElement("p", {
     style: {
       marginTop: 8,
-      fontSize: 12
-    }
-  }, "💡 Payment window open aagalana: browser ⋮ menu → \"Open in Chrome\" select pannunga."), /*#__PURE__*/React.createElement("p", {
-    style: {
-      marginTop: 6,
       color: 'var(--teal)',
       fontWeight: 700
     }
@@ -3869,12 +3878,33 @@ function Register() {
 function StarsRow({
   v
 }) {
-  return /*#__PURE__*/React.createElement("span", null, [1, 2, 3, 4, 5].map(n => /*#__PURE__*/React.createElement("span", {
+  return /*#__PURE__*/React.createElement("span", {
+    style: {
+      letterSpacing: 1
+    }
+  }, [1, 2, 3, 4, 5].map(n => /*#__PURE__*/React.createElement("span", {
     key: n,
     style: {
-      color: n <= Math.round(v) ? '#FFB800' : '#ddd'
+      color: n <= Math.round(v) ? '#FFB800' : '#d8d8e2'
     }
-  }, "*")));
+  }, "★")));
+}
+// open/closed from working hours (HH:MM)
+function openState(s) {
+  if (!s.open_time || !s.close_time) return null;
+  try {
+    const now = new Date();
+    const cur = now.getHours() * 60 + now.getMinutes();
+    const p = t => {
+      const [h, m] = String(t).split(':').map(Number);
+      return h * 60 + (m || 0);
+    };
+    const o = p(s.open_time),
+      c = p(s.close_time);
+    return c > o ? cur >= o && cur < c : cur >= o || cur < c;
+  } catch (e) {
+    return null;
+  }
 }
 const _ext = u => {
   u = (u || '').trim();
@@ -3923,6 +3953,9 @@ function Search() {
   });
   const [res, setRes] = useState([]);
   const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [sort, setSort] = useState('rel');
+  const [catF, setCatF] = useState('');
   useEffect(() => {
     api.get('/geo/districts').then(setD).catch(() => {});
     api.get('/geo/categories').then(setC).catch(() => {});
@@ -3937,8 +3970,11 @@ function Search() {
     if (q.assembly) p.set('assembly', q.assembly);
     if (q.town) p.set('town', q.town);
     if (q.category) p.set('category', q.category);
+    setBusy(true);
+    setCatF('');
     setRes(await api.get('/search?' + p.toString()).catch(() => []));
     setDone(true);
+    setBusy(false);
   }
   const [near, setNear] = useState(false);
   const [geoMsg, setGeoMsg] = useState('');
@@ -3948,6 +3984,8 @@ function Search() {
       return;
     }
     setGeoMsg('📍 Location edukkiraen...');
+    setBusy(true);
+    setCatF('');
     navigator.geolocation.getCurrentPosition(async pos => {
       const p = new URLSearchParams({
         lat: pos.coords.latitude,
@@ -3961,9 +3999,12 @@ function Search() {
         setRes(r);
         setNear(true);
         setDone(true);
+        setSort('dist');
         setGeoMsg(r.length ? '' : 'Pakkathula (30km) kadai illa.');
       } catch (e) {
         setGeoMsg('Search fail: ' + e.message);
+      } finally {
+        setBusy(false);
       }
     }, err => setGeoMsg('Location deny aachu. Phone settings-la location allow pannunga.'), {
       enableHighAccuracy: false,
@@ -4046,53 +4087,158 @@ function Search() {
     style: {
       marginTop: 6
     }
-  }, geoMsg)), res.map(s => /*#__PURE__*/React.createElement("div", {
-    key: s.shop_code,
-    className: "card scard"
+  }, geoMsg)), busy && [0, 1, 2, 3].map(i => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "skel-card"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "scard-main",
-    onClick: () => nav(`/shop/${(s.shop_code || '').replace('-', '')}`)
+    className: "skel skel-av"
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "skel skel-ln",
+    style: {
+      width: '55%'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "skel skel-ln",
+    style: {
+      width: '35%',
+      marginTop: 8
+    }
+  })))), !busy && res.length > 0 && (() => {
+    const catList = [...new Set(res.map(s => s.category).filter(Boolean))];
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+      className: "chips",
+      style: {
+        marginTop: 12
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: 'chip' + (sort === 'rel' ? ' on' : ''),
+      onClick: () => setSort('rel')
+    }, "Suggested"), res.some(s => s.distance_km != null) && /*#__PURE__*/React.createElement("span", {
+      className: 'chip' + (sort === 'dist' ? ' on' : ''),
+      onClick: () => setSort('dist')
+    }, "📍 Nearest"), /*#__PURE__*/React.createElement("span", {
+      className: 'chip' + (sort === 'rating' ? ' on' : ''),
+      onClick: () => setSort('rating')
+    }, "⭐ Top rated")), catList.length > 1 && /*#__PURE__*/React.createElement("div", {
+      className: "chips"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: 'chip' + (catF === '' ? ' on' : ''),
+      onClick: () => setCatF('')
+    }, "All"), catList.map(c => /*#__PURE__*/React.createElement("span", {
+      key: c,
+      className: 'chip' + (catF === c ? ' on' : ''),
+      onClick: () => setCatF(c)
+    }, c))));
+  })(), !busy && (() => {
+    let list = catF ? res.filter(s => s.category === catF) : res.slice();
+    if (sort === 'dist') list.sort((a, b) => (a.distance_km ?? 1e9) - (b.distance_km ?? 1e9));
+    if (sort === 'rating') list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    return list.map(s => {
+      const op = openState(s);
+      return /*#__PURE__*/React.createElement("div", {
+        key: s.shop_code,
+        className: "card scard"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "scard-main",
+        onClick: () => nav(`/shop/${(s.shop_code || '').replace('-', '')}`)
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          width: 52,
+          height: 52,
+          borderRadius: 13,
+          background: '#f4f0ff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 26,
+          overflow: 'hidden',
+          flex: '0 0 auto'
+        }
+      }, s.logo_url ? /*#__PURE__*/React.createElement("img", {
+        src: s.logo_url,
+        onError: onImgErr,
+        style: {
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover'
+        }
+      }) : catIcon(s.category, s.category)), /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          minWidth: 0
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          flexWrap: 'wrap'
+        }
+      }, /*#__PURE__*/React.createElement("b", null, s.shop_name), op !== null && /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 11,
+          fontWeight: 800,
+          borderRadius: 12,
+          padding: '1px 8px',
+          background: op ? '#e8f8ee' : '#fdecec',
+          color: op ? '#188a4a' : '#c0392b'
+        }
+      }, op ? '● Open' : '● Closed')), /*#__PURE__*/React.createElement("div", {
+        className: "muted",
+        style: {
+          fontSize: 13
+        }
+      }, s.category || '', s.town ? ' · ' + s.town : '', s.distance_km != null ? ' · 📍 ' + s.distance_km + ' km' : ''), s.reviews > 0 && /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 13,
+          marginTop: 2
+        }
+      }, /*#__PURE__*/React.createElement(StarsRow, {
+        v: s.rating
+      }), " ", /*#__PURE__*/React.createElement("b", null, s.rating), " ", /*#__PURE__*/React.createElement("span", {
+        className: "muted"
+      }, "(", s.reviews, ")")))), /*#__PURE__*/React.createElement(ShopIcons, {
+        s: s
+      }));
+    });
+  })(), !busy && done && res.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '40px 20px',
+      color: 'var(--muted)'
+    }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      width: 48,
-      height: 48,
-      borderRadius: 12,
-      background: '#f4f0ff',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 24,
-      overflow: 'hidden',
-      flex: '0 0 auto'
+      fontSize: 52
     }
-  }, s.logo_url ? /*#__PURE__*/React.createElement("img", {
-    src: s.logo_url,
-    onError: onImgErr,
+  }, "🔍"), /*#__PURE__*/React.createElement("p", {
     style: {
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover'
+      marginTop: 8,
+      fontWeight: 600
     }
-  }) : catIcon(s.category, s.category)), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("b", null, s.shop_name), /*#__PURE__*/React.createElement("div", {
-    className: "muted"
-  }, s.category || '', " ", s.town ? '- ' + s.town : '', s.distance_km != null ? ' · 📍 ' + s.distance_km + ' km' : ''), s.reviews > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "Kadai edhuvum kidaikkala"), /*#__PURE__*/React.createElement("p", {
     style: {
       fontSize: 13
     }
-  }, /*#__PURE__*/React.createElement(StarsRow, {
-    v: s.rating
-  }), " ", s.rating, " (", s.reviews, ")"))), /*#__PURE__*/React.createElement(ShopIcons, {
-    s: s
-  }))), done && res.length === 0 && /*#__PURE__*/React.createElement("p", {
-    className: "muted"
-  }, "No shops found. Try a different search."), !done && /*#__PURE__*/React.createElement("p", {
-    className: "muted"
-  }, "Search by name, category, or area.")));
+  }, "Vera name / category / area try pannunga.")), !busy && !done && /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '36px 20px',
+      color: 'var(--muted)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 52
+    }
+  }, "🏪"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      marginTop: 8
+    }
+  }, "Name, category, illa area vachu kadaigalai thedunga."))));
 }
 
 /* ===== pages/Products.jsx ===== */
@@ -4711,8 +4857,74 @@ function ShopPage() {
     } catch {}
   };
   if (!s) return /*#__PURE__*/React.createElement("div", {
-    className: "container"
-  }, "Loading...");
+    className: "container",
+    style: {
+      maxWidth: 520,
+      paddingTop: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "skel",
+    style: {
+      height: 200,
+      borderRadius: 22
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fff',
+      borderRadius: 18,
+      padding: 16,
+      marginTop: 12,
+      boxShadow: '0 4px 18px rgba(20,18,37,.06)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "skel",
+    style: {
+      height: 26,
+      width: '50%',
+      margin: '0 auto',
+      borderRadius: 20
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "skel skel-ln",
+    style: {
+      width: '80%',
+      margin: '16px auto 0'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "skel skel-ln",
+    style: {
+      width: '60%',
+      margin: '10px auto 0'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "row",
+    style: {
+      justifyContent: 'center',
+      gap: 10,
+      marginTop: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "skel",
+    style: {
+      height: 38,
+      width: 90,
+      borderRadius: 20
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "skel",
+    style: {
+      height: 38,
+      width: 90,
+      borderRadius: 20
+    }
+  }))), /*#__PURE__*/React.createElement("p", {
+    className: "muted",
+    style: {
+      textAlign: 'center',
+      marginTop: 16,
+      fontSize: 13
+    }
+  }, "Loading shop…"));
   if (!s.found) return /*#__PURE__*/React.createElement("div", {
     className: "container"
   }, /*#__PURE__*/React.createElement("div", {
@@ -10326,7 +10538,7 @@ function OwnerDashboard() {
     style: {
       marginTop: 8
     }
-  }, "Dashboard marupadi active aaga ", /*#__PURE__*/React.createElement("b", null, "₹99 pay pannunga"), " (1 month). Payment aana udane ellam thirandhu, 1 month add aagum."), /*#__PURE__*/React.createElement("button", {
+  }, "Dashboard marupadi active aaga ", /*#__PURE__*/React.createElement("b", null, "₹99 pay pannunga"), ". Payment aana udane ellam thirandhu ", /*#__PURE__*/React.createElement("b", null, "+30 naal"), " add aagum."), /*#__PURE__*/React.createElement("button", {
     className: "btn",
     style: {
       marginTop: 14,
@@ -10335,14 +10547,14 @@ function OwnerDashboard() {
       width: '100%'
     },
     onClick: () => renew(1)
-  }, "💳 Pay ₹99 · 1 Month"), /*#__PURE__*/React.createElement("button", {
+  }, "💳 Pay ₹99 · +30 days"), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost",
     style: {
       marginTop: 10,
       width: '100%'
     },
     onClick: () => renew(3)
-  }, "Or ₹299 · 3 Months (save more)"), /*#__PURE__*/React.createElement("p", {
+  }, "Or ₹299 · +90 days (save more)"), /*#__PURE__*/React.createElement("p", {
     style: {
       color: 'var(--teal)',
       marginTop: 10
@@ -10443,35 +10655,46 @@ function OwnerDashboard() {
     className: "card"
   }, /*#__PURE__*/React.createElement("h3", null, "Membership"), /*#__PURE__*/React.createElement("p", {
     className: "muted"
-  }, "Plan: ", /*#__PURE__*/React.createElement("b", null, s.subscription_id ? '₹99/month UPI Autopay ⚡' : 'NammaOor Basic')), /*#__PURE__*/React.createElement("p", {
+  }, "Plan: ", /*#__PURE__*/React.createElement("b", null, "NammaOor")), /*#__PURE__*/React.createElement("p", {
     className: "muted"
-  }, s.subscription_id ? 'Next charge' : 'Renewal date', ": ", /*#__PURE__*/React.createElement("b", null, s.expires_at ? new Date(s.expires_at).toDateString() : '-')), /*#__PURE__*/React.createElement("p", {
+  }, "Expires on: ", /*#__PURE__*/React.createElement("b", null, s.expires_at ? new Date(s.expires_at).toDateString() : '-')), /*#__PURE__*/React.createElement("div", {
     style: {
-      fontWeight: 800,
-      fontSize: 18,
-      color: daysLeft < 15 ? '#c0392b' : '#008C78'
+      background: daysLeft <= 7 ? '#fdecec' : '#e8f8ee',
+      borderRadius: 10,
+      padding: '8px 12px',
+      marginTop: 6
     }
-  }, daysLeft, " days remaining"), s.subscription_id ? /*#__PURE__*/React.createElement("p", {
-    className: "muted",
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 12
+      fontWeight: 900,
+      fontSize: 22,
+      color: daysLeft <= 7 ? '#c0392b' : '#188a4a'
     }
-  }, "Autopay ON — every month ₹99 automatic-a deduct aagum. Onnum panna vendam. ✅") : /*#__PURE__*/React.createElement("div", {
+  }, daysLeft), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontWeight: 700,
+      color: daysLeft <= 7 ? '#c0392b' : '#188a4a'
+    }
+  }, " naal meedhi")), /*#__PURE__*/React.createElement("div", {
     className: "row",
     style: {
       gap: 6,
-      flexWrap: 'wrap'
+      flexWrap: 'wrap',
+      marginTop: 10
     }
   }, /*#__PURE__*/React.createElement("button", {
     className: "btn",
     onClick: () => renew(1)
-  }, "💳 Pay ₹99 · 1 Month"), /*#__PURE__*/React.createElement("button", {
+  }, "💳 Pay ₹99 · +30 days"), /*#__PURE__*/React.createElement("button", {
     className: "btn ghost",
     onClick: () => renew(3)
-  }, "₹299 · 3 Months"), /*#__PURE__*/React.createElement("button", {
-    className: "btn ghost",
-    onClick: startAutopay
-  }, "⚡ Auto-pay ON")), /*#__PURE__*/React.createElement("p", {
+  }, "₹299 · +90 days")), /*#__PURE__*/React.createElement("p", {
+    className: "muted",
+    style: {
+      fontSize: 12,
+      marginTop: 6
+    }
+  }, "💡 Munnadiye pay pannalaam — meedhi naal + pudhu naal serndhu add aagum (eg. 10 + 30 = 40 naal)."), /*#__PURE__*/React.createElement("p", {
     style: {
       color: 'var(--teal)',
       marginTop: 8
@@ -13153,7 +13376,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.c
 }), /*#__PURE__*/React.createElement(Route, {
   path: "/app/admin",
   element: /*#__PURE__*/React.createElement(AdminDashboard, null)
-}))));
+})), /*#__PURE__*/React.createElement(BottomNav, null)));
 </script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}</script>
 </body></html>
